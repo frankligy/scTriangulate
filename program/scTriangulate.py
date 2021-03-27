@@ -11,6 +11,7 @@ import gseapy as gp
 import math
 from metrics import *
 from diagnose import *
+from viewer import *
 
 def check_filter_single_cluster(adata,key):
     vc = adata.obs['gs'].astype('str').value_counts()
@@ -93,6 +94,7 @@ query = ['leiden0.5','leiden1','leiden2','gs']
 
 # compute metrics and map to original adata
 data_to_json = {}
+data_to_viwer = {}
 for key in query:
     print(key)
     adata_to_compute = check_filter_single_cluster(adata,key)  # every adata will be a copy
@@ -111,6 +113,7 @@ for key in query:
     adata.obs['SCCAF_{}'.format(key)] = adata.obs[key].astype('str').map(cluster_to_SCCAF).fillna(0).values
 
     data_to_json[key] = [cluster_to_accuracy,cluster_to_tfidf,cluster_to_SCCAF]
+    data_to_viewer[key] = list(cluster_to_accuracy.keys())
 
 with open('./score.json','w') as f:
     json.dump(data_to_json,f)
@@ -123,7 +126,6 @@ print('finished metrics computing')
 # draw diagnostic plots
 '''
 using marker gene and exclusive gene result ouput
-generate a folder where an index.html and cluster_1.html, cluster_proNeu_1.html
 each html will have a barplot showing artifact gene enrichment, and UMAP for top10 marker gene and top10 exclusive genes
 '''
 for key in query:
@@ -183,6 +185,7 @@ print('finished pruning')
 # print out
 adata.obs.to_csv('./shapley_annotation.txt',sep='\t')
 adata.write('./after_shapley.h5ad')
+adata.raw.to_adata().write('./after_shapley_to_cellxgene.h5ad')
 
 print('finished print out')
 
@@ -201,6 +204,12 @@ plt.savefig('./umap_shapley_reassign.pdf',bbox_inches='tight')
 plt.close()
 
 print('finished plotting')
+
+# scTriangulate viewer
+with open('./diagnose/viewer.html','w') as f:
+    f.write(to_html(data_to_viewer))
+
+
 
 
 
