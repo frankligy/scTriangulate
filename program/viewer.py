@@ -1,6 +1,7 @@
 #!/data/salomonis2/LabFiles/Frank-Li/citeseq/scanpy_new_env/bin/python3.6
 
 from yattag import Doc
+import json
 
 
 def html_banner():
@@ -27,12 +28,12 @@ def html_left_nav(key_cluster_dict):
                         text(cluster)
     return doc.getvalue()
 
-def html_right_show():
+def html_right_show(key_cluster_data):
     doc,tag,text,line = Doc().ttl()
     with tag('div'):
         doc.attr(klass='right_show')
         with tag('div'):
-            doc.attr(klass='score _information')
+            doc.attr(klass='score_information')
             with tag('h2'):
                 doc.attr(klass='score_h2')
                 text('placeholder')
@@ -44,27 +45,38 @@ def html_right_show():
                 text('placeholder')   
             with tag('p'):
                 doc.attr(klass='score_p3')
-                text('placeholder')            
+                text('placeholder')  
+        with tag('div'):
+            doc.attr(klass='doublet')
+            with tag('h2'):
+                doc.attr(klass='doublet_h2')
+                text('placeholder')
+            doc.stag('img',src='./doublet.png',width='60%')
+
         with tag('div'):
             doc.attr(klass='enrichment')
             with tag('h2'):
                 text('enrichment plot')
-            doc.stag('img',src='./diagnose/init.png',alt='Choose key and cluster',klass='img_enrichment',width='60%')
+            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_enrichment',width='60%')
         with tag('div'):
             doc.attr(klass='marker_umap')
             with tag('h2'):
                 text('marker gene umap')
-            doc.stag('img',src='./diagnose/init.png',alt='Choose key and cluster',klass='img_marker',width='90%')
+            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_marker',width='90%')
         with tag('div'):
             doc.attr(klass='exclusive_umap')
             with tag('h2'):
                 text('exclusive gene umap')
-            doc.stag('img',src='./diagnose/init.png',alt='Choose key and cluster',klass='img_exclusive',width='90%')
+            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_exclusive',width='90%')
+
+        with tag('div'):
+            doc.attr(klass='pass_to_js')
+            with tag('p'):
+                text(json.dumps(key_cluster_data))
     return doc.getvalue()
 
 
-def to_html(key_cluster_dict):
-    from yattag import Doc
+def to_html(key_cluster_dict,key_cluster_data):
     doc,tag,text,line = Doc().ttl()
     doc.asis('<!DOCTYPE html>')
     with tag('html'):
@@ -78,7 +90,7 @@ def to_html(key_cluster_dict):
             with tag('div'):
                 doc.attr(klass='main_body')
                 doc.asis(html_left_nav(key_cluster_dict))
-                doc.asis(html_right_show())
+                doc.asis(html_right_show(key_cluster_data))
         with tag('script'):
             doc.attr(src='../score.json')
             doc.attr(src='./viewer.js')
@@ -86,15 +98,6 @@ def to_html(key_cluster_dict):
 
 
 
-key_cluster_dict = {
-    'leiden0.5':list(range(0,15,1)),
-    'leiden1':list(range(0,21,1)),
-    'leiden2':list(range(0,35,1)),
-    'gs':['B1','Basophil','CD19+','DC','ERP1','ERP2','ERP3','ERP4','Eosinophils','HSCP','IG2','MDP','MKP','MP','MPP4','Mast cell','Mono','Multi-Lin-1','Multi-Lin-2','NK','cMoP','immNeu','pre-B','preNeu-1','preNeu-2','preNeu-3','proNeu-1','proNeu-2']}
-    
-
-with open('./diagnose/viewer.html','w') as f:
-    f.write(to_html(key_cluster_dict))
 
 
 

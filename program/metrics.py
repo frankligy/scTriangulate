@@ -10,6 +10,13 @@ import sys
 import gseapy as gp
 import math
 
+def doublet_compute(adata,key):
+    cluster_to_doublet = {}
+    for cluster in adata.obs[key].astype('category').cat.categories:
+        mean_score = adata[adata.obs[key]==cluster,:].obs['doublet_scores'].values.mean()
+        cluster_to_doublet[cluster] = mean_score
+    return cluster_to_doublet
+
 
 
 def compute_combo_score(rank_uns,cluster):
@@ -48,12 +55,12 @@ def run_gsea_and_enrichr(gene_list,name):
                     description=name,
                     gene_sets=artifact_dict,
                     background=20000,
-                    outdir='./local_mode_enrichr/',
+                    outdir='./scTriangulate_local_mode_enrichr/',
                     cutoff=0.1, # adj-p for plotting
                     verbose=True)
     enrichr_result = enr2.results
     enrichr_dict = {}
-    for metric in ['Sex_associate', 'mitochondira', 'predict_gene_Gm', 'predict_gene_dot', 'ribosomal_Rpl', 'ribosomal_Rps']:
+    for metric in ['Sex_associate', 'mitochondrial', 'predict_gene_Gm', 'predict_gene_dot', 'ribosomal_Rpl', 'ribosomal_Rps']:
         if enrichr_result.shape[0] == 0:  # no enrichment for any of the above terms
             enrichr_dict[metric] = 0
         else:
@@ -72,7 +79,7 @@ def run_gsea_and_enrichr(gene_list,name):
     try:
         pre_res = gp.prerank(rnk=df, gene_sets=artifact_dict,
                             permutation_num=100,
-                            outdir='./local_mode_prerank/{}'.format(name),
+                            outdir='./scTriangulate_local_mode_prerank/{}'.format(name),
                             min_size=1,
                             max_size=10000,
                             seed=6,
@@ -81,7 +88,7 @@ def run_gsea_and_enrichr(gene_list,name):
         for metric in ['Sex_associate', 'mitochondira', 'predict_gene_Gm', 'predict_gene_dot', 'ribosomal_Rpl', 'ribosomal_Rps']:
             gsea_dict[metric] = 0
     else:
-        gsea_result = pd.read_csv('./local_mode_prerank/{}/gseapy.prerank.gene_sets.report.csv'.format(name))
+        gsea_result = pd.read_csv('./scTriangulate_local_mode_prerank/{}/gseapy.prerank.gene_sets.report.csv'.format(name))
         for metric in ['Sex_associate', 'mitochondira', 'predict_gene_Gm', 'predict_gene_dot', 'ribosomal_Rpl', 'ribosomal_Rps']:
             try:
                 gsea_score = -math.log10(gsea_result.loc[gsea_result['Term']==metric,:]['pval'].to_list()[0])
@@ -203,7 +210,7 @@ def reassign_score(adata,key,marker):
     model.fit(X,y)
     pred = model.predict(scoring)  # (n_samples,)
     mat = confusion_matrix(scoring_y,pred)
-    pd.DataFrame(data=mat,index=order,columns=order).to_csv('./confusion_reassign_{}.txt'.format(key),sep='\t')
+    pd.DataFrame(data=mat,index=order,columns=order).to_csv('./scTriangulate_result/confusion_reassign_{}.txt'.format(key),sep='\t')
     accuracy = []
     for i in range(mat.shape[0]):
         accuracy.append(mat[i,i]/np.sum(mat[i,:]))
@@ -246,7 +253,7 @@ def tf_idf_for_cluster(adata,key):
         #print('{0} has {1}'.format(item, result))
         cluster_to_tfidf[item] = result
         cluster_to_exclusive[item] = test[:10].index.to_list()
-    pd.Series(cluster_to_exclusive,name='genes').to_csv('./exclusive_gene_{}.txt'.format(key),sep='\t')
+    pd.Series(cluster_to_exclusive,name='genes').to_csv('./scTriangulate_result/exclusive_gene_{}.txt'.format(key),sep='\t')
     return cluster_to_tfidf
 
 
@@ -275,7 +282,7 @@ def SCCAF_score(adata, key):
     model.fit(X_train, Y_train)
     result = model.predict(X_test)
     m = confusion_matrix(Y_test, result)
-    pd.DataFrame(data=m,index=le.classes_,columns=le.classes_).to_csv('./confusion_SCCAF_{}.txt'.format(key),sep='\t')
+    pd.DataFrame(data=m,index=le.classes_,columns=le.classes_).to_csv('./scTriangulate_result/confusion_SCCAF_{}.txt'.format(key),sep='\t')
     # derive cluster reliability from confusion matrix for each cluster
     numeric2reliable = []  # [0.4,0.5...] length is the number of clusters involved in self-projection
     for i in range(m.shape[0]):
@@ -290,20 +297,6 @@ def SCCAF_score(adata, key):
 
 
 
-
-# adata = sc.read('./leiden_gs.h5ad')
-# for key in ['leiden0.5','leiden1','leiden2','gs']:
-#     print(key)
-#     if key == 'gs':
-#         vc = adata.obs['gs'].astype('str').value_counts()
-#         exclude_cluster = vc.loc[vc==1].index
-#         adata = adata[adata.obs['gs']!='uncertain',:]
-#     result = marker_gene(adata,key=key)
-#     cluster_to_accuracy = reassign_score(adata,key,result)
-#     print(cluster_to_accuracy)
-
-    #tf_idf_for_cluster(adata,key)
-    #SCCAF_score(adata,key)
 
 
 
