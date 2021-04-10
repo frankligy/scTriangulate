@@ -35,6 +35,7 @@ def draw_umap(adata,key):
     e = pd.read_csv('./scTriangulate_result/exclusive_gene_{}.txt'.format(key),sep='\t',index_col=0)
     for cluster in e.index:
         a = literal_eval(e.loc[cluster,:]['genes'])
+        a = list(a.keys())
         top = a[:10]
         sc.pl.umap(adata,color=top,ncols=5)
         plt.savefig('./scTriangulate_diagnose/{0}_{1}_exclusive_umap.png'.format(key,cluster),bbox_inches='tight')

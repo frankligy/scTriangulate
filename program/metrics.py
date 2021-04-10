@@ -252,7 +252,7 @@ def tf_idf_for_cluster(adata,key):
         result = test_pure.iloc[9]
         #print('{0} has {1}'.format(item, result))
         cluster_to_tfidf[item] = result
-        cluster_to_exclusive[item] = test[:10].index.to_list()
+        cluster_to_exclusive[item] = test[:10].to_dict()
     pd.Series(cluster_to_exclusive,name='genes').to_csv('./scTriangulate_result/exclusive_gene_{}.txt'.format(key),sep='\t')
     return cluster_to_tfidf
 
