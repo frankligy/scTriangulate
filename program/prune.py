@@ -95,6 +95,14 @@ def reference_pruning(adata,reference):
                     mapping[cluster] = cluster
 
         subset['reassign'] = subset['engraft'].map(mapping).values
+
+        # change to most abundant type if engraft only have 1
+        vc2 = subset['reassign'].value_counts()
+        most_abundant_cluster = vc2.loc[vc2==vc2.max()].index[0]  # if multiple, just pick the first one
+        exclude_clusters = vc2.loc[vc2==1].index
+        for i in range(subset.shape[0]):
+            if subset.iloc[i]['reassign'] in exclude_clusters:
+                subset.loc[:,'reassign'].iloc[i] = most_abundant_cluster   # caution that Settingwithcopy issue
         pruned_chunks.append(subset)
     modified_obs = pd.concat(pruned_chunks)
     modified_obs.sort_values(by='ori',inplace=True)

@@ -22,6 +22,7 @@ from metrics import *
 from diagnose import *
 from viewer import *
 from prune import *
+from inspection import *
 
 
 # helper functions for running main program
@@ -45,6 +46,8 @@ if not os.path.exists('./scTriangulate_local_mode_prerank'):
     os.mkdir('./scTriangulate_local_mode_prerank')
 if not os.path.exists('./scTriangulate_present'):
     os.mkdir('./scTriangulate_present')
+if not os.path.exists('./scTriangulate_inspection'):
+    os.mkdir('./scTriangulate_inspection')
 
 
 
@@ -112,66 +115,70 @@ adata = sc.read('./scTriangulate_result/after_metrics_computing.h5ad')
 # print('finished diagnose')
 
 
-# compute shaley value
-score_colname = ['reassign','tfidf','SCCAF']
-data = np.empty([len(query),adata.obs.shape[0],len(score_colname)])  # store the metric data for each cell
-'''
-data:
-depth is how many sets of annotations
-height is how many cells
-width is how many score metrics
-'''
-for i,key in enumerate(query):
-    practical_colname = [name + '_' + key for name in score_colname]
-    data[i,:,:] = adata.obs[practical_colname].values
+# # compute shaley value
+# score_colname = ['reassign','tfidf','SCCAF']
+# data = np.empty([len(query),adata.obs.shape[0],len(score_colname)])  # store the metric data for each cell
+# '''
+# data:
+# depth is how many sets of annotations
+# height is how many cells
+# width is how many score metrics
+# '''
+# for i,key in enumerate(query):
+#     practical_colname = [name + '_' + key for name in score_colname]
+#     data[i,:,:] = adata.obs[practical_colname].values
 
-final = []
-intermediate = []
-for i in range(data.shape[1]):
-    layer = data[:,i,:]
-    result = []
-    for j in range(layer.shape[0]):
-        result.append(shapley_value(j,layer))
-    to_take = which_to_take(adata,result,query,reference)   # which annotation this cell should adopt
-    final.append(to_take)    
-    intermediate.append(result)
-adata.obs['final_annotation'] = final
-decisions = zip(*intermediate)
-for i,d in enumerate(decisions):
-    adata.obs['{}_shapley'.format(query[i])] = d
+# final = []
+# intermediate = []
+# for i in range(data.shape[1]):
+#     layer = data[:,i,:]
+#     result = []
+#     for j in range(layer.shape[0]):
+#         result.append(shapley_value(j,layer))
+#     to_take = which_to_take(adata,result,query,reference)   # which annotation this cell should adopt
+#     final.append(to_take)    
+#     intermediate.append(result)
+# adata.obs['final_annotation'] = final
+# decisions = zip(*intermediate)
+# for i,d in enumerate(decisions):
+#     adata.obs['{}_shapley'.format(query[i])] = d
 
-print('finished shapley computing')
+# print('finished shapley computing')
 
-# assign
-assign = []
-for i in range(adata.obs.shape[0]):
-    name = adata.obs.iloc[i,:].loc['final_annotation']
-    cluster = adata.obs.iloc[i,:].loc[name]
-    concat = name + '_' + cluster
-    assign.append(concat)   
-adata.obs['engraft'] = assign
+# # assign
+# assign = []
+# for i in range(adata.obs.shape[0]):
+#     name = adata.obs.iloc[i,:].loc['final_annotation']
+#     cluster = adata.obs.iloc[i,:].loc[name]
+#     concat = name + '_' + cluster
+#     assign.append(concat)   
+# adata.obs['engraft'] = assign
 
-print('finished engraft')
+# print('finished engraft')
 
-# prune
-reference_pruning(adata,reference)
-print('finished pruning')
+# # prune
+# reference_pruning(adata,reference)
+# print('finished pruning')
 
-# prefix with reference cluster
-col1 = adata.obs['reassign']
-col2 = adata.obs[reference]
-col = []
-for i in range(len(col1)):
-    concat = reference + '_' + col2[i] + '|' + col1[i]
-    col.append(concat)
-adata.obs['reassign_prefix'] = col
+# # prefix with reference cluster
+# col1 = adata.obs['reassign']
+# col2 = adata.obs[reference]
+# col = []
+# for i in range(len(col1)):
+#     concat = reference + '_' + col2[i] + '|' + col1[i]
+#     col.append(concat)
+# adata.obs['reassign_prefix'] = col
 
-# print out
-adata.obs.to_csv('./scTriangulate_present/shapley_annotation.txt',sep='\t')
-adata.write('./scTriangulate_present/after_shapley.h5ad')
-adata.raw.to_adata().write('./scTriangulate_present/after_shapley_to_cellxgene.h5ad')
+# # print out
+# adata.obs.to_csv('./scTriangulate_present/shapley_annotation.txt',sep='\t')
+# adata.write('./scTriangulate_present/after_shapley.h5ad')
+# adata.raw.to_adata().write('./scTriangulate_present/after_shapley_to_cellxgene.h5ad')
 
-print('finished print out')
+# print('finished print out')
+
+# inspection (DE, small umap, seperate adata h5ad)
+adata = sc.read('./scTriangulate_present/after_shapley.h5ad')
+plot_DE_umap_save(adata,reference)
 
 # plot
 fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
