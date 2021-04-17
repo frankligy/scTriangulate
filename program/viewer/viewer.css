@@ -1,12 +1,92 @@
-
-
-.left_nav {
-    width:25%;
-    float:left;
+/* banner */
+#banner {
+    background-color: #E9ECEF;
+    width: 100%;
+    height: 100px;
+    line-height: 60px;
+    text-align: center;
+    border: 1px solid red;
 }
 
-.right_show {
+/*left*/
+
+#left_nav {
+    margin-top:20px;
+    width:10%;
+    float:left;
+    border: 1px solid red;
+}
+
+/*right*/
+
+#right_show {
+    margin-top:20px;
     float: right;
-    width:75%;
+    width:80%;
+    border: 1px solid red;
+}
+
+#score_information {
+    margin-top: 10px;
+    border: 1px dashed green;
+}
+
+#score_information h2 {
+    text-align: center;
+}
+
+#score_information span {
+    color: blue;
+}
+
+
+#doublet {
+    margin-top: 10px;
+    border: 1px dashed green;
+}
+
+#doublet h2 {
+    text-align: center;
+}
+
+#enrichment {
+    margin-top: 10px;
+    border: 1px dashed green;
+}
+
+#enrichment h2 {
+    text-align: center;
+}
+
+.marker_umap {
+    margin-top: 10px;
+    border: 1px dashed green;
+}
+
+.marker_umap h2 {
+    text-align: center;
+}
+
+.exclusive_umap {
+    margin-top: 10px;
+    border: 1px dashed green;
+}
+
+.exclusive_umap h2 {
+    text-align: center;
+}
+
+
+#right_show .inspection_div {
+    border: 1px solid green;
+    margin-top: 25px;
+    background-color: lightblue;
+    height: 50px;
+}
+
+#right_show .inspection_div a {
+    text-align: center;
+    display:block;
+    line-height:50px;
 }
 
