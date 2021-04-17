@@ -3,74 +3,62 @@
 from yattag import Doc
 import json
 
-
+# for individual viewer
 def html_banner():
     doc,tag,text,line = Doc().ttl()
     with tag('div'):
-        doc.attr(klass='banner')
-        with tag('h2'):
-            text('scTriangulate Viewer')
+        doc.attr(id='banner')
+        line('h2','scTriangulate Viewer')
     return doc.getvalue()
 
 
 def html_left_nav(key_cluster_dict):
     doc,tag,text,line = Doc().ttl()
     with tag('div'):
-        doc.attr(klass='left_nav')
+        doc.attr(id='left_nav')
         for key,value in key_cluster_dict.items():
-            with tag('h3'):
-                text(key)
+            line('h3',key)
             with tag('ul'):
-                doc.attr(klass='{}'.format(key))
+                doc.attr(id='{}'.format(key))
                 for cluster in value:
-                    with tag('li'):
-                        doc.attr(onclick='display_score(this.parentElement.className,this.textContent);display_plot(this.parentElement.className,this.textContent)')
-                        text(cluster)
+                    line('li',cluster,onclick='display_score(this.parentElement.id,this.textContent);display_plot(this.parentElement.id,this.textContent)')
     return doc.getvalue()
 
 def html_right_show(key_cluster_data):
     doc,tag,text,line = Doc().ttl()
     with tag('div'):
-        doc.attr(klass='right_show')
+        doc.attr(id='right_show')
         with tag('div'):
-            doc.attr(klass='score_information')
+            doc.attr(id='score_information')
             with tag('h2'):
-                doc.attr(klass='score_h2')
-                text('placeholder')
-            with tag('p'):
-                doc.attr(klass='score_p1')
-                text('placeholder')
-            with tag('p'):
-                doc.attr(klass='score_p2')
-                text('placeholder')   
-            with tag('p'):
-                doc.attr(klass='score_p3')
-                text('placeholder')  
+                text('Scoring information:')
+                with tag('span'):
+                    text(' ')
+            line('p','reassign score:')
+            line('p','tfidf score:')
+            line('p','SCCAF score:')
         with tag('div'):
-            doc.attr(klass='doublet')
-            with tag('h2'):
-                doc.attr(klass='doublet_h2')
-                text('placeholder')
-            doc.stag('img',src='./doublet.png',width='60%')
+            doc.attr(id='doublet')
+            line('h2','Average doublet score:')
+            doc.stag('img',src='./doublet.png',width='40%',height='40%')
 
         with tag('div'):
-            doc.attr(klass='enrichment')
-            with tag('h2'):
-                text('enrichment plot')
-            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_enrichment',width='60%')
+            doc.attr(id='enrichment')
+            line('h2','Enrichment plot')
+            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_enrichment',width='40%',height='40%')
         with tag('div'):
             doc.attr(klass='marker_umap')
-            with tag('h2'):
-                text('marker gene umap')
+            line('h2','Marker gene umap')
             doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_marker',width='90%')
         with tag('div'):
             doc.attr(klass='exclusive_umap')
-            with tag('h2'):
-                text('exclusive gene umap')
+            line('h2','Exclusive gene umap')
             doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_exclusive',width='90%')
-
         with tag('div'):
-            doc.attr(klass='pass_to_js')
+            doc.attr(klass='inspection_div')
+            line('a','Go to Inspection',href='../scTriangulate_inspection/inspection.html')
+        with tag('div'):
+            doc.attr('hidden',klass='pass_to_js')
             with tag('p'):
                 text(json.dumps(key_cluster_data))
     return doc.getvalue()
@@ -82,20 +70,74 @@ def to_html(key_cluster_dict,key_cluster_data):
     with tag('html'):
         with tag('head'):
             with tag('title'):
-                text('scTriangulate')
+                text('scTriangulate_individual')
             with tag('link'):
-                doc.attr(rel='stylesheet',href='./viewer.css')
+                doc.attr(type='text/css',rel='stylesheet',href='./viewer.css')
         with tag('body'):
             doc.asis(html_banner())
-            with tag('div'):
-                doc.attr(klass='main_body')
-                doc.asis(html_left_nav(key_cluster_dict))
-                doc.asis(html_right_show(key_cluster_data))
+            doc.asis(html_left_nav(key_cluster_dict))
+            doc.asis(html_right_show(key_cluster_data))
         with tag('script'):
-            doc.attr(src='../score.json')
             doc.attr(src='./viewer.js')
     return doc.getvalue()
 
+
+
+# for inspection viewer
+def header():
+    doc,tag,text,line = Doc().ttl()
+    line('h1','ScTriangulate Inspection',id='header')
+    return doc.getvalue()
+
+def left_nav(key_cluster_dict,reference):
+    doc,tag,text,line = Doc().ttl()
+    data = key_cluster_dict[reference] # a list
+    with tag('div'):
+        doc.attr(id='left_nav')
+        with tag('h3'):
+            text('{}'.format(reference))
+        with tag('ul'):
+            for cluster in data:
+                line('li',cluster,onclick='display(this.textContent)')
+    return doc.getvalue()
+
+def right_show():
+    doc,tag,text,line = Doc().ttl()
+    with tag('div'):
+        doc.attr(id='right_show')
+        line('h2','Cluster',id='identity')
+        with tag('div'):
+            doc.attr(klass='umap_div')
+            line('h2','UMAP view')
+            doc.stag('img', id='umap', src='./init.png', alt='please check cluster on the left')
+        with tag('div'):
+            doc.attr(klass='heatmap_div')
+            line('h2','heatmap view')
+            doc.stag('img', id='heatmap', src='./init.png', alt='please check cluster on the left')
+        with tag('div'):
+            doc.attr(klass='viewer_div')
+            line('a','Go to Viewer',href='../scTriangulate_diagnose/viewer.html')
+    return doc.getvalue()
+
+
+def inspection_html(key_cluster_dict,reference):
+    doc,tag,text,line = Doc().ttl()
+    doc.asis('<!DOCTYPE html>')
+    with tag('html'):
+        with tag('head'):
+            doc.stag('meta', charset='UTF-8')
+            doc.stag('meta', name='viewport', content='width=device-width, initial-scale=1.0')
+            with tag('title'):
+                text('scTriangulate_inspection')
+            with tag('link'):
+                doc.attr(type='text/css',rel='stylesheet',href='./inspection.css')
+        with tag('body'):
+            doc.asis(header())
+            doc.asis(left_nav(key_cluster_dict,reference))
+            doc.asis(right_show())
+        with tag('script'):
+            doc.attr(src='./inspection.js')
+    return doc.getvalue()
 
 
 
