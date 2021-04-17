@@ -47,7 +47,7 @@ def compute_combo_score(rank_uns,cluster):
     df.set_index(keys=pd.Index(np.arange(df.shape[0])), inplace=True)
     return df
 
-def run_gsea_and_enrichr(gene_list,name):
+def run_enrichr(gene_list,name):
     # run enrichr
     artifact = pd.read_csv('./artifact_genes.txt',sep='\t')
     artifact_dict = artifact.groupby(by='notes')['genes'].apply(lambda x:x.tolist()).to_dict()
@@ -70,33 +70,7 @@ def run_gsea_and_enrichr(gene_list,name):
                 enrichr_dict[metric] = 0
             else:
                 enrichr_dict[metric] = enrichr_score
-        
-    # run GSEA
-    artifact = pd.read_csv('./artifact_genes.txt',sep='\t')
-    artifact_dict = artifact.groupby(by='notes')['genes'].apply(lambda x:x.tolist()).to_dict()
-    df = pd.DataFrame({0: gene_list, 1: 1/(np.arange(len(gene_list))+1) })
-    gsea_dict = {}
-    try:
-        pre_res = gp.prerank(rnk=df, gene_sets=artifact_dict,
-                            permutation_num=100,
-                            outdir='./scTriangulate_local_mode_prerank/{}'.format(name),
-                            min_size=1,
-                            max_size=10000,
-                            seed=6,
-                            verbose=True)
-    except:  # no hit return, all metrics are zero
-        for metric in ['Sex_associate', 'mitochondira', 'predict_gene_Gm', 'predict_gene_dot', 'ribosomal_Rpl', 'ribosomal_Rps']:
-            gsea_dict[metric] = 0
-    else:
-        gsea_result = pd.read_csv('./scTriangulate_local_mode_prerank/{}/gseapy.prerank.gene_sets.report.csv'.format(name))
-        for metric in ['Sex_associate', 'mitochondira', 'predict_gene_Gm', 'predict_gene_dot', 'ribosomal_Rpl', 'ribosomal_Rps']:
-            try:
-                gsea_score = -math.log10(gsea_result.loc[gsea_result['Term']==metric,:]['pval'].to_list()[0])
-            except:   # some pval=0, and pval may not be a good way to reflect that.
-                gsea_dict[metric] = 0
-            else:
-                gsea_dict[metric] = gsea_score
-    return enrichr_dict,gsea_dict
+    return enrichr_dict
 
 def purify_gene(genelist):
     result = []
@@ -154,17 +128,14 @@ def marker_gene(adata, key):
 
     # now let's perform enrichr and GSEA, and get puried marker gene
     col_enrichr = []
-    col_gsea = []
     col_purify = []   # genelist that have artifact genes removed
     for cluster in result.index:
-        enrichr_dict, gsea_dict = run_gsea_and_enrichr(result.loc[cluster,:].to_list()[0],name=cluster)  # [0] because it is a [[gene_list]],we only need [gene_list]
+        enrichr_dict = run_enrichr(result.loc[cluster,:].to_list()[0],name=cluster)  # [0] because it is a [[gene_list]],we only need [gene_list]
         purified = purify_gene(result.loc[cluster,:].to_list()[0]) # the [0] is explained last line
         col_enrichr.append(enrichr_dict)
-        col_gsea.append(gsea_dict)
         col_purify.append(purified)
 
     result['enrichr'] = col_enrichr
-    result['gsea'] = col_gsea
     result['purify'] = col_purify
 
     return result
@@ -310,63 +281,3 @@ def SCCAF_score(adata, key):
 
 
 
-
-
-
-
-
-
-
-# ## code storage
-# def tf_idf_all_gene(df,cluster):
-#     '''
-#     now the df contains all the gene for and an additional column for cluster
-#     '''
-#     # compute its tf_idf
-#     tmp1 = df.loc[df['cluster'] == cluster, :].loc[:,df.columns!='cluster'].values  # (n_cells,n_genes)
-#     tf = np.count_nonzero(tmp1,axis=0) / tmp1.shape[0]  # (n_genes,)
-#     tf = tf + 1e-5
-#     tmp2 = df.loc[:,df.columns!='cluster'].values
-#     df_ = np.count_nonzero(tmp2,axis=0) / tmp2.shape[0]  # (n_genes,)
-#     df_ = df_ + 1e-5
-#     idf = -np.log10(df_)
-#     tf_idf_ori = tf * idf  # (n_genes,)
-#     # compute background tf_idf
-#     ntimes = 1000
-#     background = np.empty([ntimes,len(tf_idf_ori)])  # (ntimes,n_genes)
-#     for j in range(ntimes):
-#         cluster_col = df['cluster'].values
-#         np.random.shuffle(cluster_col)
-#         df['cluster'] = cluster_col
-#         tmp1 = df.loc[df['cluster'] == cluster, :].loc[:, df.columns != 'cluster'].values  # (n_cells,n_genes)
-#         tf = np.count_nonzero(tmp1, axis=0) / tmp1.shape[0]  # (n_genes,)
-#         tf = tf + 1e-5
-#         tmp2 = df.loc[:, df.columns != 'cluster'].values
-#         df_ = np.count_nonzero(tmp2, axis=0) / tmp2.shape[0]  # (n_genes,)
-#         df_ = df_ + 1e-5
-#         idf = -np.log10(df_)
-#         tf_idf = tf * idf  # (n_genes,)
-#         background[j,:] = tf_idf
-#     # compute p_value
-#     pval = 1 / ntimes * np.count_nonzero(np.array(background) > tf_idf_ori, axis=0)  # (n_genes,)
-#     return tf_idf_ori, pval
-
-# def tf_idf_score(adata,key):
-#     big = np.empty([3,len(adata.obs[key].cat.categories),len(adata.raw.var_names)])
-#     '''
-#     the big ndarray:
-#     depth is three layers, ori,pval,flag
-#     height is n_cluster
-#     width is n_gene
-#     '''
-#     df = pd.DataFrame(data=adata.raw.X,index=adata.obs_names,columns=adata.raw.var_names)
-#     df['cluster'] = adata.obs[key].astype('str').values
-#     for i,cluster in enumerate(adata.obs[key].cat.categories):
-#         tf_idf_ori, pval = tf_idf_all_gene(df,cluster)
-#         flag = pval < 0.05
-#         big[0,i,:] = tf_idf_ori
-#         big[1,i,:] = pval
-#         big[2,i,:] = flag
-#     amount = np.count_nonzero(big[2,:,:],axis=1)  # (n_cluster,)
-#     print(adata.obs[key].cat.categories)
-#     print(amount)
