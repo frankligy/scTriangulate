@@ -197,14 +197,16 @@ plt.close()
 print('finished plotting')
 
 # scTriangulate viewer
+import pickle
 with open('./scTriangulate_present/key_cluster.p','rb') as f:
     data_to_viewer = pickle.load(f)
-
 with open('./scTriangulate_present/score.json','r') as f:
     data_to_json = json.load(f)
-
 with open('./scTriangulate_diagnose/viewer.html','w') as f:
     f.write(to_html(data_to_viewer,data_to_json))
+with open('./scTriangulate_inspection/inspection.html','w') as f:
+    f.write(inspection_html(data_to_viewer,reference))
+
 
 
 
