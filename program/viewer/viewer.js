@@ -24,6 +24,11 @@ function display_score(key,cluster) {
 }
 
 function display_plot(key,cluster) {
+
+    var path = `./${key}_${cluster}_identity_umap.png`;
+    var img_identity = document.getElementsByClassName('img_identity');
+    img_identity[0].src = path;
+
     var path = `./${key}_${cluster}_enrichment.png`;
     var img_enrichment = document.getElementsByClassName('img_enrichment');
     img_enrichment[0].src = path;

@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import scanpy as sc
 import matplotlib.pyplot as plt
+from matplotlib import cm
 from ast import literal_eval
 
 
@@ -23,12 +24,16 @@ def draw_enrich_plots(key):
         plt.close()
 
 def draw_umap(adata,key):
+    '''remember, cluster is a int since it'is loaded from csv for leiden int cluster, so when drawing
+    identity map, first cast it to str for safety'''
     # for example, key=gs, cluster='Mono'
     m = pd.read_csv('./scTriangulate_result/marker_{}.txt'.format(key),sep='\t',index_col=0)
     for cluster in m.index:
         a = literal_eval(m.loc[cluster,:]['purify'])
         top = a[:10]
-        sc.pl.umap(adata,color=top,ncols=5)
+        # change cmap a bit
+        cmap = cm.get_cmap('viridis').set_under('lightgrey')
+        sc.pl.umap(adata,color=top,ncols=5,cmap=cmap,vmin=1e-5)
         plt.savefig('./scTriangulate_diagnose/{0}_{1}_marker_umap.png'.format(key,cluster),bbox_inches='tight')
         plt.close()
 
@@ -37,8 +42,16 @@ def draw_umap(adata,key):
         a = literal_eval(e.loc[cluster,:]['genes'])
         a = list(a.keys())
         top = a[:10]
-        sc.pl.umap(adata,color=top,ncols=5)
+        sc.pl.umap(adata,color=top,ncols=5,cmap=cmap,vmin=1e-5)
         plt.savefig('./scTriangulate_diagnose/{0}_{1}_exclusive_umap.png'.format(key,cluster),bbox_inches='tight')
+        plt.close()
+
+    # draw identity umap
+    for cluster in e.index:  
+        col = [1 if item == str(cluster) else 0 for item in adata.obs[key]]
+        adata.obs['tmp_plot'] = col
+        sc.pl.umap(adata,color='tmp_plot',cmap=cmap,vmin=1e-5)
+        plt.savefig('./scTriangulate_diagnose/{0}_{1}_identity_umap.png'.format(key,cluster),bbox_inches='tight')
         plt.close()
 
 

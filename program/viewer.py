@@ -43,6 +43,11 @@ def html_right_show(key_cluster_data):
             doc.stag('img',src='./doublet.png',width='40%',height='40%')
 
         with tag('div'):
+            doc.attr(id='identity')
+            line('h2','Cluster location')
+            doc.stag('img',src='./init.png',width='40%',height='40%',alt='Choose key and cluster',klass='img_identity')
+
+        with tag('div'):
             doc.attr(id='enrichment')
             line('h2','Enrichment plot')
             doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_enrichment',width='40%',height='40%')

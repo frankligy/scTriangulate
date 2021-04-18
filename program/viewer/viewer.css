@@ -41,6 +41,8 @@
 
 
 #doublet {
+    float: left;
+    width: 50%;
     margin-top: 10px;
     border: 1px dashed green;
 }
@@ -49,7 +51,20 @@
     text-align: center;
 }
 
+#identity {
+    float: right;
+    width: 48%;
+    margin-top: 10px;
+    border: 1px dashed green;
+}
+
+#identity h2 {
+    text-align: center;
+}
+
 #enrichment {
+    clear: both;
+    display: block;
     margin-top: 10px;
     border: 1px dashed green;
 }
@@ -59,6 +74,8 @@
 }
 
 .marker_umap {
+    clear: both;
+    display: block;
     margin-top: 10px;
     border: 1px dashed green;
 }
@@ -68,6 +85,8 @@
 }
 
 .exclusive_umap {
+    clear: both;
+    display: block;
     margin-top: 10px;
     border: 1px dashed green;
 }
@@ -77,14 +96,15 @@
 }
 
 
-#right_show .inspection_div {
+.inspection_div {
+    display: block;
     border: 1px solid green;
     margin-top: 25px;
     background-color: lightblue;
     height: 50px;
 }
 
-#right_show .inspection_div a {
+.inspection_div a {
     text-align: center;
     display:block;
     line-height:50px;
