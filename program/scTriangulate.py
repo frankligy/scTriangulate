@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import rankdata
+import multiprocessing as mp
 
 import scanpy as sc
 import anndata as ad
@@ -34,6 +35,43 @@ def check_filter_single_cluster(adata,key):
     return adata_valid
 
 
+# to parallelize, define singular function
+def each_key_program(adata,key):
+    print(key,os.getpid())
+    adata_to_compute = check_filter_single_cluster(adata,key)  # every adata will be a copy
+    print('finished filtering')
+    result = marker_gene(adata_to_compute,key=key)
+    print('finished marker gene computing')
+    result.to_csv('./scTriangulate_result/marker_{0}.txt'.format(key),sep='\t')
+    cluster_to_accuracy = reassign_score(adata_to_compute,key,result)
+    print('finished reassign score')
+    cluster_to_tfidf = tf_idf_for_cluster(adata_to_compute,key)
+    print('finished tfidf')
+    cluster_to_SCCAF = SCCAF_score(adata_to_compute,key)
+    print('finished SCCAF')
+    col_reassign = adata.obs[key].astype('str').map(cluster_to_accuracy).fillna(0).values
+    col_tfidf = adata.obs[key].astype('str').map(cluster_to_tfidf).fillna(0).values
+    col_SCCAF = adata.obs[key].astype('str').map(cluster_to_SCCAF).fillna(0).values
+
+    # add a doublet score to each cluster
+    cluster_to_doublet = doublet_compute(adata_to_compute,key)
+
+    to_json = [cluster_to_accuracy,cluster_to_tfidf,cluster_to_SCCAF,cluster_to_doublet]
+    to_viewer = list(cluster_to_accuracy.keys())
+
+    # some diagnose plot
+    draw_enrich_plots(key)
+    draw_umap(adata,key)
+
+    # all the intermediate results needed to be returned
+    collect = {'key':key,
+               'col_reassign':col_reassign,
+               'col_tfidf':col_tfidf,
+               'col_SCCAF':col_SCCAF,
+               'to_json':to_json,
+               'to_viewer':to_viewer}
+    return collect
+
 
 # set some file path
 if not os.path.exists('./scTriangulate_result'):
@@ -49,69 +87,52 @@ if not os.path.exists('./scTriangulate_inspection'):
 
 
 
-# give an adata, have raw attribute, several obs column corresponding to different sets of annotations
+# give an adata, have raw attribute (only need raw attribute), several obs column corresponding to different sets of annotations,
+# users supplied umap if preferred
 
 adata = sc.read('./leiden_gs_nathan.h5ad')
 query = ['leiden0.5','leiden1','leiden2','gs']
 reference = 'gs'
 
-# # add a doublet column
-# counts_matrix = adata.X.copy()
-# scrub = scr.Scrublet(counts_matrix)
-# doublet_scores,predicted_doublets = scrub.scrub_doublets(min_counts=1,min_cells=1)
-# adata.obs['doublet_scores'] = doublet_scores
-# print('finished doublet check')
+# add a doublet column
+counts_matrix = adata.raw.X.copy()
+scrub = scr.Scrublet(counts_matrix)
+doublet_scores,predicted_doublets = scrub.scrub_doublets(min_counts=1,min_cells=1)
+adata.obs['doublet_scores'] = doublet_scores
 
-# # compute metrics and map to original adata
-# data_to_json = {}
-# data_to_viewer = {}
-# for key in query:
-#     print(key)
-#     adata_to_compute = check_filter_single_cluster(adata,key)  # every adata will be a copy
-#     print('finished filtering')
-#     result = marker_gene(adata_to_compute,key=key)
-#     print('finished marker gene computing')
-#     result.to_csv('./scTriangulate_result/marker_{0}.txt'.format(key),sep='\t')
-#     cluster_to_accuracy = reassign_score(adata_to_compute,key,result)
-#     print('finished reassign score')
-#     cluster_to_tfidf = tf_idf_for_cluster(adata_to_compute,key)
-#     print('finished tfidf')
-#     cluster_to_SCCAF = SCCAF_score(adata_to_compute,key)
-#     print('finished SCCAF')
-#     adata.obs['reassign_{}'.format(key)] = adata.obs[key].astype('str').map(cluster_to_accuracy).fillna(0).values
-#     adata.obs['tfidf_{}'.format(key)] = adata.obs[key].astype('str').map(cluster_to_tfidf).fillna(0).values
-#     adata.obs['SCCAF_{}'.format(key)] = adata.obs[key].astype('str').map(cluster_to_SCCAF).fillna(0).values
-
-#     # add a doublet score to each cluster
-#     cluster_to_doublet = doublet_compute(adata_to_compute,key)
-
-#     data_to_json[key] = [cluster_to_accuracy,cluster_to_tfidf,cluster_to_SCCAF,cluster_to_doublet]
-#     data_to_viewer[key] = list(cluster_to_accuracy.keys())
-
-# with open('./scTriangulate_present/score.json','w') as f:
-#     json.dump(data_to_json,f)
-
-# with open('./scTriangulate_present/key_cluster.p','wb') as f:
-#     pickle.dump(data_to_viewer,f)
-
-# adata.write('./scTriangulate_result/after_metrics_computing.h5ad')
-# adata.obs.to_csv('./scTriangulate_result/check_metrics.txt',sep='\t')
-# print('finished metrics computing')
-# print('----------------------------')
-
-adata = sc.read('./scTriangulate_result/after_metrics_computing.h5ad')
-
-# draw diagnostic plots
 sc.pl.umap(adata,color=['doublet_scores'],cmap='YlOrRd')
 plt.savefig('./scTriangulate_diagnose/doublet.png',bbox_inches='tight')
 plt.close()
+print('finished doublet check')
 
-for key in query:
-    draw_enrich_plots(key)
-    draw_umap(adata,key)
+# compute metrics and map to original adata
+data_to_json = {}
+data_to_viewer = {}
 
-print('finished diagnose')
 
+cores = len(query)  # make sure to request same numeber of cores as the length of query list
+pool = mp.Pool(processes=cores)
+results = [pool.apply_async(each_key_program,args=(adata,key)) for key in query]  # [collect,collect,collect,collect], will be AppyResult object
+for collect in results:
+    collect = collect.get()
+    key = collect['key']
+    adata.obs['reassign_{}'.format(key)] = collect['col_reassign']
+    adata.obs['tfidf_{}'.format(key)] = collect['col_tfidf']
+    adata.obs['SCCAF_{}'.format(key)] = collect['col_SCCAF']
+    data_to_json[key] = collect['to_json']
+    data_to_viewer[key] = collect['to_viewer']
+
+with open('./scTriangulate_present/score.json','w') as f:
+    json.dump(data_to_json,f)
+with open('./scTriangulate_present/key_cluster.p','wb') as f:
+    pickle.dump(data_to_viewer,f)
+
+adata.write('./scTriangulate_result/after_metrics_computing.h5ad')
+adata.obs.to_csv('./scTriangulate_result/check_metrics.txt',sep='\t')
+print('finished metrics computing and diagnose plot generaton')
+print('----------------------------')
+
+#adata = sc.read('./scTriangulate_result/after_metrics_computing.h5ad')
 
 # compute shaley value
 score_colname = ['reassign','tfidf','SCCAF']
@@ -133,7 +154,7 @@ for i in range(data.shape[1]):
     result = []
     for j in range(layer.shape[0]):
         result.append(shapley_value(j,layer))
-    to_take = which_to_take(adata,result,query,reference)   # which annotation this cell should adopt
+    to_take = which_to_take(adata,result,query,reference,i)   # which annotation this cell should adopt
     final.append(to_take)    
     intermediate.append(result)
 adata.obs['final_annotation'] = final
@@ -166,6 +187,7 @@ for i in range(len(col1)):
     concat = reference + '_' + col2[i] + '|' + col1[i]
     col.append(concat)
 adata.obs['reassign_prefix'] = col
+print('finished prefix')
 
 # print out
 adata.obs.to_csv('./scTriangulate_present/shapley_annotation.txt',sep='\t')
@@ -177,6 +199,8 @@ print('finished print out')
 # inspection (DE, small umap, seperate adata h5ad)
 adata = sc.read('./scTriangulate_present/after_shapley.h5ad')
 plot_DE_umap_save(adata,reference)
+
+print('finished inspection')
 
 # plot
 fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation

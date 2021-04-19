@@ -73,14 +73,14 @@ def shapley_value(index,data):
     return shapley
 
 
-# def size_of_cluster(adata,c):
-#     c_key = list(c.keys())[0]
-#     c_value = list(c.values())[0]
-#     obs = adata.obs
-#     size = obs.loc[obs[c_key]==c_value,:].shape[0]
-#     return size
+def size_of_cluster(adata,key,i):  # i tells which row in obs that we are talking about
+    obs = adata.obs
+    cluster = obs.iloc[i].loc[key]
+    obs = adata.obs
+    size = obs.loc[obs[key]==cluster,:].shape[0]
+    return size
 
-def which_to_take(adata,result,query,reference):
+def which_to_take(adata,result,query,reference,i): 
     '''
     query: [leiden0.5,leiden1,leiden2,gs]
     result: [0.3, 0.5, 0.4, 0.5]
@@ -95,8 +95,9 @@ def which_to_take(adata,result,query,reference):
         winners = np.where(rank==len(query))[0]   # the index of all winners
         if reference_index in winners:  
             to_take = reference
-        else:  # randomly choose one
-            to_take = query[np.random.choice(winners,size=(1,))[0]]
+        else:  # prefer smaller/granular one, say winners is [0,1,2], size will be [45,67,90]
+            size = [size_of_cluster(adata,query[index],i) for index in winners]
+            to_take = query[winners[size.index(min(size))]]
     return to_take
 
 

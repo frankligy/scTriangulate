@@ -23,7 +23,9 @@ def plot_DE_umap_save(adata,reference):
                 print('{0} entirely being assigned to one type, no need to do DE'.format(cluster),file=f)
                 continue
             sc.tl.rank_genes_groups(adata_s,groupby='reassign_prefix')
-            sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=8,swap_axes=True)
+            number_of_groups = len(adata_s.obs['reassign_prefix'].unique())
+            genes_to_pick = 50 // number_of_groups
+            sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True)
             plt.savefig('./scTriangulate_inspection/DE_heatmap_{}.pdf'.format(cluster),bbox_inches='tight')
             plt.close()
 
