@@ -72,7 +72,7 @@ def inclusiveness(obs,r,c):
 
 
 
-def reference_pruning(adata,reference):
+def reference_pruning(adata,reference,size_dict):
     obs = adata.obs
     obs['ori'] = np.arange(obs.shape[0])     # keep original index order in one column
     pruned_chunks = [] # store pruned chunk, one chunk menas one reference cluster
@@ -88,8 +88,11 @@ def reference_pruning(adata,reference):
             if not result:  # no inclusive, go back to reference annotation
                 mapping[cluster] = reference + '_' + chunk[0]
             else:
-                proportion = vc.loc[cluster] / vc.sum()
-                if proportion < 0.1 and not nearly:  # only cover < 5% reference cluster and it is not nearly included
+                proportion_to_ref = vc.loc[cluster] / vc.sum()
+                proportion_to_self = vc.loc[cluster] / size_dict[cluster.split('_')[0]][cluster.split('_')[1]]
+                if proportion_to_ref < 0.1 and not nearly:  # only cover < 10% reference cluster and it is not nearly included
+                    mapping[cluster] = reference + '_' + chunk[0]
+                elif nearly and proportion_to_ref < 0.1 and proportion_to_self < 0.1: # it is nearly included, so evade the first catcher, but to_self proportion is low
                     mapping[cluster] = reference + '_' + chunk[0]
                 else:
                     mapping[cluster] = cluster

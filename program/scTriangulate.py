@@ -90,9 +90,13 @@ if not os.path.exists('./scTriangulate_inspection'):
 # give an adata, have raw attribute (only need raw attribute), several obs column corresponding to different sets of annotations,
 # users supplied umap if preferred
 
-adata = sc.read('./leiden_gs_nathan.h5ad')
-query = ['leiden0.5','leiden1','leiden2','gs']
+adata = sc.read('./add_cite.h5ad')
+query = ['leiden0.5','leiden1','leiden2','gs','adt$leiden1','adt$leiden2']
 reference = 'gs'
+
+# precomputing size
+size_dict,size_list = get_size(adata.obs,query)
+c,s = size_sort(size_list)
 
 # add a doublet column
 counts_matrix = adata.raw.X.copy()
@@ -147,20 +151,24 @@ for i,key in enumerate(query):
     practical_colname = [name + '_' + key for name in score_colname]
     data[i,:,:] = adata.obs[practical_colname].values
 
-final = []
-intermediate = []
-for i in range(data.shape[1]):
-    layer = data[:,i,:]
-    result = []
-    for j in range(layer.shape[0]):
-        result.append(shapley_value(j,layer))
-    to_take = which_to_take(adata,result,query,reference,i)   # which annotation this cell should adopt
-    final.append(to_take)    
-    intermediate.append(result)
-adata.obs['final_annotation'] = final
-decisions = zip(*intermediate)
-for i,d in enumerate(decisions):
-    adata.obs['{}_shapley'.format(query[i])] = d
+with open('./scTriangulate_present/log.txt','w') as log:
+    final = []
+    intermediate = []
+    for i in range(data.shape[1]):
+        if i % 500 == 0 or i==data.shape[1]:
+            print('Cell{}'.format(i),file=log,flush=True)
+        layer = data[:,i,:]
+        result = []
+        for j in range(layer.shape[0]):
+            result.append(shapley_value(j,layer))
+        cluster_row = adata.obs.iloc[i].loc[query].values
+        to_take = which_to_take(adata,result,query,reference,cluster_row,size_dict)   # which annotation this cell should adopt
+        final.append(to_take)    
+        intermediate.append(result)
+    adata.obs['final_annotation'] = final
+    decisions = zip(*intermediate)
+    for i,d in enumerate(decisions):
+        adata.obs['{}_shapley'.format(query[i])] = d
 
 print('finished shapley computing')
 
@@ -176,7 +184,7 @@ adata.obs['engraft'] = assign
 print('finished engraft')
 
 # prune
-reference_pruning(adata,reference)
+reference_pruning(adata,reference,size_dict)
 print('finished pruning')
 
 # prefix with reference cluster

@@ -17,6 +17,32 @@ import anndata as ad
 import gseapy as gp
 import scrublet as scr
 
+# here we define a series of function for precomputing all cluster size, and sort them for future use
+def single_size_query(obs,c):
+    # c would be {gs:ERP4}
+    key = list(c.keys())[0]
+    cluster = list(c.values())[0]
+    size = obs.loc[obs[key]==cluster,:].shape[0]
+    return size
+
+def get_size(obs,query):
+    size_dict = {}  # {gs:{ERP1:54,ERP2:100},...}
+    size_list = []  # [  ({gs:ERP1},54),  (),()  ]
+    for key in query:
+        size_dict[key] = {}   # {ERP1:54,ERP2:100}
+        for cluster in obs[key].unique():
+            size = single_size_query(obs,{key:cluster})
+            size_dict[key][cluster] = size
+            size_list.append(({key:cluster},size))
+    return size_dict,size_list
+
+def size_sort(size_list):
+    result = sorted(size_list,key=lambda x:x[1])
+    c,s = zip(*result)  # c means {gs:ERP4}, s means size (int)
+    return c,s
+
+
+# functions for computing shapley
 def cheat_add_bonus(total_matrix,index_matrix,bonus):
     index_matrix = copy.deepcopy(index_matrix) # make a copy, since we will modify an immutable data
     for j in range(index_matrix.shape[1]):   # each score/column
@@ -73,18 +99,14 @@ def shapley_value(index,data):
     return shapley
 
 
-def size_of_cluster(adata,key,i):  # i tells which row in obs that we are talking about
-    obs = adata.obs
-    cluster = obs.iloc[i].loc[key]
-    obs = adata.obs
-    size = obs.loc[obs[key]==cluster,:].shape[0]
-    return size
 
-def which_to_take(adata,result,query,reference,i): 
+def which_to_take(adata,result,query,reference,cluster_row,size_dict): 
     '''
     query: [leiden0.5,leiden1,leiden2,gs]
     result: [0.3, 0.5, 0.4, 0.5]
     reference = gs
+    cluster_row: 1,4,7,ERP3     (the cluster of that row)
+    size_dict: {gs:{ERP1:54,ERP2:100},...}
     '''
     rank = rankdata(result,method='max')   # 1,4,2,4
     number_of_winner = len(np.where(rank==len(query))[0]) # how many winners, 1 if not tie occur
@@ -96,7 +118,7 @@ def which_to_take(adata,result,query,reference,i):
         if reference_index in winners:  
             to_take = reference
         else:  # prefer smaller/granular one, say winners is [0,1,2], size will be [45,67,90]
-            size = [size_of_cluster(adata,query[index],i) for index in winners]
+            size = [size_dict[query[index]][cluster_row[index]] for index in winners]
             to_take = query[winners[size.index(min(size))]]
     return to_take
 
