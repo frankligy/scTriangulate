@@ -28,7 +28,7 @@ from inspection import *
 
 # helper functions for running main program
 def check_filter_single_cluster(adata,key):
-    vc = adata.obs['gs'].astype('str').value_counts()
+    vc = adata.obs[key].astype('str').value_counts()
     exclude_clusters= vc.loc[vc==1].index
     truth = np.logical_not(adata.obs[key].isin(exclude_clusters).values)
     adata_valid = adata[truth,:]
@@ -90,9 +90,9 @@ if not os.path.exists('./scTriangulate_inspection'):
 # give an adata, have raw attribute (only need raw attribute), several obs column corresponding to different sets of annotations,
 # users supplied umap if preferred
 
-adata = sc.read('./add_cite.h5ad')
-query = ['leiden0.5','leiden1','leiden2','gs','adt$leiden1','adt$leiden2']
-reference = 'gs'
+adata = sc.read('./triangulate_input.h5ad')
+query = ['leiden1','leiden2','leiden3']
+reference = 'leiden1'
 
 # precomputing size
 size_dict,size_list = get_size(adata.obs,query)

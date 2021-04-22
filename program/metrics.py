@@ -156,7 +156,7 @@ def reassign_score(adata,key,marker):
     # reducing dimension 
     from sklearn.decomposition import PCA
     reducer = PCA(n_components=30)
-    scoring = reducer.fit_transform(X=adata_now.X.toarray())
+    scoring = reducer.fit_transform(X=adata_now.X.toarray()) #become dense matrix
 
     from sklearn.preprocessing import LabelEncoder
     le = LabelEncoder()
@@ -177,7 +177,11 @@ def reassign_score(adata,key,marker):
     # train a KNN classifier
     from sklearn.neighbors import KNeighborsClassifier
     from sklearn.metrics import confusion_matrix
-    model = KNeighborsClassifier(n_neighbors=10,weights='distance')
+    # if number of centroid(training data) < N_neighbors, will raise error, we hard code it to be 10
+    n_neighbors = 10
+    if X.shape[0] < n_neighbors:
+        n_neighbors = X.shape[0]
+    model = KNeighborsClassifier(n_neighbors=n_neighbors,weights='distance')
     model.fit(X,y)
     pred = model.predict(scoring)  # (n_samples,)
     mat = confusion_matrix(scoring_y,pred)
@@ -207,7 +211,7 @@ def tf_idf_bare_compute(df,cluster):
     return tf_idf_ori
 
 def tf_idf_for_cluster(adata,key):
-    df = pd.DataFrame(data=adata.raw.X, index=adata.obs_names, columns=adata.raw.var_names)
+    df = pd.DataFrame(data=adata.raw.X.toarray(), index=adata.obs_names, columns=adata.raw.var_names)  #become dense matrix
     df['cluster'] = adata.obs[key].astype('str').values
     cluster_to_tfidf = {}  # store tfidf score
     cluster_to_exclusive = {}   # store exclusivly expressed genes
@@ -236,7 +240,7 @@ def SCCAF_score(adata, key):
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import confusion_matrix
     # define X and Y and exclude cells whose cluster only have 1 cell
-    X = adata.raw.X
+    X = adata.raw.X.toarray()
     Y = adata.obs[key].values
 
     # label encoding Y to numerical values
@@ -260,7 +264,6 @@ def SCCAF_score(adata, key):
         numeric2reliable.append(m[i, i] / m[i, :].sum())
     cluster_to_SCCAF = {}
     for i in range(len(numeric2reliable)):
-        #print('{0} has {1}'.format(le.classes_[i],numeric2reliable[i]))
         cluster_to_SCCAF[le.classes_[i]] = numeric2reliable[i]
     return cluster_to_SCCAF
 
