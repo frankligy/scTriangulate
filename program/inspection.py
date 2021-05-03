@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 def plot_DE_umap_save(adata,reference):
     with open('./scTriangulate_inspection/log.txt','w') as f:
         for cluster in adata.obs[reference].astype('category').cat.categories:
-            adata_s = adata[adata.obs[reference]==cluster,:]
+            adata_s = adata[adata.obs[reference]==cluster,:].copy()
 
             # first, save adata_s.h5ad (cellxgene)
-            adata_s.raw.to_adata().write('./scTriangulate_inspection/to_cellxgene_{}.h5ad'.format(cluster))
+            adata_s.write('./scTriangulate_inspection/to_cellxgene_{}.h5ad'.format(cluster))
 
             # second, umap
             sc.pl.umap(adata_s,color=['reassign_prefix'])

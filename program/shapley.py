@@ -100,7 +100,7 @@ def shapley_value(index,data):
 
 
 
-def which_to_take(adata,result,query,reference,cluster_row,size_dict): 
+def which_to_take(result,query,reference,cluster_row,size_dict): 
     '''
     query: [leiden0.5,leiden1,leiden2,gs]
     result: [0.3, 0.5, 0.4, 0.5]

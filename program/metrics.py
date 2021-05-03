@@ -86,8 +86,8 @@ def marker_gene(adata, key):
     if adata.uns.get('rank_genes_groups') != None:
         del adata.uns['rank_genes_groups']
     # perform t-test
-    sc.tl.rank_genes_groups(adata, key, method='t-test',n_genes=adata.raw.shape[1])
-    all_genes = adata.raw.var_names.values  # ndarray, all the genes
+    sc.tl.rank_genes_groups(adata, key, method='t-test',n_genes=adata.shape[1])
+    all_genes = adata.var_names.values  # ndarray, all the genes
     all_clusters = adata.obs[key].cat.categories  # pd.Index, all the clusters
     cluster2gene = dict()  # {'cluster1':[gene1,gene2..]}
     rank_uns = adata.uns['rank_genes_groups']
@@ -111,11 +111,11 @@ def marker_gene(adata, key):
         assign = all_clusters[np.argmin(np.array(index_store))]  # get argmin, take the corresponding cluster
         cluster2gene[assign].append((gene,np.min(index_store)))
     # sort the cluster2gene
-    for key,value in cluster2gene.items():
+    for key_,value in cluster2gene.items():
         gene = [item[0] for item in value]
         rank = [item[1] for item in value]
         temp = sorted(zip(gene,rank),key=lambda x:x[1])
-        cluster2gene[key] = [item[0] for item in temp]
+        cluster2gene[key_] = [item[0] for item in temp]
     result = pd.Series(cluster2gene).to_frame()
     result.columns = ['whole_marker_genes']
 
@@ -137,7 +137,7 @@ def marker_gene(adata, key):
 
     result['enrichr'] = col_enrichr
     result['purify'] = col_purify
-
+    result.to_csv('./scTriangulate_result/marker_{0}.txt'.format(key),sep='\t')
     return result
 
 
@@ -150,13 +150,12 @@ def reassign_score(adata,key,marker):
         pick = marker_genes[:num]  # if the list doesn't have more than 30 markers, it is oK, python will automatically choose all
         pool.extend(pick)
     pool = list(set(pool))
-    adata_now = adata.raw.to_adata()
-    adata_now = adata_now[:,pool]
+    adata_now = adata[:,pool]
     
     # reducing dimension 
     from sklearn.decomposition import PCA
     reducer = PCA(n_components=30)
-    scoring = reducer.fit_transform(X=adata_now.X.toarray()) #become dense matrix
+    scoring = reducer.fit_transform(X=adata_now.X) 
 
     from sklearn.preprocessing import LabelEncoder
     le = LabelEncoder()
@@ -211,13 +210,13 @@ def tf_idf_bare_compute(df,cluster):
     return tf_idf_ori
 
 def tf_idf_for_cluster(adata,key):
-    df = pd.DataFrame(data=adata.raw.X.toarray(), index=adata.obs_names, columns=adata.raw.var_names)  #become dense matrix
+    df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
     df['cluster'] = adata.obs[key].astype('str').values
     cluster_to_tfidf = {}  # store tfidf score
     cluster_to_exclusive = {}   # store exclusivly expressed genes
     for item in adata.obs[key].cat.categories:
         a = tf_idf_bare_compute(df,item)
-        a_names = adata.raw.var_names
+        a_names = adata.var_names
         test = pd.Series(data=a, index=a_names)
         test.sort_values(ascending=False, inplace=True)
         # remove artifact genes
@@ -240,7 +239,7 @@ def SCCAF_score(adata, key):
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import confusion_matrix
     # define X and Y and exclude cells whose cluster only have 1 cell
-    X = adata.raw.X.toarray()
+    X = adata.X
     Y = adata.obs[key].values
 
     # label encoding Y to numerical values

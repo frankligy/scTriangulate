@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import rankdata
+import multiprocessing as mp
 
 import scanpy as sc
 import anndata as ad
@@ -71,33 +72,34 @@ def inclusiveness(obs,r,c):
     return fraction_r,fraction_c,result,nearly
 
 
-
-def reference_pruning(adata,reference,size_dict):
-    obs = adata.obs
-    obs['ori'] = np.arange(obs.shape[0])     # keep original index order in one column
-    pruned_chunks = [] # store pruned chunk, one chunk menas one reference cluster
-    for chunk in obs.groupby(by=reference):
+def run_reference_pruning(chunk,reference,size_dict,obs):
+    with open('./scTriangulate_present/log_prune_step_{}.txt'.format(chunk[0]),'a') as log:
+        log.write('reference cluster: {}\n'.format(chunk[0]))
+        log.flush()
         subset = chunk[1]
         vc = subset['engraft'].value_counts()
         overlap_clusters = vc.index
         mapping = {}
         for cluster in overlap_clusters:
+            print('--- query cluster: {}'.format(cluster),file=log,flush=True)
             r = {reference:chunk[0]}
-            c = {cluster.split('_')[0]:cluster.split('_')[1]}
+            c = {cluster.split('$')[0]:cluster.split('$')[1]}
             fraction_r,fraction_c,result,nearly = inclusiveness(obs,r,c)
             if not result:  # no inclusive, go back to reference annotation
-                mapping[cluster] = reference + '_' + chunk[0]
+                mapping[cluster] = reference + '$' + chunk[0]
             else:
                 proportion_to_ref = vc.loc[cluster] / vc.sum()
-                proportion_to_self = vc.loc[cluster] / size_dict[cluster.split('_')[0]][cluster.split('_')[1]]
+                proportion_to_self = vc.loc[cluster] / size_dict[cluster.split('$')[0]][cluster.split('$')[1]]
                 if proportion_to_ref < 0.1 and not nearly:  # only cover < 10% reference cluster and it is not nearly included
-                    mapping[cluster] = reference + '_' + chunk[0]
+                    mapping[cluster] = reference + '$' + chunk[0]
                 elif nearly and proportion_to_ref < 0.1 and proportion_to_self < 0.1: # it is nearly included, so evade the first catcher, but to_self proportion is low
-                    mapping[cluster] = reference + '_' + chunk[0]
+                    mapping[cluster] = reference + '$' + chunk[0]
                 else:
                     mapping[cluster] = cluster
 
         subset['reassign'] = subset['engraft'].map(mapping).values
+
+        print('finished first part',file=log,flush=True)
 
         # change to most abundant type if engraft only have 1
         vc2 = subset['reassign'].value_counts()
@@ -106,10 +108,25 @@ def reference_pruning(adata,reference,size_dict):
         for i in range(subset.shape[0]):
             if subset.iloc[i]['reassign'] in exclude_clusters:
                 subset.loc[:,'reassign'].iloc[i] = most_abundant_cluster   # caution that Settingwithcopy issue
-        pruned_chunks.append(subset)
+
+        print('finished second part',file=log,flush=True)
+        print(subset.shape,file=log,flush=True)
+        return subset
+
+
+def reference_pruning(obs,reference,size_dict):
+    obs['ori'] = np.arange(obs.shape[0])     # keep original index order in one column
+    pruned_chunks = [] # store pruned chunk, one chunk menas one reference cluster
+    chunk_list = list(obs.groupby(by=reference))
+    cores = len(chunk_list)
+    pool = mp.Pool(processes=cores)
+    r = [pool.apply_async(run_reference_pruning,args=(chunk,reference,size_dict,obs)) for chunk in chunk_list]
+    pool.close()
+    pool.join()
+    pruned_chunks = [collect.get() for collect in r]
     modified_obs = pd.concat(pruned_chunks)
     modified_obs.sort_values(by='ori',inplace=True)
-    adata.obs = modified_obs
+    return modified_obs
 
     
 
