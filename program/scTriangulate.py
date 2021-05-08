@@ -13,6 +13,7 @@ import seaborn as sns
 from scipy.stats import rankdata
 from scipy.sparse import issparse,csr_matrix
 import multiprocessing as mp
+import argparse
 
 import scanpy as sc
 import anndata as ad
@@ -75,97 +76,6 @@ def each_key_program(key):
     return collect
 
 
-# set some file path
-if not os.path.exists('./scTriangulate_result'):
-    os.mkdir('./scTriangulate_result')
-if not os.path.exists('./scTriangulate_diagnose'):
-    os.mkdir('./scTriangulate_diagnose')
-if not os.path.exists('./scTriangulate_local_mode_enrichr'):
-    os.mkdir('./scTriangulate_local_mode_enrichr')
-if not os.path.exists('./scTriangulate_present'):
-    os.mkdir('./scTriangulate_present')
-if not os.path.exists('./scTriangulate_inspection'):
-    os.mkdir('./scTriangulate_inspection')
-
-
-
-# give an adata, have raw attribute (only need X attribute), several obs column corresponding to different sets of annotations,
-# users supplied umap if preferred
-
-adata = sc.read('./input.h5ad')
-query = ['ch_hsc','ch_baso','ch_ly6d','ch_prime','ch_thymo','un_cd127','un_hsc','un_kit','un_multilin','un_prime','un_thymo']
-reference = 'ch_prime'
-
-# precomputing size
-size_dict,size_list = get_size(adata.obs,query)
-c,s = size_sort(size_list)
-
-if issparse(adata.X):
-    adata.X = adata.X.toarray()
-
-
-# add a doublet column
-counts_matrix = adata.X
-scrub = scr.Scrublet(counts_matrix)
-doublet_scores,predicted_doublets = scrub.scrub_doublets(min_counts=1,min_cells=1)
-adata.obs['doublet_scores'] = doublet_scores
-
-sc.pl.umap(adata,color=['doublet_scores'],cmap='YlOrRd')
-plt.savefig('./scTriangulate_diagnose/doublet.png',bbox_inches='tight')
-plt.close()
-print('finished doublet check')
-
-del counts_matrix
-del scrub
-
-
-# compute metrics and map to original adata
-data_to_json = {}
-data_to_viewer = {}
-
-cores = len(query)  # make sure to request same numeber of cores as the length of query list
-pool = mp.Pool(processes=cores)
-map_result = pool.map_async(each_key_program,query)  # a map result object, need to call get() method
-pool.close()
-pool.join()
-results = map_result.get()  # [dict,dict,dict,dict]
-for collect in results:
-    key = collect['key']
-    adata.obs['reassign${}'.format(key)] = collect['col_reassign']
-    adata.obs['tfidf${}'.format(key)] = collect['col_tfidf']
-    adata.obs['SCCAF${}'.format(key)] = collect['col_SCCAF']
-    data_to_json[key] = collect['to_json']
-    data_to_viewer[key] = collect['to_viewer']
-
-with open('./scTriangulate_present/score.json','w') as f:
-    json.dump(data_to_json,f)
-with open('./scTriangulate_present/key_cluster.p','wb') as f:
-    pickle.dump(data_to_viewer,f)
-
-adata.X = csr_matrix(adata.X)
-adata.write('./scTriangulate_result/after_metrics_computing.h5ad')
-adata.obs.to_csv('./scTriangulate_result/check_metrics.txt',sep='\t')
-print('finished metrics computing and diagnose plot generaton')
-print('----------------------------')
-
-
-# adata = sc.read('./scTriangulate_result/after_metrics_computing.h5ad')
-
-
-# compute shaley value
-score_colname = ['reassign','tfidf','SCCAF']
-data = np.empty([len(query),adata.obs.shape[0],len(score_colname)])  # store the metric data for each cell
-'''
-data:
-depth is how many sets of annotations
-height is how many cells
-width is how many score metrics
-'''
-for i,key in enumerate(query):
-    practical_colname = [name + '$' + key for name in score_colname]
-    data[i,:,:] = adata.obs[practical_colname].values
-
-# parallelize
 def run_shapley(data):
     with open('./scTriangulate_present/log_shapley_step_{}.txt'.format(os.getpid()),'a') as log:
         log.write('This core needs to process {} cells\n'.format(data.shape[1]))
@@ -185,30 +95,7 @@ def run_shapley(data):
             intermediate.append(result)
     return final,intermediate
 
-final = []
-intermediate = []
-cores = mp.cpu_count()
-sub_datas = np.array_split(data,cores,axis=1)  # [sub_data,sub_data,....]
-pool = mp.Pool(processes=cores)
-r = pool.map_async(run_shapley,sub_datas)
-pool.close()
-pool.join()
-results = r.get()  # [(final,intermediate), (), ()...]
-for collect in results:
-    final.extend(collect[0])
-    intermediate.extend(collect[1])
-adata.obs['final_annotation'] = final
-decisions = list(zip(*intermediate))
-for i,d in enumerate(decisions):
-    adata.obs['{}_shapley'.format(query[i])] = d
-print('finished shapley computing')
 
-adata.write('./scTriangulate_present/just_after_shapley.h5ad')
-
-# adata = sc.read('./just_after_shapley.h5ad')
-
-# assign
-# parallelize
 def run_assign(obs):       
     with open('./scTriangulate_present/log_assign_step_{}.txt'.format(os.getpid()),'a') as log:
         log.write('This core needs to process {} cells\n'.format(obs.shape[0]))
@@ -224,85 +111,223 @@ def run_assign(obs):
     obs['engraft'] = assign
     return obs
 
-obs = adata.obs
-obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
-cores = mp.cpu_count()
-sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
-sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
-pool = mp.Pool(processes=cores)
-r = pool.map_async(run_assign,sub_obs)
-pool.close()
-pool.join()
-results = r.get()  # [sub_obs,sub_obs...]
-obs = pd.concat(results)
-adata.obs = obs
-print('finished engraft')
-
-adata.write('./scTriangulate_present/just_after_engraft.h5ad')
+def first_half(adata,query,reference):
+    # set some file path
+    if not os.path.exists('./scTriangulate_result'):
+        os.mkdir('./scTriangulate_result')
+    if not os.path.exists('./scTriangulate_diagnose'):
+        os.mkdir('./scTriangulate_diagnose')
+    if not os.path.exists('./scTriangulate_local_mode_enrichr'):
+        os.mkdir('./scTriangulate_local_mode_enrichr')
+    if not os.path.exists('./scTriangulate_present'):
+        os.mkdir('./scTriangulate_present')
+    if not os.path.exists('./scTriangulate_inspection'):
+        os.mkdir('./scTriangulate_inspection')
 
 
+    # precomputing size
+    global size_dict
+    size_dict,size_list = get_size(adata.obs,query)
+    c,s = size_sort(size_list)
 
-# prune
-obs = reference_pruning(adata.obs,reference,size_dict)
-adata.obs = obs
-print('finished pruning')
-
-adata.write('./scTriangulate_present/just_after_prune.h5ad')
-
-# prefix with reference cluster
-col1 = adata.obs['reassign']
-col2 = adata.obs[reference]
-col = []
-for i in range(len(col1)):
-    concat = reference + '$' + col2[i] + '|' + col1[i]
-    col.append(concat)
-adata.obs['reassign_prefix'] = col
-print('finished prefix')
-
-# print out
-adata.obs.to_csv('./scTriangulate_present/shapley_annotation.txt',sep='\t')
-adata.write('./scTriangulate_present/after_shapley_to_cellxgene.h5ad')
+    if issparse(adata.X):
+        adata.X = adata.X.toarray()
 
 
-print('finished print out')
+    # add a doublet column
+    counts_matrix = adata.X
+    scrub = scr.Scrublet(counts_matrix)
+    doublet_scores,predicted_doublets = scrub.scrub_doublets(min_counts=1,min_cells=1)
+    adata.obs['doublet_scores'] = doublet_scores
 
-# inspection (DE, small umap, seperate adata h5ad)
-plot_DE_umap_save(adata,reference)
+    sc.pl.umap(adata,color=['doublet_scores'],cmap='YlOrRd')
+    plt.savefig('./scTriangulate_diagnose/doublet.png',bbox_inches='tight')
+    plt.close()
+    print('finished doublet check')
 
-print('finished inspection')
-
-# plot
-fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
-sc.pl.umap(adata,color='final_annotation',frameon=False,ax=ax[0])
-sc.pl.umap(adata,color='final_annotation',frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
-plt.savefig('./scTriangulate_present/umap_shapley_final_annotation.pdf',bbox_inches='tight')
-plt.close()
+    del counts_matrix
+    del scrub
 
 
-fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})   # for reassign
-sc.pl.umap(adata,color='reassign',frameon=False,ax=ax[0])
-sc.pl.umap(adata,color='reassign',frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
-plt.savefig('./scTriangulate_present/umap_shapley_reassign.pdf',bbox_inches='tight')
-plt.close()
+    # compute metrics and map to original adata
+    data_to_json = {}
+    data_to_viewer = {}
 
-print('finished plotting')
+    cores1 = len(query)  # make sure to request same numeber of cores as the length of query list
+    cores2 = mp.cpu_count()
+    cores = min(cores1,cores2)
+    pool = mp.Pool(processes=cores)
+    map_result = pool.map_async(each_key_program,query)  # a map result object, need to call get() method
+    pool.close()
+    pool.join()
+    results = map_result.get()  # [dict,dict,dict,dict]
+    for collect in results:
+        key = collect['key']
+        adata.obs['reassign${}'.format(key)] = collect['col_reassign']
+        adata.obs['tfidf${}'.format(key)] = collect['col_tfidf']
+        adata.obs['SCCAF${}'.format(key)] = collect['col_SCCAF']
+        data_to_json[key] = collect['to_json']
+        data_to_viewer[key] = collect['to_viewer']
 
-# scTriangulate viewer
-with open('./scTriangulate_present/key_cluster.p','rb') as f:
-    data_to_viewer = pickle.load(f)
-with open('./scTriangulate_present/score.json','r') as f:
-    data_to_json = json.load(f)
-with open('./scTriangulate_diagnose/viewer.html','w') as f:
-    f.write(to_html(data_to_viewer,data_to_json))
-with open('./scTriangulate_inspection/inspection.html','w') as f:
-    f.write(inspection_html(data_to_viewer,reference))
+    with open('./scTriangulate_present/score.json','w') as f:
+        json.dump(data_to_json,f)
+    with open('./scTriangulate_present/key_cluster.p','wb') as f:
+        pickle.dump(data_to_viewer,f)
 
-os.system('cp ./viewer/viewer.css ./scTriangulate_diagnose')
-os.system('cp ./viewer/viewer.js ./scTriangulate_diagnose')
-os.system('cp ./viewer/inspection.css ./scTriangulate_inspection')
-os.system('cp ./viewer/inspection.js ./scTriangulate_inspection')
+    adata.X = csr_matrix(adata.X)
+    adata.write('./scTriangulate_result/after_metrics_computing.h5ad')
+    adata.obs.to_csv('./scTriangulate_result/check_metrics.txt',sep='\t')
+    print('finished metrics computing and diagnose plot generaton')
+    print('----------------------------')
 
-print('finished viewer building')
+
+
+def second_half(adata,query,reference):
+    # compute shaley value
+    score_colname = ['reassign','tfidf','SCCAF']
+    data = np.empty([len(query),adata.obs.shape[0],len(score_colname)])  # store the metric data for each cell
+    '''
+    data:
+    depth is how many sets of annotations
+    height is how many cells
+    width is how many score metrics
+    '''
+    for i,key in enumerate(query):
+        practical_colname = [name + '$' + key for name in score_colname]
+        data[i,:,:] = adata.obs[practical_colname].values
+
+    # parallelize
+    final = []
+    intermediate = []
+    cores = mp.cpu_count()
+    sub_datas = np.array_split(data,cores,axis=1)  # [sub_data,sub_data,....]
+    pool = mp.Pool(processes=cores)
+    r = pool.map_async(run_shapley,sub_datas)
+    pool.close()
+    pool.join()
+    results = r.get()  # [(final,intermediate), (), ()...]
+    for collect in results:
+        final.extend(collect[0])
+        intermediate.extend(collect[1])
+    adata.obs['final_annotation'] = final
+    decisions = list(zip(*intermediate))
+    for i,d in enumerate(decisions):
+        adata.obs['{}_shapley'.format(query[i])] = d
+    print('finished shapley computing')
+
+    adata.write('./scTriangulate_present/just_after_shapley.h5ad')
+
+    # adata = sc.read('./just_after_shapley.h5ad')
+
+    # assign
+    # parallelize
+    obs = adata.obs
+    obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
+    cores = mp.cpu_count()
+    sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
+    sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
+    pool = mp.Pool(processes=cores)
+    r = pool.map_async(run_assign,sub_obs)
+    pool.close()
+    pool.join()
+    results = r.get()  # [sub_obs,sub_obs...]
+    obs = pd.concat(results)
+    adata.obs = obs
+    print('finished engraft')
+
+    adata.write('./scTriangulate_present/just_after_engraft.h5ad')
+
+
+
+    # prune
+    obs = reference_pruning(adata.obs,reference,size_dict)
+    adata.obs = obs
+    print('finished pruning')
+
+    adata.write('./scTriangulate_present/just_after_prune.h5ad')
+
+    # prefix with reference cluster
+    col1 = adata.obs['reassign']
+    col2 = adata.obs[reference]
+    col = []
+    for i in range(len(col1)):
+        concat = reference + '$' + col2[i] + '|' + col1[i]
+        col.append(concat)
+    adata.obs['reassign_prefix'] = col
+    print('finished prefix')
+
+    # print out
+    adata.obs.to_csv('./scTriangulate_present/shapley_annotation.txt',sep='\t')
+    adata.write('./scTriangulate_present/after_shapley_to_cellxgene.h5ad')
+
+
+    print('finished print out')
+
+    # inspection (DE, small umap, seperate adata h5ad)
+    plot_DE_umap_save(adata,reference)
+
+    print('finished inspection')
+
+    # plot
+    fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
+    sc.pl.umap(adata,color='final_annotation',frameon=False,ax=ax[0])
+    sc.pl.umap(adata,color='final_annotation',frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
+    plt.savefig('./scTriangulate_present/umap_shapley_final_annotation.pdf',bbox_inches='tight')
+    plt.close()
+
+
+    fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})   # for reassign
+    sc.pl.umap(adata,color='reassign',frameon=False,ax=ax[0])
+    sc.pl.umap(adata,color='reassign',frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
+    plt.savefig('./scTriangulate_present/umap_shapley_reassign.pdf',bbox_inches='tight')
+    plt.close()
+
+    print('finished plotting')
+
+    # scTriangulate viewer
+    with open('./scTriangulate_present/key_cluster.p','rb') as f:
+        data_to_viewer = pickle.load(f)
+    with open('./scTriangulate_present/score.json','r') as f:
+        data_to_json = json.load(f)
+    with open('./scTriangulate_diagnose/viewer.html','w') as f:
+        f.write(to_html(data_to_viewer,data_to_json))
+    with open('./scTriangulate_inspection/inspection.html','w') as f:
+        f.write(inspection_html(data_to_viewer,reference))
+
+    os.system('cp ./viewer/viewer.css ./scTriangulate_diagnose')
+    os.system('cp ./viewer/viewer.js ./scTriangulate_diagnose')
+    os.system('cp ./viewer/inspection.css ./scTriangulate_inspection')
+    os.system('cp ./viewer/inspection.js ./scTriangulate_inspection')
+
+    print('finished viewer building')
+
+
+def main(args):
+    global adata
+    global query
+    global reference
+    adata = args.adata
+    raw_query = args.query
+    reference = args.reference
+    query = raw_query.split('@')
+    print('input file is {}'.format(adata))
+    print('query is {}'.format(query))
+    print('reference is {}'.format(reference))
+    adata = sc.read(adata)
+    first_half(adata,query,reference)
+    second_half(adata,query,reference)
+
+
+if __name__ == '__main__':
+    # give an adata, have raw attribute (only need X attribute), several obs column corresponding to different sets of annotations,
+    # users supplied umap if preferred
+
+    parser = argparse.ArgumentParser(description='scTriangulate command line')
+    parser.add_argument('--adata',type=str,default='',help='path to your input adata file')
+    parser.add_argument('--query',type=str,default='',help='the annotation names (column name of obs), delimited by the @')
+    parser.add_argument('--reference',type=str,default='',help='which annotation you want to set as reference')
+    args = parser.parse_args()
+    main(args)
 
 
 
