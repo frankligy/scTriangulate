@@ -106,12 +106,12 @@ def run_assign(obs):
                 print('cell{}'.format(i),file=log,flush=True)
             name = obs.iloc[i,:].loc['final_annotation']
             cluster = obs.iloc[i,:].loc[name]
-            concat = name + '$' + cluster
+            concat = name + '@' + cluster
             assign.append(concat)   
     obs['engraft'] = assign
     return obs
 
-def first_half(adata,query,reference):
+def get_metrics(adata,query,reference):
     # set some file path
     if not os.path.exists('./scTriangulate_result'):
         os.mkdir('./scTriangulate_result')
@@ -128,7 +128,6 @@ def first_half(adata,query,reference):
     # precomputing size
     global size_dict
     size_dict,size_list = get_size(adata.obs,query)
-    c,s = size_sort(size_list)
 
     if issparse(adata.X):
         adata.X = adata.X.toarray()
@@ -163,9 +162,9 @@ def first_half(adata,query,reference):
     results = map_result.get()  # [dict,dict,dict,dict]
     for collect in results:
         key = collect['key']
-        adata.obs['reassign${}'.format(key)] = collect['col_reassign']
-        adata.obs['tfidf${}'.format(key)] = collect['col_tfidf']
-        adata.obs['SCCAF${}'.format(key)] = collect['col_SCCAF']
+        adata.obs['reassign@{}'.format(key)] = collect['col_reassign']
+        adata.obs['tfidf@{}'.format(key)] = collect['col_tfidf']
+        adata.obs['SCCAF@{}'.format(key)] = collect['col_SCCAF']
         data_to_json[key] = collect['to_json']
         data_to_viewer[key] = collect['to_viewer']
 
@@ -182,7 +181,11 @@ def first_half(adata,query,reference):
 
 
 
-def second_half(adata,query,reference):
+def get_shapley(adata,query,reference):
+
+    global size_dict
+    size_dict,size_list = get_size(adata.obs,query)
+
     # compute shaley value
     score_colname = ['reassign','tfidf','SCCAF']
     data = np.empty([len(query),adata.obs.shape[0],len(score_colname)])  # store the metric data for each cell
@@ -193,7 +196,7 @@ def second_half(adata,query,reference):
     width is how many score metrics
     '''
     for i,key in enumerate(query):
-        practical_colname = [name + '$' + key for name in score_colname]
+        practical_colname = [name + '@' + key for name in score_colname]
         data[i,:,:] = adata.obs[practical_colname].values
 
     # parallelize
@@ -251,10 +254,20 @@ def second_half(adata,query,reference):
     col2 = adata.obs[reference]
     col = []
     for i in range(len(col1)):
-        concat = reference + '$' + col2[i] + '|' + col1[i]
+        concat = reference + '@' + col2[i] + '|' + col1[i]
         col.append(concat)
     adata.obs['reassign_prefix'] = col
     print('finished prefix')
+
+    # generate a cell type sheet
+    obs = adata.obs
+    with open('./scTriangulate_present/cell_type_sheet.txt','w') as f:
+        f.write('reference\tcell_cluster\tchoice\n')
+        for ref,grouped_df in obs.groupby(by=reference):
+            unique = grouped_df['reassign'].unique()
+            for reassign in unique:
+                f.write('{}\t{}\n'.format(reference + '@' + ref,reassign))
+
 
     # print out
     adata.obs.to_csv('./scTriangulate_present/shapley_annotation.txt',sep='\t')
@@ -269,18 +282,8 @@ def second_half(adata,query,reference):
     print('finished inspection')
 
     # plot
-    fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
-    sc.pl.umap(adata,color='final_annotation',frameon=False,ax=ax[0])
-    sc.pl.umap(adata,color='final_annotation',frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
-    plt.savefig('./scTriangulate_present/umap_shapley_final_annotation.pdf',bbox_inches='tight')
-    plt.close()
-
-
-    fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})   # for reassign
-    sc.pl.umap(adata,color='reassign',frameon=False,ax=ax[0])
-    sc.pl.umap(adata,color='reassign',frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
-    plt.savefig('./scTriangulate_present/umap_shapley_reassign.pdf',bbox_inches='tight')
-    plt.close()
+    final_plot(adata,'final_annotation')
+    final_plot(adata,'reassign')
 
     print('finished plotting')
 
@@ -302,6 +305,22 @@ def second_half(adata,query,reference):
     print('finished viewer building')
 
 
+def get_cluster(adata,sheet,reference):
+    sheet = pd.read_csv(sheet,sep='\t')
+    mapping = {}
+    for ref,sub_df in sheet.groupby(by='reference'):
+        for cho,subsub_df in sub_df.groupby(by='choice'):
+            tmp_list = subsub_df['cell_cluster'].tolist()
+            composite_name = ref + '|' + '+'.join(tmp_list)
+            for item in tmp_list:
+                original_name = ref + '|' + item
+                mapping[original_name] = composite_name
+    adata.obs['choice'] = adata.obs['reassign_prefix'].map(mapping).values
+    final_plot(adata,'choice')
+    adata.obs.to_csv('./scTriangulate_present/user_choice_obs.txt',sep='\t')
+    adata.write('./scTriangulate_present/user_choice.h5ad')
+
+
 def main(args):
     global adata
     global query
@@ -309,13 +328,23 @@ def main(args):
     adata = args.adata
     raw_query = args.query
     reference = args.reference
+    mode = args.mode
+    sheet = args.sheet
     query = raw_query.split('@')
     print('input file is {}'.format(adata))
     print('query is {}'.format(query))
     print('reference is {}'.format(reference))
     adata = sc.read(adata)
-    first_half(adata,query,reference)
-    second_half(adata,query,reference)
+
+    if mode == 'combine':
+        get_metrics(adata,query,reference)
+        get_shapley(adata,query,reference)
+    elif mode == 'metrics':
+        get_metrics(adata,query,reference)
+    elif mode == 'shapley':
+        get_shapley(adata,query,reference)
+    elif mode == 'cluster':
+        get_cluster(adata,sheet,reference)
 
 
 if __name__ == '__main__':
@@ -326,6 +355,8 @@ if __name__ == '__main__':
     parser.add_argument('--adata',type=str,default='',help='path to your input adata file')
     parser.add_argument('--query',type=str,default='',help='the annotation names (column name of obs), delimited by the @')
     parser.add_argument('--reference',type=str,default='',help='which annotation you want to set as reference')
+    parser.add_argument('--sheet',type=str,default=None,help='only for cluster mode, the path to cell type sheet')
+    parser.add_argument('--mode',type=str,default='',help='the mode you want to run scTriangulate, metrics,shapley,combine,cluster')
     args = parser.parse_args()
     main(args)
 

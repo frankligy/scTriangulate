@@ -83,17 +83,17 @@ def run_reference_pruning(chunk,reference,size_dict,obs):
         for cluster in overlap_clusters:
             print('--- query cluster: {}'.format(cluster),file=log,flush=True)
             r = {reference:chunk[0]}
-            c = {cluster.split('$')[0]:cluster.split('$')[1]}
+            c = {cluster.split('@')[0]:cluster.split('@')[1]}
             fraction_r,fraction_c,result,nearly = inclusiveness(obs,r,c)
             if not result:  # no inclusive, go back to reference annotation
-                mapping[cluster] = reference + '$' + chunk[0]
+                mapping[cluster] = reference + '@' + chunk[0]
             else:
                 proportion_to_ref = vc.loc[cluster] / vc.sum()
-                proportion_to_self = vc.loc[cluster] / size_dict[cluster.split('$')[0]][cluster.split('$')[1]]
+                proportion_to_self = vc.loc[cluster] / size_dict[cluster.split('@')[0]][cluster.split('@')[1]]
                 if proportion_to_ref < 0.1 and not nearly:  # only cover < 10% reference cluster and it is not nearly included
-                    mapping[cluster] = reference + '$' + chunk[0]
+                    mapping[cluster] = reference + '@' + chunk[0]
                 elif nearly and proportion_to_ref < 0.1 and proportion_to_self < 0.1: # it is nearly included, so evade the first catcher, but to_self proportion is low
-                    mapping[cluster] = reference + '$' + chunk[0]
+                    mapping[cluster] = reference + '@' + chunk[0]
                 else:
                     mapping[cluster] = cluster
 

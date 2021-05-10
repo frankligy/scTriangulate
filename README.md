@@ -1,2 +1,0 @@
-# scTriangulate
-wait
