@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 
-result = pd.read_csv('/Volumes/salomonis2/LabFiles/Frank-Li/scTriangulate/pbmc10k/scTriangulate_present/user_choice_obs.txt',
+result = pd.read_csv('/Volumes/salomonis2/LabFiles/Frank-Li/scTriangulate/pbmc10k/criterion2/scTriangulate_present/shapley_annotation.txt',
                      sep='\t',index_col=0)
 
 from sklearn.preprocessing import LabelEncoder
@@ -15,7 +15,7 @@ leiden3 = LabelEncoder().fit_transform(result['leiden3'].values)
 final = LabelEncoder().fit_transform(result['reassign_prefix'].values)
 user = LabelEncoder().fit_transform(result['choice'].values)
 
-for test in [leiden1,leiden2,leiden3,final,user,azimuth]:
+for test in [leiden1,leiden2,leiden3,final,azimuth]:
     print('ARI:{}'.format(adjusted_rand_score(azimuth,test)))
     print('AMI:{}'.format(adjusted_mutual_info_score(azimuth, test)))
     print('V:{}'.format(v_measure_score(azimuth, test)))

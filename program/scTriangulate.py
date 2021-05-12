@@ -43,13 +43,13 @@ def each_key_program(key):
     print(key,os.getpid())
     adata_to_compute = check_filter_single_cluster(adata,key)  # be a view
     print('finished filtering')
-    result = marker_gene(adata_to_compute,key=key)
+    result = marker_gene(adata_to_compute,key,species,criterion)
     print('finished marker gene computing')
     cluster_to_accuracy = reassign_score(adata_to_compute,key,result)
     print('finished reassign score')
-    cluster_to_tfidf = tf_idf_for_cluster(adata_to_compute,key)
+    cluster_to_tfidf = tf_idf_for_cluster(adata_to_compute,key,species,criterion)
     print('finished tfidf')
-    cluster_to_SCCAF = SCCAF_score(adata_to_compute,key)
+    cluster_to_SCCAF = SCCAF_score(adata_to_compute,key, species, criterion)
     print('finished SCCAF')
     col_reassign = adata.obs[key].astype('str').map(cluster_to_accuracy).fillna(0).values
     col_tfidf = adata.obs[key].astype('str').map(cluster_to_tfidf).fillna(0).values
@@ -111,7 +111,7 @@ def run_assign(obs):
     obs['engraft'] = assign
     return obs
 
-def get_metrics(adata,query,reference):
+def get_metrics(adata,query):
     # set some file path
     if not os.path.exists('./scTriangulate_result'):
         os.mkdir('./scTriangulate_result')
@@ -125,13 +125,8 @@ def get_metrics(adata,query,reference):
         os.mkdir('./scTriangulate_inspection')
 
 
-    # precomputing size
-    global size_dict
-    size_dict,size_list = get_size(adata.obs,query)
-
     if issparse(adata.X):
         adata.X = adata.X.toarray()
-
 
     # add a doublet column
     counts_matrix = adata.X
@@ -143,9 +138,6 @@ def get_metrics(adata,query,reference):
     plt.savefig('./scTriangulate_diagnose/doublet.png',bbox_inches='tight')
     plt.close()
     print('finished doublet check')
-
-    del counts_matrix
-    del scrub
 
 
     # compute metrics and map to original adata
@@ -277,7 +269,7 @@ def get_shapley(adata,query,reference):
     print('finished print out')
 
     # inspection (DE, small umap, seperate adata h5ad)
-    plot_DE_umap_save(adata,reference)
+    plot_DE_umap_save(adata,reference,species,criterion)
 
     print('finished inspection')
 
@@ -325,19 +317,20 @@ def main(args):
     global adata
     global query
     global reference
+    global species
+    global criterion
     adata = args.adata
     raw_query = args.query
     reference = args.reference
     mode = args.mode
     sheet = args.sheet
+    species = args.species
+    criterion = args.criterion
     query = raw_query.split('@')
-    print('input file is {}'.format(adata))
-    print('query is {}'.format(query))
-    print('reference is {}'.format(reference))
-    adata = sc.read(adata)
 
+    adata = sc.read(adata)
     if mode == 'combine':
-        get_metrics(adata,query,reference)
+        get_metrics(adata,query)
         get_shapley(adata,query,reference)
     elif mode == 'metrics':
         get_metrics(adata,query,reference)
@@ -357,6 +350,8 @@ if __name__ == '__main__':
     parser.add_argument('--reference',type=str,default='',help='which annotation you want to set as reference')
     parser.add_argument('--sheet',type=str,default=None,help='only for cluster mode, the path to cell type sheet')
     parser.add_argument('--mode',type=str,default='',help='the mode you want to run scTriangulate, metrics,shapley,combine,cluster')
+    parser.add_argument('--species',type=str,default='human',help='useful for artifact gene removal, which species your dataset belong')
+    parser.add_argument('--criterion',type=int,default=5,help='useful for artifact gene removal, see function purify_gene for detail')
     args = parser.parse_args()
     main(args)
 

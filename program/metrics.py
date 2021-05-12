@@ -50,7 +50,7 @@ def compute_combo_score(rank_uns,cluster):
 def run_enrichr(gene_list,name):
     # run enrichr
     artifact = pd.read_csv('./artifact_genes.txt',sep='\t')
-    artifact_dict = artifact.groupby(by='notes')['genes'].apply(lambda x:x.tolist()).to_dict()
+    artifact_dict = artifact.groupby(by='class')['genes'].apply(lambda x:x.tolist()).to_dict()
     enr2 = gp.enrichr(gene_list=gene_list,
                     description=name,
                     gene_sets=artifact_dict,
@@ -60,7 +60,7 @@ def run_enrichr(gene_list,name):
                     verbose=True)
     enrichr_result = enr2.results
     enrichr_dict = {}
-    for metric in ['Sex_associate', 'mitochondrial', 'predict_gene_Gm', 'predict_gene_dot', 'ribosomal_Rpl', 'ribosomal_Rps']:
+    for metric in artifact_dict.keys():
         if enrichr_result.shape[0] == 0:  # no enrichment for any of the above terms
             enrichr_dict[metric] = 0
         else:
@@ -72,16 +72,43 @@ def run_enrichr(gene_list,name):
                 enrichr_dict[metric] = enrichr_score
     return enrichr_dict
 
-def purify_gene(genelist):
+def read_artifact_genes(species,criterion,path='./artifact_genes.txt'):
+    '''
+    criterion1: all will be artifact
+    criterion2: all will be artifact except cellcycle
+    criterion3: all will be artifact except cellcycle, ribosome
+    criterion4: all will be artifact except cellcycle, ribosome, mitochondrial
+    criterion5: all will be artifact except cellcycle, ribosome, mitochondrial, antisense
+    criterion6: all will be artifact except cellcycle, ribosome, mitochondrial, antisense, predict_gene
+    '''
+    artifact = pd.read_csv(path,sep='\t',index_col=0)
+    artifact = artifact.loc[artifact['species']==species,:]
+    if criterion == 1:
+        artifact = artifact
+    elif criterion == 2:
+        artifact = artifact.loc[~(artifact['class']=='cellcycle'),:]
+    elif criterion == 3:
+        artifact = artifact.loc[~((artifact['class']=='ribosome')|(artifact['class']=='cellcycle')),:]
+    elif criterion == 4:
+        artifact = artifact.loc[~((artifact['class']=='ribosome')|(artifact['class']=='cellcylce')|(artifact['class']=='mitochondrial')),:]
+    elif criterion == 5:
+        artifact = artifact.loc[~((artifact['class']=='ribosome')|(artifact['class']=='cellcylce')|(artifact['class']=='mitochondrial')|(artifact['class']=='antisense')),:]
+    elif criterion == 6:
+        artifact = artifact.loc[~((artifact['class']=='ribosome')|(artifact['class']=='cellcylce')|(artifact['class']=='mitochondrial')|(artifact['class']=='antisense')|(artifact['class']=='predict_gene')),:]
+    return artifact
+
+    
+
+def purify_gene(genelist,species,criterion):
     result = []
-    artifact = pd.read_csv('./artifact_genes.txt',sep='\t')
-    artifact_genes = set(artifact['genes'].to_list())
+    artifact = read_artifact_genes(species,criterion,path='./artifact_genes.txt')
+    artifact_genes = set(artifact.index.to_list())
     for gene in genelist:
         if gene not in artifact_genes:
             result.append(gene)
     return result
 
-def marker_gene(adata, key):
+def marker_gene(adata, key, species, criterion):
     # delete previous rank_gene_gruops if present
     if adata.uns.get('rank_genes_groups') != None:
         del adata.uns['rank_genes_groups']
@@ -131,7 +158,7 @@ def marker_gene(adata, key):
     col_purify = []   # genelist that have artifact genes removed
     for cluster in result.index:
         enrichr_dict = run_enrichr(result.loc[cluster,:].to_list()[0],name=cluster)  # [0] because it is a [[gene_list]],we only need [gene_list]
-        purified = purify_gene(result.loc[cluster,:].to_list()[0]) # the [0] is explained last line
+        purified = purify_gene(result.loc[cluster,:].to_list()[0],species,criterion) # the [0] is explained last line
         col_enrichr.append(enrichr_dict)
         col_purify.append(purified)
 
@@ -209,7 +236,7 @@ def tf_idf_bare_compute(df,cluster):
     tf_idf_ori = tf * idf  # (n_genes,)
     return tf_idf_ori
 
-def tf_idf_for_cluster(adata,key):
+def tf_idf_for_cluster(adata,key,species,criterion):
     df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
     df['cluster'] = adata.obs[key].astype('str').values
     cluster_to_tfidf = {}  # store tfidf score
@@ -220,8 +247,8 @@ def tf_idf_for_cluster(adata,key):
         test = pd.Series(data=a, index=a_names)
         test.sort_values(ascending=False, inplace=True)
         # remove artifact genes
-        artifact = pd.read_csv('./artifact_genes.txt',sep='\t')
-        artifact_genes = set(artifact['genes'].to_list())
+        artifact = read_artifact_genes(species,criterion,path='./artifact_genes.txt')
+        artifact_genes = set(artifact.index.to_list())
         test_pure = test.loc[~test.index.isin(artifact_genes)]
         result = test_pure.iloc[9]
         #print('{0} has {1}'.format(item, result))
@@ -233,13 +260,15 @@ def tf_idf_for_cluster(adata,key):
 
 
 
-def SCCAF_score(adata, key):
+def SCCAF_score(adata, key, species, criterion):
     from sklearn.preprocessing import LabelEncoder
     from sklearn.model_selection import StratifiedShuffleSplit
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import confusion_matrix
-    # define X and Y and exclude cells whose cluster only have 1 cell
-    X = adata.X
+    # define X and Y and remove artifact genes in the first place
+    artifact = read_artifact_genes(species,criterion,path='./artifact_genes.txt')
+    artifact_genes = set(artifact.index.to_list())
+    X = adata[:,~adata.var_names.isin(artifact_genes)].X
     Y = adata.obs[key].values
 
     # label encoding Y to numerical values

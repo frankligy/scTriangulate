@@ -25,6 +25,7 @@
     border: 1px solid red;
 }
 
+
 #identity {
     height: 50px;
     line-height: 50px;
@@ -33,15 +34,33 @@
     color: blue;
 }
 
-
-.umap_div {
+#two_umap_left {
     float: left;
     width: 40%;
+    height: 50%;
+    border: 1px solid red;
+}
+
+
+.umap_div {
     border: 1px dashed green;
 }
 
 .umap_div h2 {
     text-align: center;
+}
+
+.location_div {
+    border: 1px dashed green;
+}
+
+.location_div h2 {
+    text-align: center;
+}
+
+.location_div #location {
+    width: 80%;
+
 }
 
 .heatmap_div {

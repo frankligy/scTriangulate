@@ -102,8 +102,9 @@ def left_nav(key_cluster_dict,reference):
         with tag('h3'):
             text('{}'.format(reference))
         with tag('ul'):
+            doc.attr(id=reference)
             for cluster in data:
-                line('li',cluster,onclick='display(this.textContent)')
+                line('li',cluster,onclick='display(this.parentElement.id,this.textContent)')
     return doc.getvalue()
 
 def right_show():
@@ -112,9 +113,15 @@ def right_show():
         doc.attr(id='right_show')
         line('h2','Cluster',id='identity')
         with tag('div'):
-            doc.attr(klass='umap_div')
-            line('h2','UMAP view')
-            doc.stag('img', id='umap', src='./init.png', alt='please check cluster on the left')
+            doc.attr(id='two_umap_left')
+            with tag('div'):
+                doc.attr(klass='umap_div')
+                line('h2','UMAP view')
+                doc.stag('img', id='umap', src='./init.png', alt='please check cluster on the left')
+            with tag('div'):
+                doc.attr(klass='location_div')
+                line('h2','cluster location')
+                doc.stag('img',id='location', src='./init.png',alt='the location of this cluster')
         with tag('div'):
             doc.attr(klass='heatmap_div')
             line('h2','heatmap view')

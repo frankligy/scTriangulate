@@ -2,8 +2,22 @@
 
 import scanpy as sc
 import matplotlib.pyplot as plt
+from metrics import read_artifact_genes
+import pandas as pd
 
-def plot_DE_umap_save(adata,reference):
+
+def filter_DE_genes(adata,species,criterion):
+    criterion = 2
+    de_gene = pd.DataFrame.from_records(adata.uns['rank_genes_groups']['names']) #column use field name, index is none by default, so incremental int value
+    artifact = set(read_artifact_genes(species,criterion).index)
+    de_gene.mask(de_gene.isin(artifact),inplace=True)
+    adata.uns['rank_genes_gruops_filtered'] = adata.uns['rank_genes_groups'].copy()
+    adata.uns['rank_genes_gruops_filtered']['names'] = de_gene.to_records(index=False)
+    return adata
+
+
+
+def plot_DE_umap_save(adata,reference,species,criterion):
     with open('./scTriangulate_inspection/log.txt','w') as f:
         for cluster in adata.obs[reference].astype('category').cat.categories:
             adata_s = adata[adata.obs[reference]==cluster,:].copy()
@@ -23,9 +37,10 @@ def plot_DE_umap_save(adata,reference):
                 print('{0} entirely being assigned to one type, no need to do DE'.format(cluster),file=f)
                 continue
             sc.tl.rank_genes_groups(adata_s,groupby='reassign_prefix')
+            adata_s = filter_DE_genes(adata_s,species,criterion)
             number_of_groups = len(adata_s.obs['reassign_prefix'].unique())
             genes_to_pick = 50 // number_of_groups
-            sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True)
+            sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_gruops_filtered')
             plt.savefig('./scTriangulate_inspection/DE_heatmap_{}.pdf'.format(cluster),bbox_inches='tight')
             plt.close()
 

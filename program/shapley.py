@@ -59,7 +59,7 @@ def cheat_add_bonus(total_matrix,index_matrix,bonus):
 def shapley_value(index,data):
     '''
     it takes in a 2d ndarray, row means how many players, col means the metrics for a game performance
-    [[0.5,0.4,0.7],        edge case 
+    [[0.5,0.4,0.7],             edge case 
      [2.3,4.5,6.7],             change last row, equal or approximately equal to row2,               
      [0.1,0.1,0.1],             see what's going on.
      [9.1,9.2,9.9]]   
@@ -113,7 +113,10 @@ def which_to_take(result,query,reference,cluster_row,size_dict):
     if number_of_winner == 1:
         to_take = query[np.where(rank==len(query))[0][0]]
     else:
-        reference_index = query.index(reference)
+        try:
+            reference_index = query.index(reference)
+        except ValueError:  # reference not in the query
+            reference_index = -1
         winners = np.where(rank==len(query))[0]   # the index of all winners
         if reference_index in winners:  
             to_take = reference
