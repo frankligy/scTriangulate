@@ -17861,3 +17861,11 @@ Nek2	cellcycle	mice
 Tacc3	cellcycle	mice
 Cks2	cellcycle	mice
 Cks1b	cellcycle	mice
+Mcmdc2	cellcycle	mice
+Mcm3	cellcycle	mice
+Mcm10	cellcycle	mice
+Mcm8	cellcycle	mice
+Mcm7	cellcycle	mice
+Mcmbp	cellcycle	mice
+Mcm3ap	cellcycle	mice
+Mcm9	cellcycle	mice
