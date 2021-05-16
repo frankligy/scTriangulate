@@ -111,7 +111,7 @@ def run_assign(obs):
     obs['engraft'] = assign
     return obs
 
-def get_metrics(adata,query):
+def get_metrics(adata,query,reference):
     # set some file path
     if not os.path.exists('./scTriangulate_result'):
         os.mkdir('./scTriangulate_result')
@@ -159,6 +159,8 @@ def get_metrics(adata,query):
         adata.obs['SCCAF@{}'.format(key)] = collect['col_SCCAF']
         data_to_json[key] = collect['to_json']
         data_to_viewer[key] = collect['to_viewer']
+    
+    data_to_viewer[reference] = adata.obs[reference].unique()
 
     with open('./scTriangulate_present/score.json','w') as f:
         json.dump(data_to_json,f)
@@ -330,7 +332,7 @@ def main(args):
 
     adata = sc.read(adata)
     if mode == 'combine':
-        get_metrics(adata,query)
+        get_metrics(adata,query,reference)
         get_shapley(adata,query,reference)
     elif mode == 'metrics':
         get_metrics(adata,query,reference)

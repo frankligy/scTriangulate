@@ -7,7 +7,6 @@ import pandas as pd
 
 
 def filter_DE_genes(adata,species,criterion):
-    criterion = 2
     de_gene = pd.DataFrame.from_records(adata.uns['rank_genes_groups']['names']) #column use field name, index is none by default, so incremental int value
     artifact = set(read_artifact_genes(species,criterion).index)
     de_gene.mask(de_gene.isin(artifact),inplace=True)

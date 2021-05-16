@@ -44,7 +44,7 @@ def size_sort(size_list):
 
 # functions for computing shapley
 def cheat_add_bonus(total_matrix,index_matrix,bonus):
-    index_matrix = copy.deepcopy(index_matrix) # make a copy, since we will modify an immutable data
+    index_matrix = copy.deepcopy(index_matrix) # make a copy, since we will modify an mutable data
     for j in range(index_matrix.shape[1]):   # each score/column
         if index_matrix[-1,j] < index_matrix.shape[0]: # player not win
             player_score = total_matrix[-1,j]   # a float
