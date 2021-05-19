@@ -54,7 +54,7 @@ def compute_combo_score(rank_uns,cluster):
 
 def run_enrichr(gene_list,name):
     # run enrichr
-    artifact = pd.read_csv('./artifact_genes.txt',sep='\t')
+    artifact = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)),'artifact_genes.txt'),sep='\t')
     artifact_dict = artifact.groupby(by='class')['genes'].apply(lambda x:x.tolist()).to_dict()
     enr2 = gp.enrichr(gene_list=gene_list,
                     description=name,
