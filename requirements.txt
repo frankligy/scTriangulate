@@ -1,0 +1,10 @@
+pandas
+numpy
+scipy
+matplotlib
+seaborn
+scanpy
+anndata
+gseapy
+scrublet
+yattag
