@@ -10,6 +10,7 @@ import matplotlib as mpl
 import seaborn as sns
 from scipy.sparse import issparse,csr_matrix
 import multiprocessing as mp
+import platform
 import logging
 logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
@@ -113,7 +114,8 @@ class ScTriangulate(object):
                 self._add_to_uns('marker_genes',key,collect)
                 self._add_to_uns('exclusive_genes',key,collect)
             if self.reference not in self.query:
-                self.cluster[self.reference] = self.adata.obs[self.reference].unique()  
+                self.cluster[self.reference] = self.adata.obs[self.reference].unique() 
+            os.system('rm -r "./scTriangulate_local_mode_enrichr/"')  # remove this temporary directory 
 
     def compute_shapley(self,parallel=True):
         if parallel:
@@ -259,7 +261,7 @@ class ScTriangulate(object):
                 plt.savefig(os.path.join(self.dir,'{0}_{1}_location_umap.png'.format(key,cluster)),bbox_inches='tight')
                 plt.close()
 
-    def plot_heterogeneity(self,cluster,style,save):
+    def plot_heterogeneity(self,cluster,style,save,genes=None):
         # cluster should be a valid cluster in self.reference
         adata_s = self.adata[self.adata.obs[self.reference]==cluster,:]
         if style == 'umap':
@@ -288,6 +290,11 @@ class ScTriangulate(object):
                 if save:
                     plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.pdf'.format(cluster,style)),bbox_inches='tight')
                     plt.close()
+        elif style == 'violin':
+            sc.pl.violin(adata_s,genes,groupby='prefixed')
+            if save:
+                plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(genes,style)),bbox_inches='tight')
+                plt.close()
 
     def _atomic_viewer_figure(self,key):
         for cluster in self.cluster[key]:
@@ -304,23 +311,38 @@ class ScTriangulate(object):
 
 
     def building_viewer_fig(self,parallel=True):
-        if parallel:
-            logging.info('Building viewer requires generating all the necessary figures, may take several minutes')
-            # create a folder to store all the figures
-            if not os.path.exists(os.path.join(self.dir,'figure4viewer')):
-                os.mkdir(os.path.join(self.dir,'figure4viewer'))
-            ori_dir = self.dir
-            new_dir = os.path.join(self.dir,'figure4viewer')
-            self.dir = new_dir
-            # generate all the figures
-            '''doublet plot'''
-            self.plot_umap('doublet_scores','continuous',True)
+        logging.info('Building viewer requires generating all the necessary figures, may take several minutes')
+        # create a folder to store all the figures
+        if not os.path.exists(os.path.join(self.dir,'figure4viewer')):
+            os.mkdir(os.path.join(self.dir,'figure4viewer'))
+        ori_dir = self.dir
+        new_dir = os.path.join(self.dir,'figure4viewer')
+        self.dir = new_dir
+        # generate all the figures
+        '''doublet plot'''
+        self.plot_umap('doublet_scores','continuous',True)
+
+        if platform.system() == 'Linux':    # can parallelize
+            '''heterogeneity'''
+            logging.info('spawn 1 sub process for inspection figure genearation')
+            p = mp.Process(target=self._atomic_viewer_hetero)
+            p.start()
+            '''other figures'''
+            cores = mp.cpu_count()
+            pool = mp.Pool(processes=cores)
+            logging.info('spawn {} sub processes for viewer figure generation'.format(cores))
+            raw_results = [pool.apply_async(func=self._atomic_viewer_figure,args=(key,)) for key in self.cluster.keys()]
+            p.join()
+            pool.close()
+            pool.join()
+        else:                               # Windows and Darwin can not parallelize if plotting
             '''heterogeneity'''
             self._atomic_viewer_hetero()
             '''other figures'''
             for key in self.cluster.keys():
                 self._atomic_viewer_figure(key)
-            self.dir = ori_dir
+
+        self.dir = ori_dir
 
     def building_viewer_html(self):
         with open(os.path.join(self.dir,'figure4viewer','viewer.html'),'w') as f:
@@ -409,6 +431,42 @@ def filter_DE_genes(adata,species,criterion):
     adata.uns['rank_genes_gruops_filtered'] = adata.uns['rank_genes_groups'].copy()
     adata.uns['rank_genes_gruops_filtered']['names'] = de_gene.to_records(index=False)
     return adata
+
+def plot_diagnose_figure(dir, adata, uns, cluster, cmap, key):
+    for cluster in cluster[key]:
+        # draw enrichment plot
+        fig,ax = plt.subplots()
+        a = uns['marker_genes'][key].loc[cluster,:]['enrichr']
+        ax.barh(y=np.arange(len(a)),width=[item for item in a.values()],color='#FF9A91')
+        ax.set_yticks(np.arange(len(a)))
+        ax.set_yticklabels([item for item in a.keys()])
+        ax.set_title('Marker gene enrichment')
+        ax.set_xlabel('-Log10(adjusted_pval)')
+        plt.savefig(os.path.join(dir,'{0}_{1}_enrichment.png'.format(key,cluster)),bbox_inches='tight')
+        plt.close()
+
+        # draw marker gene plot
+        a = uns['marker_genes'][key].loc[cluster,:]['purify']
+        top = a[:10]
+        sc.pl.umap(adata,color=top,ncols=5,cmap=cmap['viridis'],vmin=1e-5)
+        plt.savefig(os.path.join(dir,'{0}_{1}_marker_umap.png'.format(key,cluster)),bbox_inches='tight')
+        plt.close()
+
+        # draw exclusive gene plot
+        a = uns['exclusive_genes'][key][cluster]  # self.uns['exclusive_genes'][key] is a pd.Series
+        a = list(a.keys())
+        top = a[:10]
+        sc.pl.umap(adata,color=top,ncols=5,cmap=cmap['viridis'],vmin=1e-5)
+        plt.savefig(os.path.join(dir,'{0}_{1}_exclusive_umap.png'.format(key,cluster)),bbox_inches='tight')
+        plt.close()     
+
+        # draw location plot
+        col = [1 if item == str(cluster) else 0 for item in adata.obs[key]]
+        adata.obs['tmp_plot'] = col
+        sc.pl.umap(adata,color='tmp_plot',cmap=cmap['YlOrRd'],vmin=1e-5)
+        plt.savefig(os.path.join(dir,'{0}_{1}_location_umap.png'.format(key,cluster)),bbox_inches='tight')
+        plt.close()
+
 
 
 
