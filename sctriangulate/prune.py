@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import rankdata
 import multiprocessing as mp
-
+import logging
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 import scanpy as sc
 import anndata as ad
 
@@ -73,6 +74,7 @@ def run_reference_pruning(chunk,reference,size_dict,obs):
     overlap_clusters = vc.index
     mapping = {}
     for cluster in overlap_clusters:
+        logging.info('process {}: {} contains {}'.format(os.getpid(),chunk[0],overlap_clusters))
         r = {reference:chunk[0]}
         c = {cluster.split('@')[0]:cluster.split('@')[1]}
         fraction_r,fraction_c,result,nearly = inclusiveness(obs,r,c)
@@ -105,6 +107,7 @@ def reference_pruning(obs,reference,size_dict):
     chunk_list = list(obs.groupby(by=reference))
     cores = len(chunk_list)
     pool = mp.Pool(processes=cores)
+    logging.info('spawn {} sub process for pruning'.format(cores))
     r = [pool.apply_async(run_reference_pruning,args=(chunk,reference,size_dict,obs)) for chunk in chunk_list]
     pool.close()
     pool.join()

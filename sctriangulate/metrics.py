@@ -7,6 +7,7 @@ import seaborn as sns
 import sys
 import gseapy as gp
 import math
+import os
 
 def check_filter_single_cluster(adata,key):
     vc = adata.obs[key].astype('str').value_counts()
@@ -77,7 +78,7 @@ def run_enrichr(gene_list,name):
                 enrichr_dict[metric] = enrichr_score
     return enrichr_dict
 
-def read_artifact_genes(species,criterion,path='./artifact_genes.txt'):
+def read_artifact_genes(species,criterion):
     '''
     criterion1: all will be artifact
     criterion2: all will be artifact except cellcycle
@@ -86,7 +87,7 @@ def read_artifact_genes(species,criterion,path='./artifact_genes.txt'):
     criterion5: all will be artifact except cellcycle, ribosome, mitochondrial, antisense
     criterion6: all will be artifact except cellcycle, ribosome, mitochondrial, antisense, predict_gene
     '''
-    artifact = pd.read_csv(path,sep='\t',index_col=0)
+    artifact = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)),'artifact_genes.txt'),sep='\t')
     artifact = artifact.loc[artifact['species']==species,:]
     if criterion == 1:
         artifact = artifact
@@ -106,7 +107,7 @@ def read_artifact_genes(species,criterion,path='./artifact_genes.txt'):
 
 def purify_gene(genelist,species,criterion):
     result = []
-    artifact = read_artifact_genes(species,criterion,path='./artifact_genes.txt')
+    artifact = read_artifact_genes(species,criterion)
     artifact_genes = set(artifact.index.to_list())
     for gene in genelist:
         if gene not in artifact_genes:
@@ -251,7 +252,7 @@ def tf_idf_for_cluster(adata,key,species,criterion):
         test = pd.Series(data=a, index=a_names)
         test.sort_values(ascending=False, inplace=True)
         # remove artifact genes
-        artifact = read_artifact_genes(species,criterion,path='./artifact_genes.txt')
+        artifact = read_artifact_genes(species,criterion)
         artifact_genes = set(artifact.index.to_list())
         test_pure = test.loc[~test.index.isin(artifact_genes)]
         result = test_pure.iloc[9]
@@ -270,7 +271,7 @@ def SCCAF_score(adata, key, species, criterion):
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import confusion_matrix
     # define X and Y and remove artifact genes in the first place
-    artifact = read_artifact_genes(species,criterion,path='./artifact_genes.txt')
+    artifact = read_artifact_genes(species,criterion)
     artifact_genes = set(artifact.index.to_list())
     X = adata[:,~adata.var_names.isin(artifact_genes)].X
     Y = adata.obs[key].values

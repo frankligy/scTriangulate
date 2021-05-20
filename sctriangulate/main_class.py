@@ -11,18 +11,17 @@ import seaborn as sns
 from scipy.sparse import issparse,csr_matrix
 import multiprocessing as mp
 import logging
-logging.getLogger().setLevel(logging.INFO)
-logging.getLogger().handlers[0].setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 
 import scanpy as sc
 import anndata as ad
 import gseapy as gp
 import scrublet as scr
 
-from shapley import *
-from metrics import *
-from viewer import *
-from prune import *
+from .shapley import *
+from .metrics import *
+from .viewer import *
+from .prune import *
 
 
 
@@ -36,9 +35,23 @@ class ScTriangulate(object):
         self.reference = reference
         self.species = species
         self.criterion = criterion
-        self.scores = {}
+        self.score = {}
         self.cluster = {}
         self.uns = {}
+        self._special_cmap()
+
+    def __str__(self):  # when you print(instance) in REPL
+        return 'ScTriangualate Object:\nWorking directory is {0}\nQuery Annotation is {1}\nReference Annotation is {2}\n'\
+            'Species is {3}\nCriterion is {4}\nScores slot contains {5}\nCluster slot contains {6}\nUns slot contains {7}\n'\
+            'cmap contains: {8}'.format(self.dir, self.query,self.reference,self.species,self.criterion,list(self.score.keys()),
+            list(self.cluster.keys()),list(self.uns.keys()),list(self.cmap.keys()))
+
+    def __repr__(self):  # when you type the instance in REPL
+        return 'ScTriangualate Object:\nWorking directory is {0}\nQuery Annotation is {1}\nReference Annotation is {2}\n'\
+            'Species is {3}\nCriterion is {4}\nScores slot contains {5}\nCluster slot contains {6}\nUns slot contains {7}\n'\
+            'cmap contains: {8}'.format(self.dir, self.query,self.reference,self.species,self.criterion,list(self.score.keys()),
+            list(self.cluster.keys()),list(self.uns.keys()),list(self.cmap.keys()))
+
 
     def _to_dense(self):
         self.adata.X = self.adata.X.toarray() 
@@ -47,6 +60,7 @@ class ScTriangulate(object):
         self.adata.X = csr_matrix(self.adata.X)
 
     def _special_cmap(self):
+        self.cmap = {}
         cmap = copy.copy(cm.get_cmap('viridis'))
         cmap.set_under('lightgrey')
         self.cmap['viridis'] = cmap
@@ -56,7 +70,8 @@ class ScTriangulate(object):
 
 
     def doublet_predict(self):
-        assert issparse(self.adata.X) == False
+        if issparse(self.adata.X):
+            self._to_dense()
         counts_matrix = self.adata.X
         logging.info('running Scrublet may take several minutes')
         scrub = scr.Scrublet(counts_matrix)
@@ -121,6 +136,7 @@ class ScTriangulate(object):
             cores = mp.cpu_count()
             sub_datas = np.array_split(data,cores,axis=1)  # [sub_data,sub_data,....]
             pool = mp.Pool(processes=cores)
+            logging.info('spawn {} sub processes for shapley computing'.format(cores))
             raw_results = [pool.apply_async(func=run_shapley,args=(self.adata.obs,self.query,self.reference,self.size_dict,sub_data)) for sub_data in sub_datas]
             pool.close()
             pool.join()
@@ -140,6 +156,7 @@ class ScTriangulate(object):
             sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
             sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
             pool = mp.Pool(processes=cores)
+            logging.info('spawn {} sub processes for getting raw sctriangulate result'.format(cores))
             r = pool.map_async(run_assign,sub_obs)
             pool.close()
             pool.join()
@@ -148,17 +165,18 @@ class ScTriangulate(object):
             self.adata.obs = obs
 
     def pruning(self,parallel=True):
-        obs = reference_pruning(self.adata.obs,self.reference,self.size_dict)
-        self.adata.obs = obs
+        if parallel:
+            obs = reference_pruning(self.adata.obs,self.reference,self.size_dict)
+            self.adata.obs = obs
 
-        # also, prefix the pruned assignment with reference annotation
-        col1 = self.adata.obs['reassign']
-        col2 = self.adata.obs[self.reference]
-        col = []
-        for i in range(len(col1)):
-            concat = self.reference + '@' + col2[i] + '|' + col1[i]
-            col.append(concat)
-        self.adata.obs['prefixed'] = col
+            # also, prefix the pruned assignment with reference annotation
+            col1 = self.adata.obs['pruned']
+            col2 = self.adata.obs[self.reference]
+            col = []
+            for i in range(len(col1)):
+                concat = self.reference + '@' + col2[i] + '|' + col1[i]
+                col.append(concat)
+            self.adata.obs['prefixed'] = col
 
         # finally, generate a celltype sheet
         obs = self.adata.obs
@@ -168,27 +186,42 @@ class ScTriangulate(object):
                 unique = grouped_df['pruned'].unique()
                 for reassign in unique:
                     f.write('{}\t{}\n'.format(self.reference + '@' + ref,reassign))
+
+    def get_cluster(self):
+        sheet = pd.read_csv(os.path.join(self.dir,'celltype.txt'),sep='\t')
+        mapping = {}
+        for ref,sub_df in sheet.groupby(by='reference'):
+            for cho,subsub_df in sub_df.groupby(by='choice'):
+                tmp_list = subsub_df['cell_cluster'].tolist()
+                composite_name = ref + '|' + '+'.join(tmp_list)
+                for item in tmp_list:
+                    original_name = ref + '|' + item
+                    mapping[original_name] = composite_name
+        self.adata.obs['user_choice'] = self.adata.obs['prefixed'].map(mapping).values
         
 
-    def plot_umap(self,col,type_='category',save=True):
+    def plot_umap(self,col,kind='category',save=True):
         # col means which column in obs to draw umap on
-        if type_ == 'category':
+        if kind == 'category':
             fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
             sc.pl.umap(self.adata,color=col,frameon=False,ax=ax[0])
             sc.pl.umap(self.adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
             if save:
                 plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.pdf'.format(col)),bbox_inches='tight')
                 plt.close()
-        elif type_ == 'continuous':
+        elif kind == 'continuous':
             sc.pl.umap(self.adata,color=col,frameon=False,cmap=self.cmap['viridis'],vmin=1e-5)
             if save:
                 plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.pdf'.format(col)),bbox_inches='tight')
                 plt.close()
 
-    def plot_confusion(self,key,save,**kwargs):
-        sns.heatmap(self.uns[key],cmap='bwr',**kwargs)
+    def plot_confusion(self,name,key,save,**kwargs):
+        df = self.uns[name][key]
+        df = df.apply(func=lambda x:x/x.sum(),axis=1)
+        sns.heatmap(df,cmap='bwr',**kwargs)
         if save:
-            plt.savefig(os.path.join(self.dir,'confusion_{}.pdf'.format(key)),bbox_inches='tight')
+            plt.savefig(os.path.join(self.dir,'confusion_{}_{}.pdf'.format(name,key)),bbox_inches='tight')
+            plt.close()
     
     def plot_cluster_feature(self,key,cluster,feature,save):
         if feature == 'enrichment':
@@ -211,7 +244,7 @@ class ScTriangulate(object):
                 plt.savefig(os.path.join(self.dir,'{0}_{1}_marker_umap.png'.format(key,cluster)),bbox_inches='tight')
                 plt.close()
         elif feature == 'exclusive_gene':
-            a = self.uns['exclusive_genes'][key].loc[cluster,:]['genes']
+            a = self.uns['exclusive_genes'][key][cluster]  # self.uns['exclusive_genes'][key] is a pd.Series
             a = list(a.keys())
             top = a[:10]
             sc.pl.umap(self.adata,color=top,ncols=5,cmap=self.cmap['viridis'],vmin=1e-5)
@@ -222,14 +255,15 @@ class ScTriangulate(object):
             col = [1 if item == str(cluster) else 0 for item in self.adata.obs[key]]
             self.adata.obs['tmp_plot'] = col
             sc.pl.umap(self.adata,color='tmp_plot',cmap=self.cmap['YlOrRd'],vmin=1e-5)
-            plt.savefig(os.path.join(self.dir,'{0}_{1}_location_umap.png'.format(key,cluster)),bbox_inches='tight')
-            plt.close()
+            if save:
+                plt.savefig(os.path.join(self.dir,'{0}_{1}_location_umap.png'.format(key,cluster)),bbox_inches='tight')
+                plt.close()
 
     def plot_heterogeneity(self,cluster,style,save):
         # cluster should be a valid cluster in self.reference
         adata_s = self.adata[self.adata.obs[self.reference]==cluster,:]
         if style == 'umap':
-            fig,axes = plt.subplots(nrows=2,ncols=1,gridspec_kw={'hspace':0.5})
+            fig,axes = plt.subplots(nrows=2,ncols=1,gridspec_kw={'hspace':0.5},figsize=(5,10))
             # ax1
             sc.pl.umap(adata_s,color=['prefixed'],ax=axes[0])
             # ax2
@@ -237,7 +271,8 @@ class ScTriangulate(object):
             self.adata.obs['tmp_plot'] = col
             sc.pl.umap(self.adata,color='tmp_plot',cmap=self.cmap['YlOrRd'],vmin=1e-5,ax=axes[1])
             if save:
-                plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png',format(cluster,style)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,style)),bbox_inches='tight')
+                plt.close()
         elif style == 'heatmap':
             if adata_s.uns.get('rank_genes_groups') != None:
                 del adata_s.uns['rank_genes_groups']
@@ -251,8 +286,8 @@ class ScTriangulate(object):
                 genes_to_pick = 50 // number_of_groups
                 sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_gruops_filtered')
                 if save:
-                    plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.pdf',format(cluster,style)),bbox_inches='tight')
-
+                    plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.pdf'.format(cluster,style)),bbox_inches='tight')
+                    plt.close()
 
     def _atomic_viewer_figure(self,key):
         for cluster in self.cluster[key]:
@@ -268,35 +303,37 @@ class ScTriangulate(object):
 
 
 
-    def building_viewer(self,parallel=True):
+    def building_viewer_fig(self,parallel=True):
         if parallel:
             logging.info('Building viewer requires generating all the necessary figures, may take several minutes')
             # create a folder to store all the figures
             if not os.path.exists(os.path.join(self.dir,'figure4viewer')):
                 os.mkdir(os.path.join(self.dir,'figure4viewer'))
+            ori_dir = self.dir
+            new_dir = os.path.join(self.dir,'figure4viewer')
+            self.dir = new_dir
             # generate all the figures
-            '''heterogeneity, just use process'''
-            p = mp.Process(target=self._atomic_viewer_hetero,args=(self,))
-            p.start()
-            '''other figures, need to use pool'''
-            cores1 = len(self.cluster.keys()) 
-            cores2 = mp.cpu_count()
-            cores = min(cores1,cores2)
-            pool = mp.Pool(processes=cores)
-            raw_results = [pool.apply_async(func=self._atomic_viewer_figure,args=(self,key)) for key in self.cluster.keys()]
-            p.join()
-            pool.close()
-            pool.join()
+            '''doublet plot'''
+            self.plot_umap('doublet_scores','continuous',True)
+            '''heterogeneity'''
+            self._atomic_viewer_hetero()
+            '''other figures'''
+            for key in self.cluster.keys():
+                self._atomic_viewer_figure(key)
+            self.dir = ori_dir
 
+    def building_viewer_html(self):
         with open(os.path.join(self.dir,'figure4viewer','viewer.html'),'w') as f:
-            f.write(to_html(self.cluster,self.scores))
+            f.write(to_html(self.cluster,self.score))
         with open(os.path.join(self.dir,'figure4viewer','inspection.html'),'w') as f:
             f.write(inspection_html(self.cluster,self.reference))
         
-        os.system('cp os.path.join(self.dir,"viewer/viewer.css") os.path.join(self.dir,"figure4viewer")')
-        os.system('cp os.path.join(self.dir,"viewer/viewer.js") os.path.join(self.dir,"figure4viewer")')
-        os.system('cp os.path.join(self.dir,"viewer/inspection.css") os.path.join(self.dir,"figure4viewer")')
-        os.system('cp os.path.join(self.dir,"viewer/inspection.js") os.path.join(self.dir,"figure4viewer")')
+        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.js'),os.path.join(self.dir,'figure4viewer')))
+        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.css'),os.path.join(self.dir,'figure4viewer')))
+        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/inspection.js'),os.path.join(self.dir,'figure4viewer')))
+        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/inspection.css'),os.path.join(self.dir,'figure4viewer')))
+
+
         
         
 
@@ -339,6 +376,7 @@ def each_key_run_parallel(adata,key,species,criterion):
 
 
 def run_shapley(obs,query,reference,size_dict,data):
+    logging.info('process {} need to process {} cells for shapley computing'.format(os.getpid(),data.shape[1]))
     final = []
     intermediate = []
     for i in range(data.shape[1]):
@@ -353,7 +391,8 @@ def run_shapley(obs,query,reference,size_dict,data):
     return final,intermediate
 
 
-def run_assign(obs):       
+def run_assign(obs):  
+    logging.info('process {} need to process {} cells for raw sctriangulte result'.format(os.getpid(),obs.shape[0]))   
     assign = []
     for i in range(obs.shape[0]):
         name = obs.iloc[i,:].loc['final_annotation']
@@ -370,6 +409,8 @@ def filter_DE_genes(adata,species,criterion):
     adata.uns['rank_genes_gruops_filtered'] = adata.uns['rank_genes_groups'].copy()
     adata.uns['rank_genes_gruops_filtered']['names'] = de_gene.to_records(index=False)
     return adata
+
+
 
 
 

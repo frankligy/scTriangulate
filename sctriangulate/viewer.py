@@ -1,5 +1,5 @@
 from yattag import Doc
-
+import json
 
 # for individual viewer
 def html_banner():
@@ -38,7 +38,7 @@ def html_right_show(key_cluster_data):
         with tag('div'):
             doc.attr(id='doublet')
             line('h2','Average doublet score:')
-            doc.stag('img',src='./doublet.png',width='40%',height='40%')
+            doc.stag('img',src='./umap_sctriangulate_doublet_scores.pdf',width='40%',height='40%')
 
         with tag('div'):
             doc.attr(id='identity')
@@ -59,7 +59,7 @@ def html_right_show(key_cluster_data):
             doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_exclusive',width='90%')
         with tag('div'):
             doc.attr(klass='inspection_div')
-            line('a','Go to Inspection',href='../scTriangulate_inspection/inspection.html')
+            line('a','Go to Inspection',href='./inspection.html')
         with tag('div'):
             doc.attr('hidden',klass='pass_to_js')
             with tag('p'):
@@ -116,17 +116,13 @@ def right_show():
                 doc.attr(klass='umap_div')
                 line('h2','UMAP view')
                 doc.stag('img', id='umap', src='./init.png', alt='please check cluster on the left')
-            with tag('div'):
-                doc.attr(klass='location_div')
-                line('h2','cluster location')
-                doc.stag('img',id='location', src='./init.png',alt='the location of this cluster')
         with tag('div'):
             doc.attr(klass='heatmap_div')
             line('h2','heatmap view')
             doc.stag('img', id='heatmap', src='./init.png', alt='please check cluster on the left')
         with tag('div'):
             doc.attr(klass='viewer_div')
-            line('a','Go to Viewer',href='../scTriangulate_diagnose/viewer.html')
+            line('a','Go to Viewer',href='./viewer.html')
     return doc.getvalue()
 
 

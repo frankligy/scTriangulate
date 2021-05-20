@@ -5,7 +5,7 @@
     height: 100px;
     line-height: 60px;
     text-align: center;
-    border: 1px solid red;
+    border: 1px solid rgba(0,0,0,0.1);
 }
 
 /*left*/
@@ -14,7 +14,8 @@
     margin-top:20px;
     width:10%;
     float:left;
-    border: 1px solid red;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
 }
 
 /*right*/
@@ -23,12 +24,12 @@
     margin-top:20px;
     float: right;
     width:80%;
-    border: 1px solid red;
 }
 
 #score_information {
     margin-top: 10px;
-    border: 1px dashed green;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
 }
 
 #score_information h2 {
@@ -42,9 +43,10 @@
 
 #doublet {
     float: left;
-    width: 50%;
+    width: 45%;
     margin-top: 10px;
-    border: 1px dashed green;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
 }
 
 #doublet h2 {
@@ -53,9 +55,10 @@
 
 #identity {
     float: right;
-    width: 48%;
+    width: 45%;
     margin-top: 10px;
-    border: 1px dashed green;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
 }
 
 #identity h2 {
@@ -66,7 +69,8 @@
     clear: both;
     display: block;
     margin-top: 10px;
-    border: 1px dashed green;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
 }
 
 #enrichment h2 {
@@ -77,7 +81,8 @@
     clear: both;
     display: block;
     margin-top: 10px;
-    border: 1px dashed green;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
 }
 
 .marker_umap h2 {
@@ -88,7 +93,8 @@
     clear: both;
     display: block;
     margin-top: 10px;
-    border: 1px dashed green;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
 }
 
 .exclusive_umap h2 {
@@ -98,7 +104,7 @@
 
 .inspection_div {
     display: block;
-    border: 1px solid green;
+    border: 1px solid rgba(0,0,0,0.1);
     margin-top: 25px;
     background-color: lightblue;
     height: 50px;

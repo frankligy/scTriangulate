@@ -1,1 +1,1 @@
-from main_class import ScTriangulate
+from .main_class import ScTriangulate
