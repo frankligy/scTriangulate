@@ -12,7 +12,7 @@ from scipy.sparse import issparse,csr_matrix
 import multiprocessing as mp
 import platform
 import logging
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(message)s',level=logging.ERROR)
 
 import scanpy as sc
 import anndata as ad
@@ -261,7 +261,7 @@ class ScTriangulate(object):
                 plt.savefig(os.path.join(self.dir,'{0}_{1}_location_umap.png'.format(key,cluster)),bbox_inches='tight')
                 plt.close()
 
-    def plot_heterogeneity(self,cluster,style,save,genes=None):
+    def plot_heterogeneity(self,cluster,style,save=False,genes=None):
         # cluster should be a valid cluster in self.reference
         adata_s = self.adata[self.adata.obs[self.reference]==cluster,:]
         if style == 'umap':
@@ -293,8 +293,10 @@ class ScTriangulate(object):
         elif style == 'violin':
             sc.pl.violin(adata_s,genes,groupby='prefixed')
             if save:
-                plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(genes,style)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}.png'.format(cluster,genes,style)),bbox_inches='tight')
                 plt.close()
+        elif style == 'cellxgene':
+            adata_s.write(os.path.join(self.dir,'{}_heterogeneity_{}.h5ad'.format(cluster,style)))
 
     def _atomic_viewer_figure(self,key):
         for cluster in self.cluster[key]:
