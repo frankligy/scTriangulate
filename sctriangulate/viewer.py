@@ -32,31 +32,39 @@ def html_right_show(key_cluster_data):
                 text('Scoring information:')
                 with tag('span'):
                     text(' ')
-            line('p','reassign score:')
-            line('p','tfidf score:')
-            line('p','SCCAF score:')
-        with tag('div'):
-            doc.attr(id='doublet')
-            line('h2','Average doublet score:')
-            doc.stag('img',src='./umap_sctriangulate_doublet_scores.pdf',width='40%',height='40%')
+            with tag('table'):
+                with tag('tr'):
+                    line('td','Reassign Score')
+                    line('td','',id='reassign')
+                with tag('tr'):
+                    line('td','Tf-idf Score')
+                    line('td','',id='tfidf')
+                with tag('tr'):
+                    line('td','SCCAF score')
+                    line('td','',id='sccaf')    
 
         with tag('div'):
             doc.attr(id='identity')
             line('h2','Cluster location')
-            doc.stag('img',src='./init.png',width='40%',height='40%',alt='Choose key and cluster',klass='img_identity')
+            doc.stag('img',src='./init.png',width='60%',height='60%',alt='Choose key and cluster',klass='img_identity')                
+        
+        with tag('div'):
+            doc.attr(id='doublet')
+            line('h2','Average doublet score:')
+            doc.stag('img',src='./umap_sctriangulate_doublet_scores.pdf',width='60%',height='60%')
 
         with tag('div'):
             doc.attr(id='enrichment')
             line('h2','Enrichment plot')
-            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_enrichment',width='40%',height='40%')
+            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_enrichment',width='60%',height='60%')
         with tag('div'):
             doc.attr(klass='marker_umap')
             line('h2','Marker gene umap')
-            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_marker',width='90%')
+            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_marker',width='100%')
         with tag('div'):
             doc.attr(klass='exclusive_umap')
             line('h2','Exclusive gene umap')
-            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_exclusive',width='90%')
+            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_exclusive',width='100%')
         with tag('div'):
             doc.attr(klass='inspection_div')
             line('a','Go to Inspection',href='./inspection.html')

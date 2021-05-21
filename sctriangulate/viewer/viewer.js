@@ -7,17 +7,19 @@ function display_score(key,cluster) {
     var data_from_json = JSON.parse(score);
     console.log(data_from_json);
     var display_h2_span = `${key}, ${cluster}:`;
-    var display_p1 = `Reassign score is: ${data_from_json[key][0][cluster]}`;
-    var display_p2 = `tf-idf score is: ${data_from_json[key][1][cluster]}`;
-    var display_p3 = `SCCAF score is: ${data_from_json[key][2][cluster]}`;
+    var display_reassign = `${data_from_json[key][0][cluster]}`;
+    var display_tfidf = `${data_from_json[key][1][cluster]}`;
+    var display_sccaf = `${data_from_json[key][2][cluster]}`;
     var doublet = `Average doublet score is: ${data_from_json[key][3][cluster]}`;
 
     var h2_obj = document.getElementById('score_information').getElementsByTagName('span');
     h2_obj[0].innerText = display_h2_span;
-    var p_obj = document.getElementById('score_information').getElementsByTagName('p');
-    p_obj[0].innerText = display_p1;
-    p_obj[1].innerText = display_p2;
-    p_obj[2].innerText = display_p3;
+    var reassign = document.getElementById('reassign');
+    var tfidf = document.getElementById('tfidf');
+    var sccaf = document.getElementById('sccaf');
+    reassign.innerText = display_reassign;
+    tfidf.innerText = display_tfidf;
+    sccaf.innerText = display_sccaf;
     var doublet_obj = document.getElementById('doublet').getElementsByTagName('h2');
     doublet_obj[0].innerText = doublet;
 
