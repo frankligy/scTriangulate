@@ -109,16 +109,10 @@ def which_to_take(result,query,reference,cluster_row,size_dict):
     if number_of_winner == 1:
         to_take = query[np.where(rank==len(query))[0][0]]
     else:
-        try:
-            reference_index = query.index(reference)
-        except ValueError:  # reference not in the query
-            reference_index = -1
         winners = np.where(rank==len(query))[0]   # the index of all winners
-        if reference_index in winners:  
-            to_take = reference
-        else:  # prefer smaller/granular one, say winners is [0,1,2], size will be [45,67,90]
-            size = [size_dict[query[index]][cluster_row[index]] for index in winners]
-            to_take = query[winners[size.index(min(size))]]
+        # prefer smaller/granular one, say winners is [0,1,2], size will be [45,67,90]
+        size = [size_dict[query[index]][cluster_row[index]] for index in winners]
+        to_take = query[winners[size.index(min(size))]]
     return to_take
 
 

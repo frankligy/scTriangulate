@@ -12,7 +12,7 @@ from scipy.sparse import issparse,csr_matrix
 import multiprocessing as mp
 import platform
 import logging
-logging.basicConfig(format='%(asctime)s - %(message)s',level=logging.ERROR)
+logging.basicConfig(filename='app.log',filemode='w',format='%(asctime)s - %(message)s',level=logging.INFO)
 
 import scanpy as sc
 import anndata as ad
@@ -69,6 +69,11 @@ class ScTriangulate(object):
         cmap.set_under('lightgrey')
         self.cmap['YlOrRd'] = cmap
 
+    def obs_to_df(self):
+        self.adata.obs.to_csv(os.path.join(self.dir,'sctri_inspect_obs.txt'),sep='\t')
+
+    def var_to_df(self):
+        self.adata.var.to_csv(os.path.join(self.dir,'sctri_inspect_var.txt'),sep='\t')
 
     def doublet_predict(self):
         if issparse(self.adata.X):
@@ -88,6 +93,7 @@ class ScTriangulate(object):
         except KeyError:
             self.uns[name] = {}
             self.uns[name][key] = collect[name]
+
 
 
     def compute_metrics(self,parallel=True):
@@ -116,6 +122,50 @@ class ScTriangulate(object):
             if self.reference not in self.query:
                 self.cluster[self.reference] = self.adata.obs[self.reference].unique() 
             os.system('rm -r "./scTriangulate_local_mode_enrichr/"')  # remove this temporary directory 
+            self._to_sparse()
+
+        else:
+            logging.info('choosing to compute metrics sequentially')
+            for key in self.query:
+                collect = each_key_run(self.adata,key,self.species,self.criterion)
+                key = collect['key']
+                self.adata.obs['reassign@{}'.format(key)] = collect['col_reassign']
+                self.adata.obs['tfidf@{}'.format(key)] = collect['col_tfidf']
+                self.adata.obs['SCCAF@{}'.format(key)] = collect['col_SCCAF']
+                self.score[key] = collect['score_info']
+                self.cluster[key] = collect['cluster_info']  
+                self._add_to_uns('confusion_reassign',key,collect)
+                self._add_to_uns('confusion_sccaf',key,collect)
+                self._add_to_uns('marker_genes',key,collect)
+                self._add_to_uns('exclusive_genes',key,collect)
+            if self.reference not in self.query:
+                self.cluster[self.reference] = self.adata.obs[self.reference].unique() 
+            os.system('rm -r "./scTriangulate_local_mode_enrichr/"')  # remove this temporary directory 
+            self._to_sparse()
+            
+
+    def penalize_artifact(self,mode,stamp=None):
+        '''void mode is to set stamp position to 0, stamp is like {leiden1:5}'''
+        self.adata.obs['order'] = np.arange(self.adata.obs.shape[0])
+        if mode == 'void':
+            obs = self.adata.obs
+            obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
+            cores = mp.cpu_count()
+            sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
+            sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
+            pool = mp.Pool(processes=cores)
+            logging.info('spawn {} sub processes for penalizing artifact with mode-{}'.format(cores,mode))
+            r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamp,)) for chunk in sub_obs]
+            pool.close()
+            pool.join()
+            for collect in r:
+                results = collect.get()  # [sub_obs,sub_obs...]
+            obs = pd.concat(results)
+            self.adata.obs = obs
+
+
+
+
 
     def compute_shapley(self,parallel=True):
         if parallel:
@@ -166,19 +216,24 @@ class ScTriangulate(object):
             obs = pd.concat(results)
             self.adata.obs = obs
 
+            # prefixing
+            self._prefixing(col='raw')
+
+    def _prefixing(self,col):
+        col1 = self.adata.obs[col]
+        col2 = self.adata.obs[self.reference]
+        col = []
+        for i in range(len(col1)):
+            concat = self.reference + '@' + col2[i] + '|' + col1[i]
+            col.append(concat)
+        self.adata.obs['prefixed'] = col
+
+
     def pruning(self,parallel=True):
         if parallel:
             obs = reference_pruning(self.adata.obs,self.reference,self.size_dict)
             self.adata.obs = obs
-
-            # also, prefix the pruned assignment with reference annotation
-            col1 = self.adata.obs['pruned']
-            col2 = self.adata.obs[self.reference]
-            col = []
-            for i in range(len(col1)):
-                concat = self.reference + '@' + col2[i] + '|' + col1[i]
-                col.append(concat)
-            self.adata.obs['prefixed'] = col
+        self._prefixing(col='pruned')
 
         # finally, generate a celltype sheet
         obs = self.adata.obs
@@ -363,9 +418,25 @@ class ScTriangulate(object):
 
 
 # ancillary functions for main class
+def penalize_artifact_void(obs,query,stamp):
+    metrics_cols = obs.loc[:,[item2+'$'+item1 for item1 in query for item2 in ('reassign','tfidf','SCCAF')]]
+    cluster_cols = obs.loc[:,query]
+    df = cluster_cols.apply(func=lambda x:pd.Series(data=[x.name+'@'+item for item in x],name='x.name'),axis=0)
+    df_repeat = pd.DataFrame(np.repeat(df.values,3,axis=1))
+    truth = (df_repeat == stamp)
+    tmp = metrics_cols.mask(truth,0)
+    obs.loc[:,[item2+'$'+item1 for item1 in query for item2 in ('reassign','tfidf','SCCAF')]] = tmp
+    return obs
+
+
+
+
+
 def each_key_run_parallel(adata,key,species,criterion):
-    adata.X = adata.X.toarray()
-    assert issparse(adata.X) == False
+    try:
+        assert issparse(adata.X) == False
+    except AssertionError:
+        adata.X = adata.X.toarray()  
     adata_to_compute = check_filter_single_cluster(adata,key)  
     marker_genes = marker_gene(adata_to_compute,key,species,criterion)
     logging.info('Process {}, for {}, finished marker genes finding'.format(os.getpid(),key))
@@ -375,8 +446,6 @@ def each_key_run_parallel(adata,key,species,criterion):
     logging.info('Process {}, for {}, finished tfidf score computing'.format(os.getpid(),key))
     cluster_to_SCCAF, confusion_sccaf = SCCAF_score(adata_to_compute,key, species, criterion)
     logging.info('Process {}, for {}, finished SCCAF score computing'.format(os.getpid(),key))
-    adata.X = csr_matrix(adata.X)
-    assert issparse(adata.X) == True
     col_reassign = adata.obs[key].astype('str').map(cluster_to_reassign).fillna(0).values
     col_tfidf = adata.obs[key].astype('str').map(cluster_to_tfidf).fillna(0).values
     col_SCCAF = adata.obs[key].astype('str').map(cluster_to_SCCAF).fillna(0).values
