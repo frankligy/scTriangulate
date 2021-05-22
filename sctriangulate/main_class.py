@@ -1,7 +1,7 @@
 import sys
 import os
 import copy
-import copy
+import pickle
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -40,6 +40,9 @@ class ScTriangulate(object):
         self.cluster = {}
         self.uns = {}
         self._special_cmap()
+        self._metrics = ['reassign','tfidf','SCCAF']
+
+
 
     def __str__(self):  # when you print(instance) in REPL
         return 'ScTriangualate Object:\nWorking directory is {0}\nQuery Annotation is {1}\nReference Annotation is {2}\n'\
@@ -69,11 +72,21 @@ class ScTriangulate(object):
         cmap.set_under('lightgrey')
         self.cmap['YlOrRd'] = cmap
 
-    def obs_to_df(self):
-        self.adata.obs.to_csv(os.path.join(self.dir,'sctri_inspect_obs.txt'),sep='\t')
+    def obs_to_df(self,name='sctri_inspect_obs.txt'):
+        self.adata.obs.to_csv(os.path.join(self.dir,name),sep='\t')
 
-    def var_to_df(self):
-        self.adata.var.to_csv(os.path.join(self.dir,'sctri_inspect_var.txt'),sep='\t')
+    def var_to_df(self,name='sctri_inspect_var.txt'):
+        self.adata.var.to_csv(os.path.join(self.dir,name),sep='\t')
+
+    def serialize(self,name='sctri_pickle.p'):
+        with open(os.path.join(self.dir,name),'wb') as f:
+            pickle.dump(self,f)
+
+    @staticmethod
+    def deserialize(name):
+        with open(name,'rb') as f:
+            sctri = pickle.load(f)
+        return sctri
 
     def doublet_predict(self):
         if issparse(self.adata.X):
@@ -104,15 +117,14 @@ class ScTriangulate(object):
             logging.info('Spawn to {} processes'.format(cores))
             pool = mp.Pool(processes=cores)
             self._to_sparse()
-            raw_results = [pool.apply_async(each_key_run_parallel,args=(self.adata,key,self.species,self.criterion)) for key in self.query]
+            raw_results = [pool.apply_async(each_key_run,args=(self.adata,key,self.species,self.criterion)) for key in self.query]
             pool.close()
             pool.join()
             for collect in raw_results:
                 collect = collect.get()
                 key = collect['key']
-                self.adata.obs['reassign@{}'.format(key)] = collect['col_reassign']
-                self.adata.obs['tfidf@{}'.format(key)] = collect['col_tfidf']
-                self.adata.obs['SCCAF@{}'.format(key)] = collect['col_SCCAF']
+                for metric in self._metrics:
+                    self.adata.obs['{}@{}'.format(metric,key)] = collect['col_{}'.format(metric)]
                 self.score[key] = collect['score_info']
                 self.cluster[key] = collect['cluster_info']  
                 self._add_to_uns('confusion_reassign',key,collect)
@@ -129,9 +141,8 @@ class ScTriangulate(object):
             for key in self.query:
                 collect = each_key_run(self.adata,key,self.species,self.criterion)
                 key = collect['key']
-                self.adata.obs['reassign@{}'.format(key)] = collect['col_reassign']
-                self.adata.obs['tfidf@{}'.format(key)] = collect['col_tfidf']
-                self.adata.obs['SCCAF@{}'.format(key)] = collect['col_SCCAF']
+                for metric in self._metrics:
+                    self.adata.obs['{}@{}'.format(metric,key)] = collect['col_{}'.format(metric)]
                 self.score[key] = collect['score_info']
                 self.cluster[key] = collect['cluster_info']  
                 self._add_to_uns('confusion_reassign',key,collect)
@@ -155,11 +166,13 @@ class ScTriangulate(object):
             sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
             pool = mp.Pool(processes=cores)
             logging.info('spawn {} sub processes for penalizing artifact with mode-{}'.format(cores,mode))
-            r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamp,)) for chunk in sub_obs]
+            r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamp,len(self._metrics),)) for chunk in sub_obs]
             pool.close()
             pool.join()
+            results = []
             for collect in r:
-                results = collect.get()  # [sub_obs,sub_obs...]
+                result = collect.get()  # [sub_obs,sub_obs...]
+                results.append(result)
             obs = pd.concat(results)
             self.adata.obs = obs
 
@@ -172,7 +185,7 @@ class ScTriangulate(object):
             size_dict,size_list = get_size(self.adata.obs,self.query)
             self.size_dict = size_dict
             # compute shaley value
-            score_colname = ['reassign','tfidf','SCCAF']
+            score_colname = self._metrics
             data = np.empty([len(self.query),self.adata.obs.shape[0],len(score_colname)])  # store the metric data for each cell
             '''
             data:
@@ -243,6 +256,8 @@ class ScTriangulate(object):
                 unique = grouped_df['pruned'].unique()
                 for reassign in unique:
                     f.write('{}\t{}\n'.format(self.reference + '@' + ref,reassign))
+
+
 
     def get_cluster(self):
         sheet = pd.read_csv(os.path.join(self.dir,'celltype.txt'),sep='\t')
@@ -418,21 +433,21 @@ class ScTriangulate(object):
 
 
 # ancillary functions for main class
-def penalize_artifact_void(obs,query,stamp):
-    metrics_cols = obs.loc[:,[item2+'$'+item1 for item1 in query for item2 in ('reassign','tfidf','SCCAF')]]
+def penalize_artifact_void(obs,query,stamp,num_metrics):
+    metrics_cols = obs.loc[:,[item2+'@'+item1 for item1 in query for item2 in ('reassign','tfidf','SCCAF')]]
     cluster_cols = obs.loc[:,query]
-    df = cluster_cols.apply(func=lambda x:pd.Series(data=[x.name+'@'+item for item in x],name='x.name'),axis=0)
-    df_repeat = pd.DataFrame(np.repeat(df.values,3,axis=1))
-    truth = (df_repeat == stamp)
+    df = cluster_cols.apply(func=lambda x:pd.Series(data=[x.name+'@'+str(item) for item in x],name=x.name),axis=0)
+    df_repeat = pd.DataFrame(np.repeat(df.values,num_metrics,axis=1))
+    truth = pd.DataFrame(data=(df_repeat == stamp).values,index=metrics_cols.index,columns=metrics_cols.columns)
     tmp = metrics_cols.mask(truth,0)
-    obs.loc[:,[item2+'$'+item1 for item1 in query for item2 in ('reassign','tfidf','SCCAF')]] = tmp
+    obs.loc[:,[item2+'@'+item1 for item1 in query for item2 in ('reassign','tfidf','SCCAF')]] = tmp
     return obs
 
 
 
 
 
-def each_key_run_parallel(adata,key,species,criterion):
+def each_key_run(adata,key,species,criterion):
     try:
         assert issparse(adata.X) == False
     except AssertionError:
