@@ -56,16 +56,7 @@ def inclusiveness(obs,r,c):
     rc_i = r_set.intersection(c_set)
     fraction_r = len(rc_i)/len(r_set)
     fraction_c = len(rc_i)/len(c_set)
-    if fraction_r < 0.1 and fraction_c < 0.1:
-        result = False
-    else:
-        result = True
-    # next, assess if one is nearly included in reference
-    if fraction_c > 0.9:
-        nearly = True
-    else:
-        nearly = False
-    return fraction_r,fraction_c,result,nearly
+    return fraction_r,fraction_c
 
 
 def run_reference_pruning(chunk,reference,size_dict,obs):
@@ -77,21 +68,16 @@ def run_reference_pruning(chunk,reference,size_dict,obs):
         logging.info('process {}: {} contains {}'.format(os.getpid(),chunk[0],overlap_clusters))
         r = {reference:chunk[0]}
         c = {cluster.split('@')[0]:cluster.split('@')[1]}
-        fraction_r,fraction_c,result,nearly = inclusiveness(obs,r,c)
-        if not result:  # no inclusive, go back to reference annotation
+        fraction_r,fraction_c = inclusiveness(obs,r,c)  # two cluster inclusive
+        proportion_to_ref = vc.loc[cluster] / vc.sum()  # won cluster and reference inclusive
+        proportion_to_self = vc.loc[cluster] / size_dict[cluster.split('@')[0]][cluster.split('@')[1]]
+        if proportion_to_ref < 0.05 and proportion_to_self < 0.6: # only few won, and this cluster is not nearly included in reference
             mapping[cluster] = reference + '@' + chunk[0]
         else:
-            proportion_to_ref = vc.loc[cluster] / vc.sum()
-            proportion_to_self = vc.loc[cluster] / size_dict[cluster.split('@')[0]][cluster.split('@')[1]]
-            if proportion_to_ref < 0.1 and not nearly:  # only cover < 10% reference cluster and it is not nearly included
-                mapping[cluster] = reference + '@' + chunk[0]
-            elif nearly and proportion_to_ref < 0.1 and proportion_to_self < 0.1: # it is nearly included, so evade the first catcher, but to_self proportion is low
-                mapping[cluster] = reference + '@' + chunk[0]
-            else:
-                mapping[cluster] = cluster
+            mapping[cluster] = cluster
     subset['pruned'] = subset['raw'].map(mapping).values
 
-    # change to most abundant type if engraft only have 1
+    # change to most abundant type if pruned only have 1 cells, just for downstream DE analysis
     vc2 = subset['pruned'].value_counts()
     most_abundant_cluster = vc2.loc[vc2==vc2.max()].index[0]  # if multiple, just pick the first one
     exclude_clusters = vc2.loc[vc2==1].index
@@ -105,7 +91,9 @@ def reference_pruning(obs,reference,size_dict):
     obs['ori'] = np.arange(obs.shape[0])     # keep original index order in one column
     pruned_chunks = [] # store pruned chunk, one chunk menas one reference cluster
     chunk_list = list(obs.groupby(by=reference))
-    cores = len(chunk_list)
+    cores1 = len(chunk_list)
+    cores2 = mp.cpu_count()
+    cores = min(cores1,cores2)
     pool = mp.Pool(processes=cores)
     logging.info('spawn {} sub process for pruning'.format(cores))
     r = [pool.apply_async(run_reference_pruning,args=(chunk,reference,size_dict,obs)) for chunk in chunk_list]

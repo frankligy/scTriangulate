@@ -40,6 +40,7 @@ class ScTriangulate(object):
         self.cluster = {}
         self.uns = {}
         self._special_cmap()
+        self.size_dict, _ = get_size(self.adata.obs,self.query)
         self._metrics = ['reassign','tfidf','SCCAF']
 
 
@@ -87,6 +88,55 @@ class ScTriangulate(object):
         with open(name,'rb') as f:
             sctri = pickle.load(f)
         return sctri
+
+    def winners_statistics(self,col,plot,save):
+        new_size_dict = {}  # {gs@ERP4: 100}
+        for key,value in self.size_dict.items():
+            for sub_key,sub_value in value.items():
+                composite_key = key + '@' + sub_key
+                composite_value = sub_value
+                new_size_dict[composite_key] = composite_value
+        obs = self.adata.obs
+        winners = obs[col]
+        winners_vc = winners.value_counts()
+        winners_size = winners_vc.index.to_series().map(new_size_dict)
+        winners_prop = winners_vc / winners_size
+        winners_stats = pd.concat([winners_vc,winners_size,winners_prop],axis=1)
+        winners_stats.columns = ['counts','size','proportion']
+        winners_stats.sort_values(by='proportion',inplace=True)
+        self.winners_stats = winners_stats
+        if plot:
+            a = winners_stats['proportion']
+            fig,ax = plt.subplots()
+            ax.barh(y=np.arange(len(a)),width=[item for item in a.values],color='#FF9A91')
+            ax.set_yticks(np.arange(len(a)))
+            ax.set_yticklabels([item for item in a.index],fontsize=3)
+            ax.set_title('Winners statistics')
+            ax.set_xlabel('proportion of clusters that win')
+            if save:
+                plt.savefig(os.path.join(self.dir,'winners_statistics.pdf'),bbox_inches='tight')
+                plt.close()
+
+    def clusterability(self,col,plot,save):
+        bucket = {}   # {ERP4:5}
+        obs = self.adata.obs
+        for ref,grouped_df in obs.groupby(by=self.reference):
+            unique = grouped_df[col].unique()
+            bucket[ref] = len(unique)
+        bucket = {k: v for k, v in sorted(bucket.items(), key=lambda x: x[1])}
+        if plot:
+            fig,ax = plt.subplots()
+            ax.scatter(x=np.arange(len(bucket)),y=list(bucket.values()),c='k',s=15)
+            ax.set_xticks(np.arange(len(bucket)))
+            ax.set_xticklabels(list(bucket.keys()),fontsize=3,rotation=90)
+            ax.set_title('{} clusterablity'.format(self.reference))
+            ax.set_ylabel('clusterability: # sub-clusters')
+            if save:
+                plt.savefig(os.path.join(self.dir,'{}_clusterability.pdf'.format(self.reference)),bbox_inches='tight')
+                plt.close()
+
+
+
 
     def doublet_predict(self):
         if issparse(self.adata.X):
@@ -182,8 +232,6 @@ class ScTriangulate(object):
 
     def compute_shapley(self,parallel=True):
         if parallel:
-            size_dict,size_list = get_size(self.adata.obs,self.query)
-            self.size_dict = size_dict
             # compute shaley value
             score_colname = self._metrics
             data = np.empty([len(self.query),self.adata.obs.shape[0],len(score_colname)])  # store the metric data for each cell
