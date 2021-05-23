@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import matplotlib as mpl
 import seaborn as sns
-from anytree import Node, RenderTree
 from scipy.sparse import issparse,csr_matrix
 import multiprocessing as mp
 import platform
@@ -137,23 +136,6 @@ class ScTriangulate(object):
                 plt.close()
 
 
-    def display_hierarchy(self,col):
-        obs = self.adata.obs
-        root = Node(self.reference)
-        hold_ref_var = {}
-        for ref,grouped_df in obs.groupby(by=self.reference):
-            hold_ref_var[ref] = Node(ref,parent=root)
-            unique = grouped_df[col].unique()
-            if len(unique) == 1: # no sub-clusters
-                print(unique)
-                continue
-            else:
-                hold_cluster_var = {}
-                for item in unique:
-                    hold_cluster_var[item] = Node(item,parent=hold_ref_var[ref])
-        with open(os.path.join(self.dir,'display_hierarchy_{}.txt'.format(self.reference)),'a') as f:
-            for pre, fill, node in RenderTree(root):
-                print("%s%s" % (pre, node.name),file=f)
 
 
     def doublet_predict(self):
@@ -234,7 +216,7 @@ class ScTriangulate(object):
             sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
             pool = mp.Pool(processes=cores)
             logging.info('spawn {} sub processes for penalizing artifact with mode-{}'.format(cores,mode))
-            r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamp,self._metrics,)) for chunk in sub_obs]
+            r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamp,len(self._metrics),)) for chunk in sub_obs]
             pool.close()
             pool.join()
             results = []
@@ -265,7 +247,6 @@ class ScTriangulate(object):
             final = []
             intermediate = []
             cores = mp.cpu_count()
-            cores = 40
             sub_datas = np.array_split(data,cores,axis=1)  # [sub_data,sub_data,....]
             pool = mp.Pool(processes=cores)
             logging.info('spawn {} sub processes for shapley computing'.format(cores))
@@ -285,7 +266,6 @@ class ScTriangulate(object):
             obs = self.adata.obs
             obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
             cores = mp.cpu_count()
-            cores = 40
             sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
             sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
             pool = mp.Pool(processes=cores)
@@ -501,14 +481,14 @@ class ScTriangulate(object):
 
 
 # ancillary functions for main class
-def penalize_artifact_void(obs,query,stamp,metrics):
-    metrics_cols = obs.loc[:,[item2+'@'+item1 for item1 in query for item2 in metrics]]
+def penalize_artifact_void(obs,query,stamp,num_metrics):
+    metrics_cols = obs.loc[:,[item2+'@'+item1 for item1 in query for item2 in ('reassign','tfidf','SCCAF')]]
     cluster_cols = obs.loc[:,query]
     df = cluster_cols.apply(func=lambda x:pd.Series(data=[x.name+'@'+str(item) for item in x],name=x.name),axis=0)
-    df_repeat = pd.DataFrame(np.repeat(df.values,len(metrics),axis=1))
+    df_repeat = pd.DataFrame(np.repeat(df.values,num_metrics,axis=1))
     truth = pd.DataFrame(data=(df_repeat == stamp).values,index=metrics_cols.index,columns=metrics_cols.columns)
     tmp = metrics_cols.mask(truth,0)
-    obs.loc[:,[item2+'@'+item1 for item1 in query for item2 in metrics]] = tmp
+    obs.loc[:,[item2+'@'+item1 for item1 in query for item2 in ('reassign','tfidf','SCCAF')]] = tmp
     return obs
 
 

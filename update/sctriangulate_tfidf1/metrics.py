@@ -256,7 +256,7 @@ def tf_idf_for_cluster(adata,key,species,criterion):
         artifact = read_artifact_genes(species,criterion)
         artifact_genes = set(artifact.index.to_list())
         test_pure = test.loc[~test.index.isin(artifact_genes)]
-        result1 = test_pure.iloc[4] 
+        result1 = test_pure.iloc[0] 
         result10 = test_pure.iloc[9] 
         cluster_to_tfidf1[item] = result1
         cluster_to_tfidf10[item] = result10

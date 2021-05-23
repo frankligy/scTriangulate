@@ -1,0 +1,90 @@
+
+/* header */
+#header {
+    background-color: #E9ECEF;
+    width: 100%;
+    height: 100px;
+    line-height: 100px;
+    text-align: center;
+    border: 1px solid rgba(0,0,0,0.1);
+    margin: 0px 0px 20px 0px;
+}
+
+/* left */
+#left_nav {
+    float: left;
+    width: 20%;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
+}
+
+/* right */
+
+#right_show {
+    float: right;
+    width: 75%;
+    height: 100%;
+}
+
+
+#identity {
+    height: 50px;
+    line-height: 50px;
+    text-align: center;
+    border: 1px solid rgba(0,0,0,0.1);
+    color: blue;
+}
+
+#two_umap_left {
+    float: left;
+    width: 40%;
+    height: 50%;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
+}
+
+
+.umap_div {
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.umap_div h2 {
+    text-align: center;
+}
+
+
+
+.heatmap_div {
+    float: right;
+    width: 50%;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
+}
+
+.heatmap_div h2 {
+    text-align: center;
+}
+
+#umap {
+    width: 100%;
+}
+
+#heatmap {
+    width: 100%;
+}
+
+.viewer_div {
+    margin-top: 20px;
+    display: inline-block;
+    border: 1px solid rgba(0,0,0,0.1);
+    clear: both;
+    width: 100%;
+    height: 50px;
+    background-color: lightblue;
+}
+
+.viewer_div a {
+    text-align: center;
+    display:block;
+    line-height:50px;
+}
