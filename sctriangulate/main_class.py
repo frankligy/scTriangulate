@@ -13,7 +13,7 @@ from scipy.sparse import issparse,csr_matrix
 import multiprocessing as mp
 import platform
 import logging
-logging.basicConfig(filename='app.log',filemode='w',format='%(asctime)s - %(message)s',level=logging.INFO)
+logging.basicConfig(filename='scTriangulate.log',filemode='w',format='%(asctime)s - %(message)s',level=logging.INFO)
 
 import scanpy as sc
 import anndata as ad
@@ -86,6 +86,7 @@ class ScTriangulate(object):
 
     @staticmethod
     def deserialize(name):
+        logging.info('unpickle {} to memory'.format(name))
         with open(name,'rb') as f:
             sctri = pickle.load(f)
         return sctri
@@ -151,7 +152,7 @@ class ScTriangulate(object):
                 hold_cluster_var = {}
                 for item in unique:
                     hold_cluster_var[item] = Node(item,parent=hold_ref_var[ref])
-        with open(os.path.join(self.dir,'display_hierarchy_{}.txt'.format(self.reference)),'a') as f:
+        with open(os.path.join(self.dir,'display_hierarchy_{}_{}.txt'.format(self.reference,col)),'a') as f:
             for pre, fill, node in RenderTree(root):
                 print("%s%s" % (pre, node.name),file=f)
 
@@ -265,11 +266,16 @@ class ScTriangulate(object):
             final = []
             intermediate = []
             cores = mp.cpu_count()
-            cores = 40
-            sub_datas = np.array_split(data,cores,axis=1)  # [sub_data,sub_data,....]
+            cores = 60
+            # split the obs and data, based on cell axis
+            obs = self.adata.obs
+            obs_index = np.arange(obs.shape[0])
+            sub_indices = np.array_split(obs_index,cores)
+            sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_obs, sub_obs, sub_obs]
+            sub_datas = [data[:,sub_index,:] for sub_index in sub_indices]  # [sub_data,sub_data,....]
             pool = mp.Pool(processes=cores)
             logging.info('spawn {} sub processes for shapley computing'.format(cores))
-            raw_results = [pool.apply_async(func=run_shapley,args=(self.adata.obs,self.query,self.reference,self.size_dict,sub_data)) for sub_data in sub_datas]
+            raw_results = [pool.apply_async(func=run_shapley,args=(sub_obs[i],self.query,self.reference,self.size_dict,sub_datas[i])) for i in range(len(sub_obs))]
             pool.close()
             pool.join()
             for collect in raw_results: # [(final,intermediate), (), ()...]
@@ -285,7 +291,7 @@ class ScTriangulate(object):
             obs = self.adata.obs
             obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
             cores = mp.cpu_count()
-            cores = 40
+            cores = 60
             sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
             sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
             pool = mp.Pool(processes=cores)
