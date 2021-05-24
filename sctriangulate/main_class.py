@@ -30,7 +30,7 @@ from .prune import *
 # define ScTriangulate Object
 class ScTriangulate(object):
 
-    def __init__(self,dir,adata,query,reference,species,criterion=2):
+    def __init__(self,dir,adata,query,reference,species='mice',criterion=2):
         self.dir = dir
         self.adata = adata
         self.query = query
@@ -40,22 +40,25 @@ class ScTriangulate(object):
         self.score = {}
         self.cluster = {}
         self.uns = {}
+        self.metrics = ['reassign','tfidf10','SCCAF','doublet']   # default metrics
+        self.add_metrics = {}                           # user can add their own, key is metric name, value is callable
+        self.total_metrics = self.metrics               # all metrics considered
         self._special_cmap()
         self.size_dict, _ = get_size(self.adata.obs,self.query)
-        self._metrics = ['reassign','tfidf1','tfidf10','SCCAF']
+
 
 
 
     def __str__(self):  # when you print(instance) in REPL
-        return 'ScTriangualate Object:\nWorking directory is {0}\nQuery Annotation is {1}\nReference Annotation is {2}\n'\
-            'Species is {3}\nCriterion is {4}\nScores slot contains {5}\nCluster slot contains {6}\nUns slot contains {7}\n'\
-            'cmap contains: {8}'.format(self.dir, self.query,self.reference,self.species,self.criterion,list(self.score.keys()),
+        return 'ScTriangualate Object:\nWorking directory is {0}\nQuery Annotation: {1}\nReference Annotation: {2}\n'\
+            'Species: {3}\nCriterion: {4}\nTotal Metrics: {5}\nScore slot contains: {6}\nCluster slot contains: {7}\nUns slot contains: {8}\n'\
+            'cmap contains: {9}'.format(self.dir, self.query,self.reference,self.species,self.criterion,self.total_metrics, list(self.score.keys()),
             list(self.cluster.keys()),list(self.uns.keys()),list(self.cmap.keys()))
 
     def __repr__(self):  # when you type the instance in REPL
-        return 'ScTriangualate Object:\nWorking directory is {0}\nQuery Annotation is {1}\nReference Annotation is {2}\n'\
-            'Species is {3}\nCriterion is {4}\nScores slot contains {5}\nCluster slot contains {6}\nUns slot contains {7}\n'\
-            'cmap contains: {8}'.format(self.dir, self.query,self.reference,self.species,self.criterion,list(self.score.keys()),
+        return 'ScTriangualate Object:\nWorking directory is {0}\nQuery Annotation: {1}\nReference Annotation: {2}\n'\
+            'Species: {3}\nCriterion: {4}\nTotal Metrics: {5}\nScore slot contains: {6}\nCluster slot contains: {7}\nUns slot contains: {8}\n'\
+            'cmap contains: {9}'.format(self.dir, self.query,self.reference,self.species,self.criterion,self.total_metrics, list(self.score.keys()),
             list(self.cluster.keys()),list(self.uns.keys()),list(self.cmap.keys()))
 
 
@@ -90,6 +93,11 @@ class ScTriangulate(object):
         with open(name,'rb') as f:
             sctri = pickle.load(f)
         return sctri
+
+    def add_new_metrics(self,add_metrics):
+        for metric,func in add_metrics.items():
+            self.add_metrics[metric] = func
+        self.total_metrics.extend(list(self.add_metrics.keys()))
 
     def winners_statistics(self,col,plot,save):
         new_size_dict = {}  # {gs@ERP4: 100}
@@ -155,21 +163,6 @@ class ScTriangulate(object):
             for pre, fill, node in RenderTree(root):
                 print("%s%s" % (pre, node.name),file=f)
 
-    def prune_statistics(self,print=False):
-        obs = self.adata.obs
-        raw = obs['raw']
-        pruned = obs['pruned']
-        raw_vc = raw.value_counts()
-        pruned_vc = pruned.value_counts()
-        pruned_vc_dict = pruned_vc.to_dict()
-        tmp = raw_vc.index.map(pruned_vc_dict).fillna(value=0)
-        stats_df = raw_vc.to_frame()
-        stats_df['pruned'] = tmp.values
-        stats_df.sort_values(by='pruned',inplace=True,ascending=False)
-        self.prune_stats = stats_df
-        if print:
-            self.prune_stats.to_csv(os.path.join(self.dir,'sctri_prune_statistics.txt'),sep='\t')
-
 
     def doublet_predict(self):
         if issparse(self.adata.X):
@@ -200,13 +193,13 @@ class ScTriangulate(object):
             logging.info('Spawn to {} processes'.format(cores))
             pool = mp.Pool(processes=cores)
             self._to_sparse()
-            raw_results = [pool.apply_async(each_key_run,args=(self.adata,key,self.species,self.criterion)) for key in self.query]
+            raw_results = [pool.apply_async(each_key_run,args=(self,key)) for key in self.query]
             pool.close()
             pool.join()
             for collect in raw_results:
                 collect = collect.get()
                 key = collect['key']
-                for metric in self._metrics:
+                for metric in self.total_metrics:
                     self.adata.obs['{}@{}'.format(metric,key)] = collect['col_{}'.format(metric)]
                 self.score[key] = collect['score_info']
                 self.cluster[key] = collect['cluster_info']  
@@ -222,9 +215,9 @@ class ScTriangulate(object):
         else:
             logging.info('choosing to compute metrics sequentially')
             for key in self.query:
-                collect = each_key_run(self.adata,key,self.species,self.criterion)
+                collect = each_key_run(self,key)
                 key = collect['key']
-                for metric in self._metrics:
+                for metric in self.metrics + list(self.add_metrics.keys()):
                     self.adata.obs['{}@{}'.format(metric,key)] = collect['col_{}'.format(metric)]
                 self.score[key] = collect['score_info']
                 self.cluster[key] = collect['cluster_info']  
@@ -240,7 +233,6 @@ class ScTriangulate(object):
 
     def penalize_artifact(self,mode,stamp=None):
         '''void mode is to set stamp position to 0, stamp is like {leiden1:5}'''
-        self.adata.obs['order'] = np.arange(self.adata.obs.shape[0])
         if mode == 'void':
             obs = self.adata.obs
             obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
@@ -249,7 +241,7 @@ class ScTriangulate(object):
             sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
             pool = mp.Pool(processes=cores)
             logging.info('spawn {} sub processes for penalizing artifact with mode-{}'.format(cores,mode))
-            r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamp,self._metrics,)) for chunk in sub_obs]
+            r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamp,self.total_metrics,)) for chunk in sub_obs]
             pool.close()
             pool.join()
             results = []
@@ -266,7 +258,8 @@ class ScTriangulate(object):
     def compute_shapley(self,parallel=True):
         if parallel:
             # compute shaley value
-            score_colname = self._metrics
+            score_colname = copy.deepcopy(self.total_metrics)
+            score_colname.remove('doublet')
             data = np.empty([len(self.query),self.adata.obs.shape[0],len(score_colname)])  # store the metric data for each cell
             '''
             data:
@@ -280,7 +273,6 @@ class ScTriangulate(object):
             final = []
             intermediate = []
             cores = mp.cpu_count()
-            cores = 60
             # split the obs and data, based on cell axis
             obs = self.adata.obs
             obs_index = np.arange(obs.shape[0])
@@ -305,7 +297,6 @@ class ScTriangulate(object):
             obs = self.adata.obs
             obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
             cores = mp.cpu_count()
-            cores = 60
             sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
             sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
             pool = mp.Pool(processes=cores)
@@ -506,7 +497,7 @@ class ScTriangulate(object):
 
     def building_viewer_html(self):
         with open(os.path.join(self.dir,'figure4viewer','viewer.html'),'w') as f:
-            f.write(to_html(self.cluster,self.score))
+            f.write(to_html(self.cluster,self.score,self.total_metrics))
         with open(os.path.join(self.dir,'figure4viewer','inspection.html'),'w') as f:
             f.write(inspection_html(self.cluster,self.reference))
         
@@ -535,41 +526,60 @@ def penalize_artifact_void(obs,query,stamp,metrics):
 
 
 
-def each_key_run(adata,key,species,criterion):
+def each_key_run(sctri,key):
+    adata = sctri.adata
+    species = sctri.species
+    criterion = sctri.criterion
+    metrics = sctri.metrics
+    add_metrics = sctri.add_metrics
+    total_metrics = sctri.total_metrics
+
     try:
         assert issparse(adata.X) == False
     except AssertionError:
         adata.X = adata.X.toarray()  
+
+    # remove cluster that only have 1 cell, for DE analysis
     adata_to_compute = check_filter_single_cluster(adata,key)  
+
+    # a dynamically named dict
+    cluster_to_metric = {}
+    '''marker gene'''
     marker_genes = marker_gene(adata_to_compute,key,species,criterion)
     logging.info('Process {}, for {}, finished marker genes finding'.format(os.getpid(),key))
-    cluster_to_reassign, confusion_reassign = reassign_score(adata_to_compute,key,marker_genes)
+    '''reassign score'''
+    cluster_to_metric['cluster_to_reassign'], confusion_reassign = reassign_score(adata_to_compute,key,marker_genes)
     logging.info('Process {}, for {}, finished reassign score computing'.format(os.getpid(),key))
-    cluster_to_tfidf1, cluster_to_tfidf10, exclusive_genes = tf_idf_for_cluster(adata_to_compute,key,species,criterion)
+    '''tfidf10 score'''
+    cluster_to_metric['cluster_to_tfidf10'], exclusive_genes = tf_idf10_for_cluster(adata_to_compute,key,species,criterion)
     logging.info('Process {}, for {}, finished tfidf score computing'.format(os.getpid(),key))
-    cluster_to_SCCAF, confusion_sccaf = SCCAF_score(adata_to_compute,key, species, criterion)
+    '''SCCAF score'''
+    cluster_to_metric['cluster_to_SCCAF'], confusion_sccaf = SCCAF_score(adata_to_compute,key, species, criterion)
     logging.info('Process {}, for {}, finished SCCAF score computing'.format(os.getpid(),key))
-    col_reassign = adata.obs[key].astype('str').map(cluster_to_reassign).fillna(0).values
-    col_tfidf1 = adata.obs[key].astype('str').map(cluster_to_tfidf1).fillna(0).values
-    col_tfidf10 = adata.obs[key].astype('str').map(cluster_to_tfidf10).fillna(0).values
-    col_SCCAF = adata.obs[key].astype('str').map(cluster_to_SCCAF).fillna(0).values
-    # add a doublet score to each cluster
-    cluster_to_doublet = doublet_compute(adata_to_compute,key)
-    score_info = [cluster_to_reassign,cluster_to_tfidf1,cluster_to_tfidf10,cluster_to_SCCAF,cluster_to_doublet]
-    cluster_info = list(cluster_to_reassign.keys())
-    # all the intermediate results needed to be returned
-    collect = {'key':key,
-               'col_reassign':col_reassign,
-               'col_tfidf1':col_tfidf1,
-               'col_tfidf10':col_tfidf10,
-               'col_SCCAF':col_SCCAF,
-               'score_info':score_info,
-               'cluster_info':cluster_info,
-               'marker_genes':marker_genes,
-               'confusion_reassign':confusion_reassign,
-               'exclusive_genes':exclusive_genes,
-               'confusion_sccaf':confusion_sccaf,
-               }
+    '''doublet score'''
+    cluster_to_metric['cluster_to_doublet'] = doublet_compute(adata_to_compute,key)
+    logging.info('Process {}, for {}, finished doublet score assigning'.format(os.getpid(),key))
+    '''added other scores'''
+    for metric,func in add_metrics.items():
+        cluster_to_metric['cluster_to_{}'.format(metric)] = func(adata_to_compute,key,species,criterion)
+        logging.info('Process {}, for {}, finished {} score assigning'.format(os.getpid(),key,metric))
+
+
+    collect = {'key':key}  # collect will be retured to main program
+    '''collect all default metrics and added metrics'''
+    for metric in total_metrics:
+        collect['col_{}'.format(metric)] = adata.obs[key].astype('str').map(cluster_to_metric['cluster_to_{}'.format(metric)]).fillna(0).values
+    '''collect score info and cluster info'''
+    score_info = cluster_to_metric  # {cluster_to_reassign:{cluster1:0.45}}
+    cluster_info = list(cluster_to_metric['cluster_to_reassign'].keys())  #[cluster1,cluster2,cluster3]
+    collect['score_info'] = score_info
+    collect['cluster_info'] = cluster_info
+    '''collect uns including genes and confusion matrix'''
+    collect['marker_genes'] = marker_genes
+    collect['exclusive_genes'] = exclusive_genes
+    collect['confusion_reassign'] = confusion_reassign
+    collect['confusion_sccaf'] = confusion_sccaf
+
     return collect
 
 

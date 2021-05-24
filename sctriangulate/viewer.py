@@ -22,7 +22,7 @@ def html_left_nav(key_cluster_dict):
                     line('li',cluster,onclick='display_score(this.parentElement.id,this.textContent);display_plot(this.parentElement.id,this.textContent)')
     return doc.getvalue()
 
-def html_right_show(key_cluster_data):
+def html_right_show(key_cluster_data,total_metrics):
     doc,tag,text,line = Doc().ttl()
     with tag('div'):
         doc.attr(id='right_show')
@@ -33,15 +33,10 @@ def html_right_show(key_cluster_data):
                 with tag('span'):
                     text(' ')
             with tag('table'):
-                with tag('tr'):
-                    line('td','Reassign Score')
-                    line('td','',id='reassign')
-                with tag('tr'):
-                    line('td','Tf-idf Score')
-                    line('td','',id='tfidf')
-                with tag('tr'):
-                    line('td','SCCAF score')
-                    line('td','',id='sccaf')    
+                for metric in total_metrics:
+                    with tag('tr'):
+                        line('td',metric)
+                        line('td','',id='cluster_to_{}'.format(metric))
 
         with tag('div'):
             doc.attr(id='identity')
@@ -50,7 +45,7 @@ def html_right_show(key_cluster_data):
         
         with tag('div'):
             doc.attr(id='doublet')
-            line('h2','Average doublet score:')
+            line('h2','doublet distribution')
             doc.stag('img',src='./umap_sctriangulate_doublet_scores.pdf',width='60%',height='60%')
 
         with tag('div'):
@@ -75,7 +70,7 @@ def html_right_show(key_cluster_data):
     return doc.getvalue()
 
 
-def to_html(key_cluster_dict,key_cluster_data):
+def to_html(key_cluster_dict,key_cluster_data,total_metrics):
     doc,tag,text,line = Doc().ttl()
     doc.asis('<!DOCTYPE html>')
     with tag('html'):
@@ -87,7 +82,7 @@ def to_html(key_cluster_dict,key_cluster_data):
         with tag('body'):
             doc.asis(html_banner())
             doc.asis(html_left_nav(key_cluster_dict))
-            doc.asis(html_right_show(key_cluster_data))
+            doc.asis(html_right_show(key_cluster_data,total_metrics))
         with tag('script'):
             doc.attr(src='./viewer.js')
     return doc.getvalue()

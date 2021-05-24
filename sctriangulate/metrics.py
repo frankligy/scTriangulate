@@ -241,10 +241,9 @@ def tf_idf_bare_compute(df,cluster):
     tf_idf_ori = tf * idf  # (n_genes,)
     return tf_idf_ori
 
-def tf_idf_for_cluster(adata,key,species,criterion):
+def tf_idf10_for_cluster(adata,key,species,criterion):
     df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
     df['cluster'] = adata.obs[key].astype('str').values
-    cluster_to_tfidf1 = {}  # store tfidf1 score
     cluster_to_tfidf10 = {} # store tfidf10 score
     cluster_to_exclusive = {}   # store exclusivly expressed genes
     for item in adata.obs[key].cat.categories:
@@ -256,13 +255,46 @@ def tf_idf_for_cluster(adata,key,species,criterion):
         artifact = read_artifact_genes(species,criterion)
         artifact_genes = set(artifact.index.to_list())
         test_pure = test.loc[~test.index.isin(artifact_genes)]
-        result1 = test_pure.iloc[4] 
         result10 = test_pure.iloc[9] 
-        cluster_to_tfidf1[item] = result1
         cluster_to_tfidf10[item] = result10
         cluster_to_exclusive[item] = test[:30].to_dict()
     exclusive_genes = pd.Series(cluster_to_exclusive,name='genes')
-    return cluster_to_tfidf1, cluster_to_tfidf10, exclusive_genes
+    return cluster_to_tfidf10, exclusive_genes
+
+
+def tf_idf5_for_cluster(adata,key,species,criterion):
+    df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+    df['cluster'] = adata.obs[key].astype('str').values
+    cluster_to_tfidf5 = {} # store tfidf1 score
+    for item in adata.obs[key].cat.categories:
+        a = tf_idf_bare_compute(df,item)
+        a_names = adata.var_names
+        test = pd.Series(data=a, index=a_names)
+        test.sort_values(ascending=False, inplace=True)
+        # remove artifact genes
+        artifact = read_artifact_genes(species,criterion)
+        artifact_genes = set(artifact.index.to_list())
+        test_pure = test.loc[~test.index.isin(artifact_genes)]
+        result5 = test_pure.iloc[4] 
+        cluster_to_tfidf5[item] = result5
+    return cluster_to_tfidf5
+
+def tf_idf1_for_cluster(adata,key,species,criterion):
+    df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+    df['cluster'] = adata.obs[key].astype('str').values
+    cluster_to_tfidf1 = {} # store tfidf1 score
+    for item in adata.obs[key].cat.categories:
+        a = tf_idf_bare_compute(df,item)
+        a_names = adata.var_names
+        test = pd.Series(data=a, index=a_names)
+        test.sort_values(ascending=False, inplace=True)
+        # remove artifact genes
+        artifact = read_artifact_genes(species,criterion)
+        artifact_genes = set(artifact.index.to_list())
+        test_pure = test.loc[~test.index.isin(artifact_genes)]
+        result1 = test_pure.iloc[0] 
+        cluster_to_tfidf1[item] = result1
+    return cluster_to_tfidf1
 
 
 

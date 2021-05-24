@@ -5,23 +5,17 @@ function display_score(key,cluster) {
     // get score
     var score = document.getElementsByClassName('pass_to_js')[0].getElementsByTagName('p')[0].innerText;
     var data_from_json = JSON.parse(score);
-    console.log(data_from_json);
     var display_h2_span = `${key}, ${cluster}:`;
-    var display_reassign = `${data_from_json[key][0][cluster]}`;
-    var display_tfidf = `${data_from_json[key][1][cluster]}`;
-    var display_sccaf = `${data_from_json[key][2][cluster]}`;
-    var doublet = `Average doublet score is: ${data_from_json[key][3][cluster]}`;
-
     var h2_obj = document.getElementById('score_information').getElementsByTagName('span');
     h2_obj[0].innerText = display_h2_span;
-    var reassign = document.getElementById('reassign');
-    var tfidf = document.getElementById('tfidf');
-    var sccaf = document.getElementById('sccaf');
-    reassign.innerText = display_reassign;
-    tfidf.innerText = display_tfidf;
-    sccaf.innerText = display_sccaf;
-    var doublet_obj = document.getElementById('doublet').getElementsByTagName('h2');
-    doublet_obj[0].innerText = doublet;
+    var scores = Object.keys(data_from_json[key]);
+    var scores_len = scores.length;
+    console.log(scores)
+    for (let i=0; i<scores_len; i++) {
+        let display = `${data_from_json[key][scores[i]][cluster]}`;
+        let display_obj = document.getElementById(scores[i]);
+        display_obj.innerText = display;
+    }
 
 }
 
