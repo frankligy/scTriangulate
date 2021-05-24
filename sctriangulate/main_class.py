@@ -146,7 +146,6 @@ class ScTriangulate(object):
             hold_ref_var[ref] = Node(ref,parent=root)
             unique = grouped_df[col].unique()
             if len(unique) == 1: # no sub-clusters
-                print(unique)
                 continue
             else:
                 hold_cluster_var = {}
@@ -155,6 +154,21 @@ class ScTriangulate(object):
         with open(os.path.join(self.dir,'display_hierarchy_{}_{}.txt'.format(self.reference,col)),'a') as f:
             for pre, fill, node in RenderTree(root):
                 print("%s%s" % (pre, node.name),file=f)
+
+    def prune_statistics(self,print=False):
+        obs = self.adata.obs
+        raw = obs['raw']
+        pruned = obs['pruned']
+        raw_vc = raw.value_counts()
+        pruned_vc = pruned.value_counts()
+        pruned_vc_dict = pruned_vc.to_dict()
+        tmp = raw_vc.index.map(pruned_vc_dict).fillna(value=0)
+        stats_df = raw_vc.to_frame()
+        stats_df['pruned'] = tmp.values
+        stats_df.sort_values(by='pruned',inplace=True,ascending=False)
+        self.prune_stats = stats_df
+        if print:
+            self.prune_stats.to_csv(os.path.join(self.dir,'sctri_prune_statistics.txt'),sep='\t')
 
 
     def doublet_predict(self):
