@@ -69,12 +69,17 @@ def run_reference_pruning(chunk,reference,size_dict,obs):
         r = {reference:chunk[0]}
         c = {cluster.split('@')[0]:cluster.split('@')[1]}
         fraction_r,fraction_c = inclusiveness(obs,r,c)  # two cluster inclusive
+        count_cluster = vc.loc[cluster]
         proportion_to_ref = vc.loc[cluster] / vc.sum()  # won cluster and reference inclusive
         proportion_to_self = vc.loc[cluster] / size_dict[cluster.split('@')[0]][cluster.split('@')[1]]
-        if proportion_to_ref < 0.05 and proportion_to_self < 0.6: # only few won, and this cluster is not nearly included in reference
-            mapping[cluster] = reference + '@' + chunk[0]
-        else:
+        if proportion_to_self >= 0.6:
+            mapping[cluster] = cluster # nearly included, no matter how small its fraction is to the reference, keep it
+        elif proportion_to_ref >= 0.05:
+            mapping[cluster] = cluster  # not nearly included, but its fraction to reference is decent, keep it
+        elif proportion_to_ref < 0.05 and count_cluster > 30:  # not nearly included, its fraction to reference is low, but absolute count is decent, keep it
             mapping[cluster] = cluster
+        else:     # other wise, go back to reference cluster type
+            mapping[cluster] = reference + '@' + chunk[0]
     subset['pruned'] = subset['raw'].map(mapping).values
 
     # change to most abundant type if pruned only have 1 cells, just for downstream DE analysis

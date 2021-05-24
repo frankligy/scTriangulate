@@ -2,3 +2,4 @@ scanpy
 gseapy
 scrublet
 yattag
+anytree
