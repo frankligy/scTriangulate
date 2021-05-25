@@ -13,7 +13,6 @@ from scipy.sparse import issparse,csr_matrix
 import multiprocessing as mp
 import platform
 import logging
-logging.basicConfig(filename='scTriangulate.log',filemode='w',format='%(asctime)s - %(message)s',level=logging.INFO)
 
 import scanpy as sc
 import anndata as ad
@@ -27,10 +26,15 @@ from .prune import *
 
 
 
+
+
+
 # define ScTriangulate Object
 class ScTriangulate(object):
 
-    def __init__(self,dir,adata,query,reference,species='mice',criterion=2):
+    def __init__(self,dir,adata,query,reference,species='mice',criterion=2,verbose=1):
+
+        self.verbose = verbose
         self.dir = dir
         self.adata = adata
         self.query = query
@@ -46,6 +50,8 @@ class ScTriangulate(object):
         self._special_cmap()
         self.size_dict, _ = get_size(self.adata.obs,self.query)
 
+        self._set_logging()
+
 
 
 
@@ -60,6 +66,36 @@ class ScTriangulate(object):
             'Species: {3}\nCriterion: {4}\nTotal Metrics: {5}\nScore slot contains: {6}\nCluster slot contains: {7}\nUns slot contains: {8}\n'\
             'cmap contains: {9}'.format(self.dir, self.query,self.reference,self.species,self.criterion,self.total_metrics, list(self.score.keys()),
             list(self.cluster.keys()),list(self.uns.keys()),list(self.cmap.keys()))
+
+    def _set_logging(self):
+        # get all logger
+        global logger_sctriangulate
+        logger_sctriangulate = logging.getLogger(__name__)
+        logger_scanpy = logging.getLogger('scanpy')
+        logger_gseapy = logging.getLogger('gseapy')
+        logger_scrublet = logging.getLogger('scrublet')
+
+        # make other logger silent
+        logger_scanpy.setLevel(logging.ERROR)
+        logger_gseapy.setLevel(logging.ERROR)
+        logger_scrublet.setLevel(logging.ERROR)
+
+        # configure own logger
+        if self.verbose == 1:
+            c_handler = logging.StreamHandler()
+            c_handler.setLevel(logging.INFO)
+            c_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s' )
+            c_handler.setFormatter(c_formatter)        
+            logger_sctriangulate.addHandler(c_handler)
+            logger_sctriangulate.info('choosing console logging')
+
+        elif self.verbose == 2:
+            f_handler = logging.FileHandler(os.path.join(self.dir,'scTriangulate.log'))
+            f_handler.setLevel(logging.INFO)
+            f_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s' )
+            f_handler.setFormatter(f_formatter)
+            logger_sctriangulate.addHandler(f_handler)
+            logger_sctriangulate.info('choosing file logging')
 
 
     def _to_dense(self):
@@ -83,13 +119,21 @@ class ScTriangulate(object):
     def var_to_df(self,name='sctri_inspect_var.txt'):
         self.adata.var.to_csv(os.path.join(self.dir,name),sep='\t')
 
+    def gene_to_df(self,mode,key):
+        '''mode is marker_genes or exclusive_genes'''
+        self.uns['{}'.format(mode)][key].to_csv(os.path.join(self.dir,'sctri_gene_to_df_{}.txt'.format(mode)),sep='\t')
+
+    def confusion_to_df(self,mode,key):
+        '''mode is confusion_reassign or confusion_sccaf'''
+        self.uns['{}'.format(mode)][key].to_csv(os.path.join(self.dir,'sctri_confusion_to_df_{}.txt'.format(mode)),sep='\t')
+
     def serialize(self,name='sctri_pickle.p'):
         with open(os.path.join(self.dir,name),'wb') as f:
             pickle.dump(self,f)
 
     @staticmethod
     def deserialize(name):
-        logging.info('unpickle {} to memory'.format(name))
+        logger_sctriangulate.info('unpickle {} to memory'.format(name))
         with open(name,'rb') as f:
             sctri = pickle.load(f)
         return sctri
@@ -184,7 +228,7 @@ class ScTriangulate(object):
         if issparse(self.adata.X):
             self._to_dense()
         counts_matrix = self.adata.X
-        logging.info('running Scrublet may take several minutes')
+        logger_sctriangulate.info('running Scrublet may take several minutes')
         scrub = scr.Scrublet(counts_matrix)
         doublet_scores,predicted_doublets = scrub.scrub_doublets(min_counts=1,min_cells=1)
         self.adata.obs['doublet_scores'] = doublet_scores
@@ -206,7 +250,7 @@ class ScTriangulate(object):
             cores1 = len(self.query)  # make sure to request same numeber of cores as the length of query list
             cores2 = mp.cpu_count()
             cores = min(cores1,cores2)
-            logging.info('Spawn to {} processes'.format(cores))
+            logger_sctriangulate.info('Spawn to {} processes'.format(cores))
             pool = mp.Pool(processes=cores)
             self._to_sparse()
             raw_results = [pool.apply_async(each_key_run,args=(self,key)) for key in self.query]
@@ -229,7 +273,7 @@ class ScTriangulate(object):
             self._to_sparse()
 
         else:
-            logging.info('choosing to compute metrics sequentially')
+            logger_sctriangulate.info('choosing to compute metrics sequentially')
             for key in self.query:
                 collect = each_key_run(self,key)
                 key = collect['key']
@@ -247,7 +291,7 @@ class ScTriangulate(object):
             self._to_sparse()
             
 
-    def penalize_artifact(self,mode,stamp=None):
+    def penalize_artifact(self,mode,stamps=None):
         '''void mode is to set stamp position to 0, stamp is like {leiden1:5}'''
         if mode == 'void':
             obs = self.adata.obs
@@ -256,8 +300,8 @@ class ScTriangulate(object):
             sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
             sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
             pool = mp.Pool(processes=cores)
-            logging.info('spawn {} sub processes for penalizing artifact with mode-{}'.format(cores,mode))
-            r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamp,self.total_metrics,)) for chunk in sub_obs]
+            logger_sctriangulate.info('spawn {} sub processes for penalizing artifact with mode-{}'.format(cores,mode))
+            r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamps,self.total_metrics,)) for chunk in sub_obs]
             pool.close()
             pool.join()
             results = []
@@ -266,6 +310,35 @@ class ScTriangulate(object):
                 results.append(result)
             obs = pd.concat(results)
             self.adata.obs = obs
+
+        elif mode == 'cellcycle':
+            # all the clusters that have cell-cycle enrichment > 0 will be collected into stamps
+            marker_genes = self.uns['marker_genes']
+            stamps = []
+            for key,clusters in self.cluster.items():
+                for cluster in clusters:
+                    a = marker_genes[key].loc[cluster,:]['enrichr']['cellcycle']
+                    if a > 0:
+                        stamps.append(key+'@'+cluster)
+            logger_sctriangulate.info('stamps are: {}'.format(str(stamps)))
+            obs = self.adata.obs
+            obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
+            cores = mp.cpu_count()
+            sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
+            sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
+            pool = mp.Pool(processes=cores)
+            logger_sctriangulate.info('spawn {} sub processes for penalizing artifact with mode-{}'.format(cores,mode))
+            r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamps,self.total_metrics,)) for chunk in sub_obs]
+            pool.close()
+            pool.join()
+            results = []
+            for collect in r:
+                result = collect.get()  # [sub_obs,sub_obs...]
+                results.append(result)
+            obs = pd.concat(results)
+            self.adata.obs = obs
+            
+
 
 
 
@@ -296,7 +369,7 @@ class ScTriangulate(object):
             sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_obs, sub_obs, sub_obs]
             sub_datas = [data[:,sub_index,:] for sub_index in sub_indices]  # [sub_data,sub_data,....]
             pool = mp.Pool(processes=cores)
-            logging.info('spawn {} sub processes for shapley computing'.format(cores))
+            logger_sctriangulate.info('spawn {} sub processes for shapley computing'.format(cores))
             raw_results = [pool.apply_async(func=run_shapley,args=(sub_obs[i],self.query,self.reference,self.size_dict,sub_datas[i])) for i in range(len(sub_obs))]
             pool.close()
             pool.join()
@@ -316,7 +389,7 @@ class ScTriangulate(object):
             sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
             sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
             pool = mp.Pool(processes=cores)
-            logging.info('spawn {} sub processes for getting raw sctriangulate result'.format(cores))
+            logger_sctriangulate.info('spawn {} sub processes for getting raw sctriangulate result'.format(cores))
             r = pool.map_async(run_assign,sub_obs)
             pool.close()
             pool.join()
@@ -444,7 +517,7 @@ class ScTriangulate(object):
             if adata_s.uns.get('rank_genes_groups') != None:
                 del adata_s.uns['rank_genes_groups']
             if len(adata_s.obs['prefixed'].unique()) == 1: # it is already unique
-                logging.info('{0} entirely being assigned to one type, no need to do DE'.format(cluster))
+                logger_sctriangulate.info('{0} entirely being assigned to one type, no need to do DE'.format(cluster))
                 return None
             else:
                 sc.tl.rank_genes_groups(adata_s,groupby='prefixed')
@@ -478,7 +551,7 @@ class ScTriangulate(object):
 
 
     def building_viewer_fig(self,parallel=True):
-        logging.info('Building viewer requires generating all the necessary figures, may take several minutes')
+        logger_sctriangulate.info('Building viewer requires generating all the necessary figures, may take several minutes')
         # create a folder to store all the figures
         if not os.path.exists(os.path.join(self.dir,'figure4viewer')):
             os.mkdir(os.path.join(self.dir,'figure4viewer'))
@@ -491,13 +564,13 @@ class ScTriangulate(object):
 
         if platform.system() == 'Linux':    # can parallelize
             '''heterogeneity'''
-            logging.info('spawn 1 sub process for inspection figure genearation')
+            logger_sctriangulate.info('spawn 1 sub process for inspection figure genearation')
             p = mp.Process(target=self._atomic_viewer_hetero)
             p.start()
             '''other figures'''
             cores = mp.cpu_count()
             pool = mp.Pool(processes=cores)
-            logging.info('spawn {} sub processes for viewer figure generation'.format(cores))
+            logger_sctriangulate.info('spawn {} sub processes for viewer figure generation'.format(cores))
             raw_results = [pool.apply_async(func=self._atomic_viewer_figure,args=(key,)) for key in self.cluster.keys()]
             p.join()
             pool.close()
@@ -528,14 +601,15 @@ class ScTriangulate(object):
 
 
 # ancillary functions for main class
-def penalize_artifact_void(obs,query,stamp,metrics):
-    metrics_cols = obs.loc[:,[item2+'@'+item1 for item1 in query for item2 in metrics]]
-    cluster_cols = obs.loc[:,query]
-    df = cluster_cols.apply(func=lambda x:pd.Series(data=[x.name+'@'+str(item) for item in x],name=x.name),axis=0)
-    df_repeat = pd.DataFrame(np.repeat(df.values,len(metrics),axis=1))
-    truth = pd.DataFrame(data=(df_repeat == stamp).values,index=metrics_cols.index,columns=metrics_cols.columns)
-    tmp = metrics_cols.mask(truth,0)
-    obs.loc[:,[item2+'@'+item1 for item1 in query for item2 in metrics]] = tmp
+def penalize_artifact_void(obs,query,stamps,metrics):
+    for stamp in stamps:
+        metrics_cols = obs.loc[:,[item2+'@'+item1 for item1 in query for item2 in metrics]]
+        cluster_cols = obs.loc[:,query]
+        df = cluster_cols.apply(func=lambda x:pd.Series(data=[x.name+'@'+str(item) for item in x],name=x.name),axis=0)
+        df_repeat = pd.DataFrame(np.repeat(df.values,len(metrics),axis=1))
+        truth = pd.DataFrame(data=(df_repeat == stamp).values,index=metrics_cols.index,columns=metrics_cols.columns)
+        tmp = metrics_cols.mask(truth,0)
+        obs.loc[:,[item2+'@'+item1 for item1 in query for item2 in metrics]] = tmp
     return obs
 
 
@@ -562,19 +636,19 @@ def each_key_run(sctri,key):
     cluster_to_metric = {}
     '''marker gene'''
     marker_genes = marker_gene(adata_to_compute,key,species,criterion)
-    logging.info('Process {}, for {}, finished marker genes finding'.format(os.getpid(),key))
+    logger_sctriangulate.info('Process {}, for {}, finished marker genes finding'.format(os.getpid(),key))
     '''reassign score'''
     cluster_to_metric['cluster_to_reassign'], confusion_reassign = reassign_score(adata_to_compute,key,marker_genes)
-    logging.info('Process {}, for {}, finished reassign score computing'.format(os.getpid(),key))
+    logger_sctriangulate.info('Process {}, for {}, finished reassign score computing'.format(os.getpid(),key))
     '''tfidf10 score'''
     cluster_to_metric['cluster_to_tfidf10'], exclusive_genes = tf_idf10_for_cluster(adata_to_compute,key,species,criterion)
-    logging.info('Process {}, for {}, finished tfidf score computing'.format(os.getpid(),key))
+    logger_sctriangulate.info('Process {}, for {}, finished tfidf score computing'.format(os.getpid(),key))
     '''SCCAF score'''
     cluster_to_metric['cluster_to_SCCAF'], confusion_sccaf = SCCAF_score(adata_to_compute,key, species, criterion)
-    logging.info('Process {}, for {}, finished SCCAF score computing'.format(os.getpid(),key))
+    logger_sctriangulate.info('Process {}, for {}, finished SCCAF score computing'.format(os.getpid(),key))
     '''doublet score'''
     cluster_to_metric['cluster_to_doublet'] = doublet_compute(adata_to_compute,key)
-    logging.info('Process {}, for {}, finished doublet score assigning'.format(os.getpid(),key))
+    logger_sctriangulate.info('Process {}, for {}, finished doublet score assigning'.format(os.getpid(),key))
     '''added other scores'''
     for metric,func in add_metrics.items():
         cluster_to_metric['cluster_to_{}'.format(metric)] = func(adata_to_compute,key,species,criterion)
@@ -600,7 +674,7 @@ def each_key_run(sctri,key):
 
 
 def run_shapley(obs,query,reference,size_dict,data):
-    logging.info('process {} need to process {} cells for shapley computing'.format(os.getpid(),data.shape[1]))
+    logger_sctriangulate.info('process {} need to process {} cells for shapley computing'.format(os.getpid(),data.shape[1]))
     final = []
     intermediate = []
     for i in range(data.shape[1]):
@@ -616,7 +690,7 @@ def run_shapley(obs,query,reference,size_dict,data):
 
 
 def run_assign(obs):  
-    logging.info('process {} need to process {} cells for raw sctriangulte result'.format(os.getpid(),obs.shape[0]))   
+    logger_sctriangulate.info('process {} need to process {} cells for raw sctriangulte result'.format(os.getpid(),obs.shape[0]))   
     assign = []
     for i in range(obs.shape[0]):
         name = obs.iloc[i,:].loc['final_annotation']
