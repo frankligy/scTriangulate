@@ -634,41 +634,6 @@ def filter_DE_genes(adata,species,criterion):
     adata.uns['rank_genes_gruops_filtered']['names'] = de_gene.to_records(index=False)
     return adata
 
-def plot_diagnose_figure(dir, adata, uns, cluster, cmap, key):
-    for cluster in cluster[key]:
-        # draw enrichment plot
-        fig,ax = plt.subplots()
-        a = uns['marker_genes'][key].loc[cluster,:]['enrichr']
-        ax.barh(y=np.arange(len(a)),width=[item for item in a.values()],color='#FF9A91')
-        ax.set_yticks(np.arange(len(a)))
-        ax.set_yticklabels([item for item in a.keys()])
-        ax.set_title('Marker gene enrichment')
-        ax.set_xlabel('-Log10(adjusted_pval)')
-        plt.savefig(os.path.join(dir,'{0}_{1}_enrichment.png'.format(key,cluster)),bbox_inches='tight')
-        plt.close()
-
-        # draw marker gene plot
-        a = uns['marker_genes'][key].loc[cluster,:]['purify']
-        top = a[:10]
-        sc.pl.umap(adata,color=top,ncols=5,cmap=cmap['viridis'],vmin=1e-5)
-        plt.savefig(os.path.join(dir,'{0}_{1}_marker_umap.png'.format(key,cluster)),bbox_inches='tight')
-        plt.close()
-
-        # draw exclusive gene plot
-        a = uns['exclusive_genes'][key][cluster]  # self.uns['exclusive_genes'][key] is a pd.Series
-        a = list(a.keys())
-        top = a[:10]
-        sc.pl.umap(adata,color=top,ncols=5,cmap=cmap['viridis'],vmin=1e-5)
-        plt.savefig(os.path.join(dir,'{0}_{1}_exclusive_umap.png'.format(key,cluster)),bbox_inches='tight')
-        plt.close()     
-
-        # draw location plot
-        col = [1 if item == str(cluster) else 0 for item in adata.obs[key]]
-        adata.obs['tmp_plot'] = col
-        sc.pl.umap(adata,color='tmp_plot',cmap=cmap['YlOrRd'],vmin=1e-5)
-        plt.savefig(os.path.join(dir,'{0}_{1}_location_umap.png'.format(key,cluster)),bbox_inches='tight')
-        plt.close()
-
 
 
 

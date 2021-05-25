@@ -87,7 +87,7 @@ def read_artifact_genes(species,criterion):
     criterion5: all will be artifact except cellcycle, ribosome, mitochondrial, antisense
     criterion6: all will be artifact except cellcycle, ribosome, mitochondrial, antisense, predict_gene
     '''
-    artifact = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)),'artifact_genes.txt'),sep='\t')
+    artifact = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)),'artifact_genes.txt'),sep='\t',index_col=0)
     artifact = artifact.loc[artifact['species']==species,:]
     if criterion == 1:
         artifact = artifact
