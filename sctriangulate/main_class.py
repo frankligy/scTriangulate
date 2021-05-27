@@ -13,6 +13,7 @@ from scipy.sparse import issparse,csr_matrix
 import multiprocessing as mp
 import platform
 import logging
+import subprocess
 
 import scanpy as sc
 import anndata as ad
@@ -121,11 +122,11 @@ class ScTriangulate(object):
 
     def gene_to_df(self,mode,key):
         '''mode is marker_genes or exclusive_genes'''
-        self.uns['{}'.format(mode)][key].to_csv(os.path.join(self.dir,'sctri_gene_to_df_{}.txt'.format(mode)),sep='\t')
+        self.uns['{}'.format(mode)][key].to_csv(os.path.join(self.dir,'sctri_gene_to_df_{}_{}.txt'.format(mode,key)),sep='\t')
 
     def confusion_to_df(self,mode,key):
         '''mode is confusion_reassign or confusion_sccaf'''
-        self.uns['{}'.format(mode)][key].to_csv(os.path.join(self.dir,'sctri_confusion_to_df_{}.txt'.format(mode)),sep='\t')
+        self.uns['{}'.format(mode)][key].to_csv(os.path.join(self.dir,'sctri_confusion_to_df_{}_{}.txt'.format(mode,key)),sep='\t')
 
     def serialize(self,name='sctri_pickle.p'):
         with open(os.path.join(self.dir,name),'wb') as f:
@@ -133,9 +134,10 @@ class ScTriangulate(object):
 
     @staticmethod
     def deserialize(name):
-        logger_sctriangulate.info('unpickle {} to memory'.format(name))
         with open(name,'rb') as f:
             sctri = pickle.load(f)
+        sctri._set_logging()
+        logger_sctriangulate.info('unpickled {} to memory'.format(name))
         return sctri
 
     def add_new_metrics(self,add_metrics):
@@ -269,7 +271,7 @@ class ScTriangulate(object):
                 self._add_to_uns('exclusive_genes',key,collect)
             if self.reference not in self.query:
                 self.cluster[self.reference] = self.adata.obs[self.reference].unique() 
-            os.system('rm -r "./scTriangulate_local_mode_enrichr/"')  # remove this temporary directory 
+            subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr/'))])
             self._to_sparse()
 
         else:
@@ -287,7 +289,7 @@ class ScTriangulate(object):
                 self._add_to_uns('exclusive_genes',key,collect)
             if self.reference not in self.query:
                 self.cluster[self.reference] = self.adata.obs[self.reference].unique() 
-            os.system('rm -r "./scTriangulate_local_mode_enrichr/"')  # remove this temporary directory 
+            subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr/'))])
             self._to_sparse()
             
 
@@ -463,10 +465,10 @@ class ScTriangulate(object):
             plt.savefig(os.path.join(self.dir,'confusion_{}_{}.pdf'.format(name,key)),bbox_inches='tight')
             plt.close()
     
-    def plot_cluster_feature(self,key,cluster,feature,save):
+    def plot_cluster_feature(self,key,cluster,feature,enrichment_type='enrichr',save=False):
         if feature == 'enrichment':
             fig,ax = plt.subplots()
-            a = self.uns['marker_genes'][key].loc[cluster,:]['enrichr']
+            a = self.uns['marker_genes'][key].loc[cluster,:][enrichment_type]
             ax.barh(y=np.arange(len(a)),width=[item for item in a.values()],color='#FF9A91')
             ax.set_yticks(np.arange(len(a)))
             ax.set_yticklabels([item for item in a.keys()])
@@ -614,9 +616,8 @@ def penalize_artifact_void(obs,query,stamps,metrics):
 
 
 
-
-
 def each_key_run(sctri,key):
+    folder = sctri.dir
     adata = sctri.adata
     species = sctri.species
     criterion = sctri.criterion
@@ -635,7 +636,7 @@ def each_key_run(sctri,key):
     # a dynamically named dict
     cluster_to_metric = {}
     '''marker gene'''
-    marker_genes = marker_gene(adata_to_compute,key,species,criterion)
+    marker_genes = marker_gene(adata_to_compute,key,species,criterion,folder)
     logger_sctriangulate.info('Process {}, for {}, finished marker genes finding'.format(os.getpid(),key))
     '''reassign score'''
     cluster_to_metric['cluster_to_reassign'], confusion_reassign = reassign_score(adata_to_compute,key,marker_genes)

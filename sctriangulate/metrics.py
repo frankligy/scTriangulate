@@ -53,7 +53,7 @@ def compute_combo_score(rank_uns,cluster):
     df.set_index(keys=pd.Index(np.arange(df.shape[0])), inplace=True)
     return df
 
-def run_enrichr(gene_list,name):
+def run_enrichr(gene_list,key,name,folder):
     # run enrichr
     artifact = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)),'artifact_genes.txt'),sep='\t')
     artifact_dict = artifact.groupby(by='class')['genes'].apply(lambda x:x.tolist()).to_dict()
@@ -61,7 +61,7 @@ def run_enrichr(gene_list,name):
                     description=name,
                     gene_sets=artifact_dict,
                     background=20000,
-                    outdir='./scTriangulate_local_mode_enrichr/',
+                    outdir=os.path.join(folder,'scTriangulate_local_mode_enrichr'),
                     cutoff=0.1, # adj-p for plotting
                     verbose=True)
     enrichr_result = enr2.results
@@ -77,6 +77,34 @@ def run_enrichr(gene_list,name):
             else:
                 enrichr_dict[metric] = enrichr_score
     return enrichr_dict
+
+def run_gsea(gene_list,key,name,folder):
+    artifact = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)),'artifact_genes.txt'),sep='\t')
+    artifact_dict = artifact.groupby(by='class')['genes'].apply(lambda x:x.tolist()).to_dict()
+    df = pd.DataFrame({0: gene_list, 1: 1/(np.arange(len(gene_list))+1)}) # col 1 is for descending rank of gene
+    gsea_dict = {}
+    try:
+        pre_res = gp.prerank(rnk=df, gene_sets=artifact_dict,
+                            permutation_num=100,
+                            outdir=os.path.join(folder,'scTriangulate_local_mode_gsea/{}/{}'.format(key,name)),
+                            min_size=1,
+                            max_size=10000,
+                            seed=6,
+                            verbose=True)
+    except:  # no hit return, all metrics are zero
+        for metric in artifact_dict.keys():
+            gsea_dict[metric] = 0
+    else:
+        gsea_result = pre_res.res2d
+        for metric in artifact_dict.keys():
+            try:
+                gsea_score = gsea_result.loc[gsea_result.index==metric,:]['nes'].to_list()[0]
+            except:   # means no that term enriched
+                gsea_dict[metric] = 0
+            else:
+                gsea_dict[metric] = gsea_score
+    return gsea_dict
+
 
 def read_artifact_genes(species,criterion):
     '''
@@ -114,7 +142,7 @@ def purify_gene(genelist,species,criterion):
             result.append(gene)
     return result
 
-def marker_gene(adata, key, species, criterion):
+def marker_gene(adata, key, species, criterion, folder):
     # delete previous rank_gene_gruops if present
     if adata.uns.get('rank_genes_groups') != None:
         del adata.uns['rank_genes_groups']
@@ -161,14 +189,18 @@ def marker_gene(adata, key, species, criterion):
 
     # now let's perform enrichr and GSEA, and get puried marker gene
     col_enrichr = []
+    col_gsea = []
     col_purify = []   # genelist that have artifact genes removed
     for cluster in result.index:
-        enrichr_dict = run_enrichr(result.loc[cluster,:].to_list()[0],name=cluster)  # [0] because it is a [[gene_list]],we only need [gene_list]
+        enrichr_dict = run_enrichr(result.loc[cluster,:].to_list()[0],key=key,name=cluster,folder=folder)  # [0] because it is a [[gene_list]],we only need [gene_list]
+        gsea_dict = run_gsea(result.loc[cluster,:].to_list()[0],key=key,name=cluster,folder=folder)
         purified = purify_gene(result.loc[cluster,:].to_list()[0],species,criterion) # the [0] is explained last line
         col_enrichr.append(enrichr_dict)
+        col_gsea.append(gsea_dict)
         col_purify.append(purified)
 
     result['enrichr'] = col_enrichr
+    result['gsea'] = col_gsea
     result['purify'] = col_purify
     return result
 

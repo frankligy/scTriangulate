@@ -12,11 +12,3 @@ function display(key,cluster) {
     var heatmap_div = document.getElementById('heatmap');
     heatmap_div.src = path;
 }
-
-function change_color(object) {
-    object.style.color = 'blue';
-}
-
-function change_color_back(object) {
-    object.style.color = 'black';
-}

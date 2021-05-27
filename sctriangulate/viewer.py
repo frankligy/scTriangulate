@@ -19,8 +19,7 @@ def html_left_nav(key_cluster_dict):
             with tag('ul'):
                 doc.attr(id='{}'.format(key))
                 for cluster in value:
-                    line('li',cluster,onclick='display_score(this.parentElement.id,this.textContent);display_plot(this.parentElement.id,this.textContent)',
-                    onmouseover='change_color(this)',onmouseout='change_color_back(this)')
+                    line('li',cluster,onclick='display_score(this.parentElement.id,this.textContent);display_plot(this.parentElement.id,this.textContent)')
     return doc.getvalue()
 
 def html_right_show(key_cluster_data,total_metrics):
@@ -106,7 +105,7 @@ def left_nav(key_cluster_dict,reference):
         with tag('ul'):
             doc.attr(id=reference)
             for cluster in data:
-                line('li',cluster,onclick='display(this.parentElement.id,this.textContent)',onmouseover='change_color(this)',onmouseout='change_color_back(this)')
+                line('li',cluster,onclick='display(this.parentElement.id,this.textContent)')
     return doc.getvalue()
 
 def right_show():

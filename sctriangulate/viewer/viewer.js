@@ -10,6 +10,7 @@ function display_score(key,cluster) {
     h2_obj[0].innerText = display_h2_span;
     var scores = Object.keys(data_from_json[key]);
     var scores_len = scores.length;
+    console.log(scores)
     for (let i=0; i<scores_len; i++) {
         let display = `${data_from_json[key][scores[i]][cluster]}`;
         let display_obj = document.getElementById(scores[i]);
@@ -35,14 +36,6 @@ function display_plot(key,cluster) {
     var path = `./${key}_${cluster}_exclusive_umap.png`;
     var img_marker = document.getElementsByClassName('img_exclusive');
     img_marker[0].src = path;
-}
-
-function change_color(object) {
-    object.style.color = 'blue';
-}
-
-function change_color_back(object) {
-    object.style.color = 'black';
 }
 
 

@@ -9,9 +9,87 @@ import seaborn as sns
 from scipy.stats import rankdata
 import multiprocessing as mp
 import logging
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 import scanpy as sc
 import anndata as ad
+from scipy.io import mmread,mmwrite
+
+
+def large_txt_to_mtx(int_file,out_folder,gene_is_index=True):
+    '''since expression matrix is too large, I need to do iteration'''
+    reader = pd.read_csv(int_file,sep='\t',index_col=0,chunksize=1000)
+    store = []
+    for chunk in reader:
+        tmp = chunk.astype('int16')
+        store.append(tmp)
+    data = pd.concat(store)
+    print(data.shape)
+    '''save as mtx, now!!!'''
+    if not os.path.exists(out_folder):
+        os.mkdir(out_folder)
+    if gene_is_index:
+        data.index.to_series().to_csv(os.path.join(out_folder,'genes.tsv'),sep='\t',header=None,index=None)
+        data.columns.to_series().to_csv(os.path.join(out_folder,'barcodes.tsv'),sep='\t',header=None,index=None)
+        mmwrite(os.path.join(out_folder,'matrix.mtx'),csr_matrix(data.values))
+    else:
+        data.columns.to_series().to_csv(os.path.join(out_folder,'genes.tsv'),sep='\t',header=None,index=None)
+        data.index.to_series().to_csv(os.path.join(out_folder,'barcodes.tsv'),sep='\t',header=None,index=None)
+        mmwrite(os.path.join(out_folder,'matrix.mtx'),csr_matrix(data.values.T))        
+
+
+def mtx_to_large_txt(int_folder,out_file,gene_is_index=False):
+    gene = pd.read_csv(os.path.join(int_folder,'genes.tsv'),sep='\t',index_col=0,header=None).index
+    cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None).index
+    value = mmread(os.path.join(int_folder,'matrix.mtx')).toarray()
+    if gene_is_index:
+        data = pd.DataFrame(data=value,index=gene,columns=cell)
+    else:
+        data = pd.DataFrame(data=value.T,index=cell,columns=gene)
+    data.to_csv(out_file,sep='\t',chunksize=1000)
+
+
+def add_annotations(adata,inputs,cols=None):
+    # means a single file such that first column is barcodes, annotations are in the following columns
+    annotations = pd.read_csv(inputs,sep='\t',index_col=0).loc[cols]
+    mappings = []
+    for col in cols:
+        mappping = annotations[col].to_dict()
+        mappings.append(mapping)
+    for i,col in enumerate(cols):
+        adata.obs[col] = adata.obs_names.map(mappings[i]).values
+    return adata
+
+def add_umap(adata,inputs,mode,cols=None):
+    # make sure cols are [umap_x, umap_y]
+    if mode == 'pandas':
+        df = pd.read_csv(inputs,sep='\t')
+        umap = df[cols].values
+        adata.obsm['X_umap'] = umap
+    elif mode == 'numpy':
+        adata.obsm['X_umap'] = inputs
+    return adata
+
+
+
+
+
+class GeneConvert(object):
+
+    @staticmethod
+    def ensemblgene_to_symbol(query,species):
+        # assume query is a list, will also return a list
+        import mygene
+        mg = mygene.MyGeneInfo()
+        out = mg.querymany(query,scopes='ensemblgene',fileds='symbol',species=species,returnall=True,as_dataframe=True,df_index=True)
+        result = out['out']['symbol'].fillna('unknown_gene').tolist()
+        try:
+            assert len(query) == len(result)
+        except AssertionError:    # have duplicate results
+            df = out['out']
+            df_unique = df.loc[~df.index.duplicated(),:]
+            result = df_unique['symbol'].fillna('unknown_gene').tolist()
+        return result
+
+
 
 
 
