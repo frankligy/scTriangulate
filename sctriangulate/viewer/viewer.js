@@ -38,6 +38,14 @@ function display_plot(key,cluster) {
     img_marker[0].src = path;
 }
 
+function change_color(object) {
+    object.style.color = 'blue';
+}
+
+function change_color_back(object) {
+    object.style.color = 'black';
+}
+
 
 
 
