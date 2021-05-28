@@ -62,6 +62,16 @@ def mtx_to_large_txt(int_folder,out_file,gene_is_index=False):
         data = pd.DataFrame(data=value.T,index=cell,columns=gene)
     data.to_csv(out_file,sep='\t',chunksize=1000)
 
+def adding_azimuth(adata,result,name='predicted.celltype.l2'):
+    azimuth = pd.read_csv(result,sep='\t',index_col=0)
+    azimuth_map = azimuth[name].to_dict()
+    azimuth_prediction = azimuth['{}.score'.format(name)].to_dict()
+    azimuth_mapping = azimuth['mapping.score'].to_dict()
+    adata.obs['azimuth'] = adata.obs_names.map(azimuth_map).values
+    adata.obs['prediction_score'] = adata.obs_names.map(azimuth_prediction).values
+    adata.obs['mapping_score'] = adata.obs_names.map(azimuth_mapping).values
+
+
 
 def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,save=True):
     adata.var_names_make_unique()
@@ -87,8 +97,9 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
             adata = adata.raw.to_adata()
             adata.X = csr_matrix(adata.X)
             if save:
+                resolutions = '_'.join([str(item) for item in resolutions])
                 adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
-            return adata
+ 
 
         else:   # log(1+x) and depth normalized data
             adata.var['mt'] = adata.var_names.str.startswith('MT-')
@@ -108,10 +119,48 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
             adata = adata.raw.to_adata()
             adata.X = csr_matrix(adata.X)
             if save:
+                resolutions = '_'.join([str(item) for item in resolutions])
                 adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
-            return adata
 
-        
+    elif modality == 'atac':
+        if not is_log:
+            pass
+        else:
+            sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=3000)
+            adata.raw = adata
+            adata = adata[:,adata.var['highly_variable']]
+            sc.pp.scale(adata,max_value=10)
+            sc.tl.pca(adata)
+            sc.pp.neighbors(adata)
+            for resolution in resolutions:
+                sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
+            if umap:
+                sc.tl.umap(adata)
+            adata = adata.raw.to_adata()
+            adata.X = csr_matrix(adata.X)
+            if save:
+                resolutions = '_'.join([str(item) for item in resolutions])
+                adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
+
+
+    return adata
+    
+
+
+
+
+def concat_rna_and_other(adata_rna,adata_other,umap,name):
+    adata_other = adata_other[adata_rna.obs_names,:]  # make sure the obs order is the same
+    adata_combine = ad.concat([adata_rna,adata_other],axis=1,join='outer',merge='first',label='modality',keys=['rna','{}'.format(name)])
+    if umap == 'rna':
+        adata_combine.obsm['X_umap'] = adata_rna.obsm['X_umap']
+    elif umap == 'other':
+        adata_combine.obsm['X_umap'] = adata_other.obsm['X_umap']
+    return adata_combine
+
+
+
+
 
 
 def umap_dual_view_save(adata,col):

@@ -52,6 +52,7 @@ class ScTriangulate(object):
         self._special_cmap()  
         self._make_cluster_str() 
         self._replace_invalid_char()
+        self._remove_index_name()
         self.size_dict, _ = get_size(self.adata.obs,self.query)
 
 
@@ -99,6 +100,10 @@ class ScTriangulate(object):
         for key in all_keys:
             if '/' in key:
                 self.adata.obs.rename(columns={key:key.replace('/','_')},inplace=True)
+
+    def _remove_index_name(self):
+        self.adata.obs.index.name = None
+        self.adata.var.index.name = None
 
 
     def _set_logging(self):
@@ -482,12 +487,12 @@ class ScTriangulate(object):
             sc.pl.umap(self.adata,color=col,frameon=False,ax=ax[0])
             sc.pl.umap(self.adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
             if save:
-                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.png'.format(col)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.pdf'.format(col)),bbox_inches='tight')
                 plt.close()
         elif kind == 'continuous':
             sc.pl.umap(self.adata,color=col,frameon=False,cmap=self.cmap['viridis'],vmin=1e-5)
             if save:
-                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.png'.format(col)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.pdf'.format(col)),bbox_inches='tight')
                 plt.close()
 
     def plot_confusion(self,name,key,save,**kwargs):
@@ -495,7 +500,7 @@ class ScTriangulate(object):
         df = df.apply(func=lambda x:x/x.sum(),axis=1)
         sns.heatmap(df,cmap='bwr',**kwargs)
         if save:
-            plt.savefig(os.path.join(self.dir,'confusion_{}_{}.png'.format(name,key)),bbox_inches='tight')
+            plt.savefig(os.path.join(self.dir,'confusion_{}_{}.pdf'.format(name,key)),bbox_inches='tight')
             plt.close()
     
     def plot_cluster_feature(self,key,cluster,feature,enrichment_type='enrichr',save=False):
@@ -623,7 +628,6 @@ class ScTriangulate(object):
     def _atomic_viewer_hetero(self):
         for cluster in self.cluster[self.reference]:
             self.plot_heterogeneity(cluster,'build',True)
-
 
 
 
