@@ -9,7 +9,6 @@ import seaborn as sns
 from scipy.stats import rankdata
 import multiprocessing as mp
 import logging
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
 import scanpy as sc
 import anndata as ad
 
@@ -65,7 +64,6 @@ def run_reference_pruning(chunk,reference,size_dict,obs):
     overlap_clusters = vc.index
     mapping = {}
     for cluster in overlap_clusters:
-        logging.info('process {}: {} contains {}'.format(os.getpid(),chunk[0],overlap_clusters))
         r = {reference:chunk[0]}
         c = {cluster.split('@')[0]:cluster.split('@')[1]}
         fraction_r,fraction_c = inclusiveness(obs,r,c)  # two cluster inclusive

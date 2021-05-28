@@ -10,7 +10,7 @@ import math
 import os
 
 def check_filter_single_cluster(adata,key):
-    vc = adata.obs[key].astype('str').value_counts()
+    vc = adata.obs[key].value_counts()
     exclude_clusters= vc.loc[vc==1].index
     truth = np.logical_not(adata.obs[key].isin(exclude_clusters).values)
     adata_valid = adata[truth,:]

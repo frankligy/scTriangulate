@@ -28,8 +28,6 @@ from .prune import *
 
 
 
-
-
 # define ScTriangulate Object
 class ScTriangulate(object):
 
@@ -37,6 +35,7 @@ class ScTriangulate(object):
 
         self.verbose = verbose
         self.dir = dir
+        self._create_dir_if_not_exist()
         self.adata = adata
         self.query = query
         self.reference = reference
@@ -48,10 +47,13 @@ class ScTriangulate(object):
         self.metrics = ['reassign','tfidf10','SCCAF','doublet']   # default metrics
         self.add_metrics = {}                           # user can add their own, key is metric name, value is callable
         self.total_metrics = self.metrics               # all metrics considered
-        self._special_cmap()
+
+        self._set_logging()         
+        self._special_cmap()  
+        self._make_cluster_str() 
+        self._replace_invalid_char()
         self.size_dict, _ = get_size(self.adata.obs,self.query)
 
-        self._set_logging()
 
 
 
@@ -67,6 +69,37 @@ class ScTriangulate(object):
             'Species: {3}\nCriterion: {4}\nTotal Metrics: {5}\nScore slot contains: {6}\nCluster slot contains: {7}\nUns slot contains: {8}\n'\
             'cmap contains: {9}'.format(self.dir, self.query,self.reference,self.species,self.criterion,self.total_metrics, list(self.score.keys()),
             list(self.cluster.keys()),list(self.uns.keys()),list(self.cmap.keys()))
+
+    def _create_dir_if_not_exist(self):
+        if not os.path.exists(self.dir):
+            os.mkdir(self.dir)
+
+    def _make_cluster_str(self):
+        if self.reference in self.query:
+            all_keys = self.query
+        else:
+            all_keys = copy.deepcopy(self.query)
+            all_keys.append(self.reference)
+        for key in all_keys:
+            self.adata.obs[key] = self.adata.obs[key].astype('str')
+            self.adata.obs[key] = self.adata.obs[key].astype('category')
+
+
+    def _replace_invalid_char(self):
+        # replace cluster name
+        if self.reference in self.query:
+            all_keys = self.query
+        else:
+            all_keys = copy.deepcopy(self.query)
+            all_keys.append(self.reference)
+        for key in all_keys:
+            self.adata.obs[key] = self.adata.obs[key].str.replace('/','_')
+        
+        # replace key name
+        for key in all_keys:
+            if '/' in key:
+                self.adata.obs.rename(columns={key:key.replace('/','_')},inplace=True)
+
 
     def _set_logging(self):
         # get all logger
@@ -449,12 +482,12 @@ class ScTriangulate(object):
             sc.pl.umap(self.adata,color=col,frameon=False,ax=ax[0])
             sc.pl.umap(self.adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
             if save:
-                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.pdf'.format(col)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.png'.format(col)),bbox_inches='tight')
                 plt.close()
         elif kind == 'continuous':
             sc.pl.umap(self.adata,color=col,frameon=False,cmap=self.cmap['viridis'],vmin=1e-5)
             if save:
-                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.pdf'.format(col)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.png'.format(col)),bbox_inches='tight')
                 plt.close()
 
     def plot_confusion(self,name,key,save,**kwargs):
@@ -462,7 +495,7 @@ class ScTriangulate(object):
         df = df.apply(func=lambda x:x/x.sum(),axis=1)
         sns.heatmap(df,cmap='bwr',**kwargs)
         if save:
-            plt.savefig(os.path.join(self.dir,'confusion_{}_{}.pdf'.format(name,key)),bbox_inches='tight')
+            plt.savefig(os.path.join(self.dir,'confusion_{}_{}.png'.format(name,key)),bbox_inches='tight')
             plt.close()
     
     def plot_cluster_feature(self,key,cluster,feature,enrichment_type='enrichr',save=False):
@@ -501,10 +534,16 @@ class ScTriangulate(object):
                 plt.savefig(os.path.join(self.dir,'{0}_{1}_location_umap.png'.format(key,cluster)),bbox_inches='tight')
                 plt.close()
 
-    def plot_heterogeneity(self,cluster,style,save=False,genes=None):
-        # cluster should be a valid cluster in self.reference
-        adata_s = self.adata[self.adata.obs[self.reference]==cluster,:]
-        if style == 'umap':
+    def plot_heterogeneity(self,cluster,style,save=False,genes=None): 
+        adata_s = self.adata[self.adata.obs[self.reference]==cluster,:]  
+        # remove prior color stamps
+        tmp = adata_s.uns
+        tmp.pop('prefixed_colors',None)
+        adata_s.uns = tmp
+
+        if style == 'build':  # draw umap and heatmap
+
+            # umap
             fig,axes = plt.subplots(nrows=2,ncols=1,gridspec_kw={'hspace':0.5},figsize=(5,10))
             # ax1
             sc.pl.umap(adata_s,color=['prefixed'],ax=axes[0])
@@ -513,11 +552,14 @@ class ScTriangulate(object):
             self.adata.obs['tmp_plot'] = col
             sc.pl.umap(self.adata,color='tmp_plot',cmap=self.cmap['YlOrRd'],vmin=1e-5,ax=axes[1])
             if save:
-                plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,style)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,'umap')),bbox_inches='tight')
                 plt.close()
-        elif style == 'heatmap':
-            if adata_s.uns.get('rank_genes_groups') != None:
-                del adata_s.uns['rank_genes_groups']
+
+            # heatmap
+            tmp = adata_s.uns
+            tmp.pop('rank_genes_groups',None)
+            adata_s.uns = tmp
+
             if len(adata_s.obs['prefixed'].unique()) == 1: # it is already unique
                 logger_sctriangulate.info('{0} entirely being assigned to one type, no need to do DE'.format(cluster))
                 return None
@@ -528,27 +570,60 @@ class ScTriangulate(object):
                 genes_to_pick = 50 // number_of_groups
                 sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_gruops_filtered')
                 if save:
-                    plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.pdf'.format(cluster,style)),bbox_inches='tight')
+                    plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,'heatmap')),bbox_inches='tight')
                     plt.close()
+
+
+        elif style == 'umap':
+            fig,axes = plt.subplots(nrows=2,ncols=1,gridspec_kw={'hspace':0.5},figsize=(5,10))
+            # ax1
+            sc.pl.umap(adata_s,color=['prefixed'],ax=axes[0])
+            # ax2
+            col = [1 if item == str(cluster) else 0 for item in self.adata.obs[self.reference]]
+            self.adata.obs['tmp_plot'] = col
+            sc.pl.umap(self.adata,color='tmp_plot',cmap=self.cmap['YlOrRd'],vmin=1e-5,ax=axes[1])
+            if save:
+                plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,style)),bbox_inches='tight')
+                plt.close()
+
+        elif style == 'heatmap':
+            tmp = adata_s.uns
+            tmp.pop('rank_genes_groups',None)
+            adata_s.uns = tmp
+            if len(adata_s.obs['prefixed'].unique()) == 1: # it is already unique
+                logger_sctriangulate.info('{0} entirely being assigned to one type, no need to do DE'.format(cluster))
+                return None
+            else:
+                sc.tl.rank_genes_groups(adata_s,groupby='prefixed')
+                adata_s = filter_DE_genes(adata_s,self.species,self.criterion)
+                number_of_groups = len(adata_s.obs['prefixed'].unique())
+                genes_to_pick = 50 // number_of_groups
+                sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_gruops_filtered')
+                if save:
+                    plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,style)),bbox_inches='tight')
+                    plt.close()
+
         elif style == 'violin':
             sc.pl.violin(adata_s,genes,groupby='prefixed')
             if save:
                 plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}.png'.format(cluster,genes,style)),bbox_inches='tight')
                 plt.close()
+                
         elif style == 'cellxgene':
             adata_s.write(os.path.join(self.dir,'{}_heterogeneity_{}.h5ad'.format(cluster,style)))
+            
 
     def _atomic_viewer_figure(self,key):
         for cluster in self.cluster[key]:
-            self.plot_cluster_feature(key,cluster,'enrichment',True)
-            self.plot_cluster_feature(key,cluster,'marker_gene',True)
-            self.plot_cluster_feature(key,cluster,'exclusive_gene',True)
-            self.plot_cluster_feature(key,cluster,'location',True)
+            self.plot_cluster_feature(key,cluster,'enrichment','enrichr',True)
+            self.plot_cluster_feature(key,cluster,'marker_gene','enrichr',True)
+            self.plot_cluster_feature(key,cluster,'exclusive_gene','enrichr',True)
+            self.plot_cluster_feature(key,cluster,'location','enrichr',True)
 
     def _atomic_viewer_hetero(self):
         for cluster in self.cluster[self.reference]:
-            self.plot_heterogeneity(cluster,'umap',True)
-            self.plot_heterogeneity(cluster,'heatmap',True)
+            self.plot_heterogeneity(cluster,'build',True)
+
 
 
 
@@ -653,7 +728,7 @@ def each_key_run(sctri,key):
     '''added other scores'''
     for metric,func in add_metrics.items():
         cluster_to_metric['cluster_to_{}'.format(metric)] = func(adata_to_compute,key,species,criterion)
-        logging.info('Process {}, for {}, finished {} score assigning'.format(os.getpid(),key,metric))
+        logging.info('Process {}, for {}, finished {} score computing'.format(os.getpid(),key,metric))
 
 
     collect = {'key':key}  # collect will be retured to main program

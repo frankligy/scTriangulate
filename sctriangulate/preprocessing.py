@@ -12,9 +12,10 @@ import logging
 import scanpy as sc
 import anndata as ad
 from scipy.io import mmread,mmwrite
+from scipy.sparse import csr_matrix
 
 
-def large_txt_to_mtx(int_file,out_folder,gene_is_index=True):
+def large_txt_to_mtx(int_file,out_folder,gene_is_index=True):  # whether the txt if gene * cell
     '''since expression matrix is too large, I need to do iteration'''
     reader = pd.read_csv(int_file,sep='\t',index_col=0,chunksize=1000)
     store = []
@@ -36,6 +37,21 @@ def large_txt_to_mtx(int_file,out_folder,gene_is_index=True):
         mmwrite(os.path.join(out_folder,'matrix.mtx'),csr_matrix(data.values.T))        
 
 
+def mtx_to_adata(int_folder,gene_is_index=True):  # whether the mtx file is gene * cell
+    gene = pd.read_csv(os.path.join(int_folder,'genes.tsv'),sep='\t',index_col=0,header=None).index
+    cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None).index
+    value = mmread(os.path.join(int_folder,'matrix.mtx')).toarray()
+    if gene_is_index:
+        data = pd.DataFrame(data=value.T,index=cell,columns=gene)
+        adata = ad.AnnData(X=data.values,obs=pd.DataFrame(index=data.index.values),var=pd.DataFrame(index=data.columns.values))
+    else:
+        data = pd.DataFrame(data=value,index=cell,columns=gene)
+        adata = ad.AnnData(X=data.values,obs=pd.DataFrame(index=data.index.values),var=pd.DataFrame(index=data.columns.values))
+    adata.X = csr_matrix(adata.X)
+    adata.var_names_make_unique()
+    return adata
+
+
 def mtx_to_large_txt(int_folder,out_file,gene_is_index=False):
     gene = pd.read_csv(os.path.join(int_folder,'genes.tsv'),sep='\t',index_col=0,header=None).index
     cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None).index
@@ -47,24 +63,93 @@ def mtx_to_large_txt(int_folder,out_file,gene_is_index=False):
     data.to_csv(out_file,sep='\t',chunksize=1000)
 
 
+def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,save=True):
+    adata.var_names_make_unique()
+    # normal analysis
+    if modality == 'rna':
+        if not is_log:   # count data
+            adata.var['mt'] = adata.var_names.str.startswith('MT-')
+            sc.pp.calculate_qc_metrics(adata,qc_vars=['mt'],percent_top=None,inplace=True,log1p=False)
+            sc.pp.normalize_total(adata,target_sum=1e4)
+            sc.pp.log1p(adata)
+            sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=3000)
+            adata.raw = adata
+            adata = adata[:,adata.var['highly_variable']]
+            sc.pp.regress_out(adata,['total_counts','pct_counts_mt'])
+            sc.pp.scale(adata,max_value=10)
+            sc.tl.pca(adata)
+            sc.pp.neighbors(adata)
+            for resolution in resolutions:
+                sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
+            if umap:
+                sc.tl.umap(adata)
+            # put raw back to X, and make sure it is sparse matrix
+            adata = adata.raw.to_adata()
+            adata.X = csr_matrix(adata.X)
+            if save:
+                adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
+            return adata
+
+        else:   # log(1+x) and depth normalized data
+            adata.var['mt'] = adata.var_names.str.startswith('MT-')
+            sc.pp.calculate_qc_metrics(adata,qc_vars=['mt'],percent_top=None,inplace=True,log1p=False)
+            sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=3000)
+            adata.raw = adata
+            adata = adata[:,adata.var['highly_variable']]
+            sc.pp.regress_out(adata,['total_counts','pct_counts_mt'])
+            sc.pp.scale(adata,max_value=10)
+            sc.tl.pca(adata)
+            sc.pp.neighbors(adata)
+            for resolution in resolutions:
+                sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
+            if umap:
+                sc.tl.umap(adata)
+            # put raw back to X, and make sure it is sparse matrix
+            adata = adata.raw.to_adata()
+            adata.X = csr_matrix(adata.X)
+            if save:
+                adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
+            return adata
+
+        
+
+
+def umap_dual_view_save(adata,col):
+    fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
+    sc.pl.umap(adata,color=col,frameon=False,ax=ax[0])
+    sc.pl.umap(adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
+    plt.savefig('./umap_dual_view_{}.pdf'.format(col),bbox_inches='tight')
+    plt.close()
+
+
+def just_log_norm(adata):
+    sc.pp.normalize_total(adata,target_sum=1e4)
+    sc.pp.log1p(adata)
+    return adata
+
+
 def add_annotations(adata,inputs,cols=None):
     # means a single file such that first column is barcodes, annotations are in the following columns
-    annotations = pd.read_csv(inputs,sep='\t',index_col=0).loc[cols]
+    annotations = pd.read_csv(inputs,sep='\t',index_col=0).loc[:,cols]
     mappings = []
     for col in cols:
-        mappping = annotations[col].to_dict()
+        mapping = annotations[col].to_dict()
         mappings.append(mapping)
     for i,col in enumerate(cols):
         adata.obs[col] = adata.obs_names.map(mappings[i]).values
     return adata
 
-def add_umap(adata,inputs,mode,cols=None):
+def add_umap(adata,inputs,mode,cols=None,index_col=0):
     # make sure cols are [umap_x, umap_y]
     if mode == 'pandas':
-        df = pd.read_csv(inputs,sep='\t')
-        umap = df[cols].values
-        adata.obsm['X_umap'] = umap
-    elif mode == 'numpy':
+        df = pd.read_csv(inputs,sep='\t',index_col=0)
+        umap_x = df[cols[0]].to_dict()
+        umap_y = df[cols[1]].to_dict()
+        adata.obs['umap_x'] = adata.obs_names.map(umap_x).values
+        adata.obs['umap_y'] = adata.obs_names.map(umap_y).values
+        adata.obsm['X_umap'] = adata.obs.loc[:,['umap_x','umap_y']].values
+        adata.obs.drop(columns=['umap_x','umap_y'],inplace=True)
+    elif mode == 'numpy':  # assume the order is correct
         adata.obsm['X_umap'] = inputs
     return adata
 

@@ -8,7 +8,7 @@ function display(key,cluster) {
     var umap_div = document.getElementById('umap');
     umap_div.src = path;
 
-    var path = `./${cluster}_heterogeneity_heatmap.pdf`;
+    var path = `./${cluster}_heterogeneity_heatmap.png`;
     var heatmap_div = document.getElementById('heatmap');
     heatmap_div.src = path;
 }
