@@ -50,10 +50,9 @@ class ScTriangulate(object):
 
         self._set_logging()         
         self._special_cmap()  
-        self._make_cluster_str() 
-        self._replace_invalid_char()
-        self._remove_index_name()
+        self._check_adata()
         self.size_dict, _ = get_size(self.adata.obs,self.query)
+        self.invalid = []
 
 
 
@@ -75,7 +74,8 @@ class ScTriangulate(object):
         if not os.path.exists(self.dir):
             os.mkdir(self.dir)
 
-    def _make_cluster_str(self):
+    def _check_adata(self):
+        # step1: make all cluster name str
         if self.reference in self.query:
             all_keys = self.query
         else:
@@ -84,27 +84,25 @@ class ScTriangulate(object):
         for key in all_keys:
             self.adata.obs[key] = self.adata.obs[key].astype('str')
             self.adata.obs[key] = self.adata.obs[key].astype('category')
-
-
-    def _replace_invalid_char(self):
-        # replace cluster name
+        # step2: replace invalid char in cluster and key name    
+        ## replace cluster name
+        invalid_chars = ['/','@','$']
         if self.reference in self.query:
             all_keys = self.query
         else:
             all_keys = copy.deepcopy(self.query)
             all_keys.append(self.reference)
         for key in all_keys:
-            self.adata.obs[key] = self.adata.obs[key].str.replace('/','_')
+            for ichar in invalid_chars:
+                self.adata.obs[key] = self.adata.obs[key].str.replace(ichar,'_')
         
-        # replace key name
+        ## replace key name
         for key in all_keys:
-            if '/' in key:
-                self.adata.obs.rename(columns={key:key.replace('/','_')},inplace=True)
-
-    def _remove_index_name(self):
+            for ichar in invalid_chars:
+                self.adata.obs.rename(columns={key:key.replace(ichar,'_')},inplace=True)   
+        # step3: remove index name for smooth h5ad writing
         self.adata.obs.index.name = None
         self.adata.var.index.name = None
-
 
     def _set_logging(self):
         # get all logger
@@ -165,6 +163,21 @@ class ScTriangulate(object):
     def confusion_to_df(self,mode,key):
         '''mode is confusion_reassign or confusion_sccaf'''
         self.uns['{}'.format(mode)][key].to_csv(os.path.join(self.dir,'sctri_confusion_to_df_{}_{}.txt'.format(mode,key)),sep='\t')
+
+    def get_metrics_and_shapley(self,barcode,save=False):
+        obs = self.adata.obs
+        query = self.query
+        total_metrics = self.total_metrics
+        row = obs.loc[barcode,:]
+        metrics_cols = [j + '@' + i for i in query for j in total_metrics]
+        shapley_cols = [i + '_' + 'shapley' for i in query]
+        row_metrics = row.loc[metrics_cols].values.reshape(len(query),len(total_metrics))
+        df = pd.DataFrame(data=row_metrics,index=query,columns=total_metrics)
+        row_shapley = row.loc[shapley_cols].values
+        df['shapley'] = row_shapley
+        if save:
+            df.to_csv(os.path.join(self.dir,'sctri_metrics_and_shapley_df_{}.txt'.format(barcode)),sep='\t')
+        return df
 
     def serialize(self,name='sctri_pickle.p'):
         with open(os.path.join(self.dir,name),'wb') as f:
@@ -357,10 +370,12 @@ class ScTriangulate(object):
             stamps = []
             for key,clusters in self.cluster.items():
                 for cluster in clusters:
-                    a = marker_genes[key].loc[cluster,:]['enrichr']['cellcycle']
-                    if a > 0:
+                    gsea_score = marker_genes[key].loc[cluster,:]['gsea']['cellcycle'][0]
+                    gsea_hits = marker_genes[key].loc[cluster,:]['gsea']['cellcycle'][1]
+                    if gsea_hits > 5 and gsea_score > 0.8:
                         stamps.append(key+'@'+cluster)
             logger_sctriangulate.info('stamps are: {}'.format(str(stamps)))
+            self.invalid.extend(stamps)
             obs = self.adata.obs
             obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
             cores = mp.cpu_count()
@@ -450,10 +465,16 @@ class ScTriangulate(object):
         self.adata.obs['prefixed'] = col
 
 
-    def pruning(self,parallel=True):
+    def pruning(self,method='reference',parallel=True):
         if parallel:
-            obs = reference_pruning(self.adata.obs,self.reference,self.size_dict)
-            self.adata.obs = obs
+            if method == 'reference':
+                obs = reference_pruning(self.adata.obs,self.reference,self.size_dict)
+                self.adata.obs = obs
+
+            elif method == 'reassign':
+                obs, invalid = reassign_pruning(self)
+                self.adata.obs = obs
+                self.invalid = invalid
         self._prefixing(col='pruned')
 
         # finally, generate a celltype sheet
@@ -487,12 +508,12 @@ class ScTriangulate(object):
             sc.pl.umap(self.adata,color=col,frameon=False,ax=ax[0])
             sc.pl.umap(self.adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
             if save:
-                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.pdf'.format(col)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.png'.format(col)),bbox_inches='tight')
                 plt.close()
         elif kind == 'continuous':
             sc.pl.umap(self.adata,color=col,frameon=False,cmap=self.cmap['viridis'],vmin=1e-5)
             if save:
-                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.pdf'.format(col)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.png'.format(col)),bbox_inches='tight')
                 plt.close()
 
     def plot_confusion(self,name,key,save,**kwargs):

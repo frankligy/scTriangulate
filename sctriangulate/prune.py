@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import rankdata
+from scipy.sparse import issparse
 import multiprocessing as mp
 import logging
 import scanpy as sc
@@ -14,30 +15,115 @@ import anndata as ad
 
 
 
-def reassign_pruning(adata):
-    # recompute the distances as a safe bet
-    sc.pp.neighbors(adata,n_neighbors=10,n_pcs=30)
-    distances = adata.obsp['distances'].toarray()
-    # label red flag cluster
-    vc = adata.obs['engraft'].astype('str').value_counts()
-    red_flag = vc[vc < 6].index.values   # a ndarray storing cluster names that will be removed
-    # traverse cells
-    pending_modify = adata.obs['engraft'].astype('str').values
-    for i in range(adata.obs.shape[0]):
-        cluster = adata.obs['engraft'].astype('str').iloc[i]
-        if cluster in red_flag:  # need to reassign
-            neighbors_indices = np.nonzero(distances[i,:])[0]   # K nearest neighbors' indices
-            neighbors_clusters = adata.obs['engraft'].astype('str').iloc[neighbors_indices].values  # the cluster name of all the neighbors
-            # remove neighbors that actually are red flag as well
-            neighbors_clusters = neighbors_clusters[[False if nbr in red_flag else True for nbr in neighbors_clusters]]
-            u,counts = np.unique(neighbors_clusters,return_counts=True)
-            assignment = sorted(zip(u,counts),key=lambda x:x[1],reverse=True)[0][0]  # assign to the most frequence cluster among its neighbors
-            pending_modify[i] = assignment
-            #print(cluster,neighbors_clusters,assignment)
-        else:
-            continue
-    # add back
-    adata.obs['reassign'] = pending_modify
+def reassign_pruning(sctri):
+    adata = sctri.adata
+    obs = adata.obs
+    invalid = copy.deepcopy(sctri.invalid)
+    size_dict = sctri.size_dict
+    marker_genes = sctri.uns['marker_genes']
+    query = sctri.query
+    reference = sctri.reference
+
+    # add too small clusters to invaild list as well
+    obs['ori'] = np.arange(obs.shape[0])     
+    abs_thresh = 10 if obs.shape[0] < 50000 else 30
+    vc = obs['raw'].value_counts()
+    for key_cluster in vc.index:
+        size = size_dict[key_cluster.split('@')[0]][key_cluster.split('@')[1]]
+        if vc[key_cluster] < abs_thresh:
+            invalid.append(key_cluster)
+        elif vc[key_cluster] < 0.05 * size:
+            invalid.append(key_cluster)
+    
+    invalid = list(set(invalid))
+
+    # seperate valid and invalid, only operate on invalid
+    valid_obs = obs.loc[~obs['raw'].isin(invalid),:]
+    invalid_obs = obs.loc[obs['raw'].isin(invalid),:]
+  
+    # for invalid ones, find nearest centroid in valid one
+    ## get pool
+    if issparse(adata.X):
+        adata.X = adata.X.toarray()
+    num = 30
+    pool = []
+    for key in query:
+        marker = marker_genes[key]
+        for i in range(marker.shape[0]):
+            used_marker_genes = marker.iloc[i]['purify']
+            pick = used_marker_genes[:num]  # if the list doesn't have more than 30 markers, it is oK, python will automatically choose all
+            pool.extend(pick)
+    pool = list(set(pool))
+    adata_now = adata[:,pool].copy()
+
+
+    ## mean-centered and divide the std of the data
+    tmp = adata_now.X
+    from sklearn.preprocessing import scale
+    tmp_scaled = scale(tmp,axis=0)
+    adata_now.X = tmp_scaled
+
+    ## reducing dimension 
+    from sklearn.decomposition import PCA
+    n_components = 30
+    reducer = PCA(n_components=n_components)
+    scoring = reducer.fit_transform(X=adata_now.X) 
+    adata_reduced = ad.AnnData(X=scoring,obs=adata_now.obs,var=pd.DataFrame(index=['PC{}'.format(str(i+1)) for i in range(n_components)]))
+
+    ## have train and test
+    adata_train = adata_reduced[valid_obs.index.tolist(),:]
+    adata_test = adata_reduced[invalid_obs.index.tolist(),:]
+
+    ## get X,y for training
+    from sklearn.preprocessing import LabelEncoder
+    le = LabelEncoder()
+    adata_train.obs['raw'] = adata_train.obs['raw'].astype('category')
+    X = np.empty([len(adata_train.obs['raw'].cat.categories),scoring.shape[1]])
+    y = []
+    for i,cluster in enumerate(adata_train.obs['raw'].cat.categories):
+        bool_index = adata_train.obs['raw']==cluster
+        centroid = np.mean(adata_train.X[bool_index,:],axis=0)
+        X[i,:] = centroid
+        y.append(cluster)
+    y = le.fit_transform(y)
+
+    ## training
+    from sklearn.neighbors import KNeighborsClassifier
+    n_neighbors = 10
+    if X.shape[0] < n_neighbors:
+        n_neighbors = X.shape[0]
+    model = KNeighborsClassifier(n_neighbors=n_neighbors,weights='distance')
+    model.fit(X,y)
+
+    ## predict invalid ones
+    X_test = adata_test.X
+    pred = model.predict(X_test)  # (n_samples,)
+    result = le.inverse_transform(pred)
+
+    # start to reassemble
+    adata_test.obs['pruned'] = result
+    adata_train.obs['pruned'] = adata_train.obs['raw']
+    modified_obs = pd.concat([adata_train.obs,adata_test.obs])
+    modified_obs.sort_values(by='ori',inplace=True)
+
+
+    # for plotting purpose, any cluster within a reference = 1 will be reassigned to most abundant cluster
+    bucket = []
+    for ref,subset in modified_obs.groupby(by=reference):
+        vc2 = subset['pruned'].value_counts()
+        most_abundant_cluster = vc2.loc[vc2==vc2.max()].index[0]  # if multiple, just pick the first one
+        exclude_clusters = vc2.loc[vc2==1].index
+        for i in range(subset.shape[0]):
+            if subset.iloc[i]['pruned'] in exclude_clusters:
+                subset.loc[:,'pruned'].iloc[i] = most_abundant_cluster   # caution that Settingwithcopy issue
+        bucket.append(subset)
+    modified_obs = pd.concat(bucket)
+    modified_obs.sort_values(by='ori',inplace=True)
+
+    return modified_obs,invalid
+    
+
+
 
 # the following function will be used for referene pruning
 def inclusiveness(obs,r,c):
@@ -63,6 +149,7 @@ def run_reference_pruning(chunk,reference,size_dict,obs):
     vc = subset['raw'].value_counts()
     overlap_clusters = vc.index
     mapping = {}
+    abs_thresh = 10 if obs.shape[0] < 50000 else 30
     for cluster in overlap_clusters:
         r = {reference:chunk[0]}
         c = {cluster.split('@')[0]:cluster.split('@')[1]}
@@ -74,7 +161,7 @@ def run_reference_pruning(chunk,reference,size_dict,obs):
             mapping[cluster] = cluster # nearly included, no matter how small its fraction is to the reference, keep it
         elif proportion_to_ref >= 0.05:
             mapping[cluster] = cluster  # not nearly included, but its fraction to reference is decent, keep it
-        elif proportion_to_ref < 0.05 and count_cluster > 30:  # not nearly included, its fraction to reference is low, but absolute count is decent, keep it
+        elif proportion_to_ref < 0.05 and count_cluster > abs_thresh:  # not nearly included, its fraction to reference is low, but absolute count is decent, keep it
             mapping[cluster] = cluster
         else:     # other wise, go back to reference cluster type
             mapping[cluster] = reference + '@' + chunk[0]

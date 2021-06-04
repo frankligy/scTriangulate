@@ -47,7 +47,7 @@ def html_right_show(key_cluster_data,total_metrics):
         with tag('div'):
             doc.attr(id='doublet')
             line('h2','doublet distribution')
-            doc.stag('img',src='./umap_sctriangulate_doublet_scores.pdf',width='60%',height='60%')
+            doc.stag('img',src='./umap_sctriangulate_doublet_scores.png',width='60%',height='60%')
 
         with tag('div'):
             doc.attr(id='enrichment')

@@ -81,6 +81,7 @@ def run_enrichr(gene_list,key,name,folder):
 def run_gsea(gene_list,key,name,folder):
     artifact = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)),'artifact_genes.txt'),sep='\t')
     artifact_dict = artifact.groupby(by='class')['genes'].apply(lambda x:x.tolist()).to_dict()
+    artifact_dict_keys = list(artifact_dict.keys())
     df = pd.DataFrame({0: gene_list, 1: 1/(np.arange(len(gene_list))+1)}) # col 1 is for descending rank of gene
     gsea_dict = {}
     try:
@@ -90,19 +91,20 @@ def run_gsea(gene_list,key,name,folder):
                             min_size=1,
                             max_size=10000,
                             seed=6,
-                            verbose=True)
+                            verbose=True)   # run this will cause artifact dict decreasing !! Caveats!!!
     except:  # no hit return, all metrics are zero
-        for metric in artifact_dict.keys():
-            gsea_dict[metric] = 0
+        for metric in artifact_dict_keys:
+            gsea_dict[metric] = (0,0)   # first is nes, second is #hit
     else:
         gsea_result = pre_res.res2d
-        for metric in artifact_dict.keys():
-            try:
+        metric_get = set(gsea_result.index.tolist())
+        for metric in artifact_dict_keys:
+            if metric in metric_get:
                 gsea_score = gsea_result.loc[gsea_result.index==metric,:]['nes'].to_list()[0]
-            except:   # means no that term enriched
-                gsea_dict[metric] = 0
-            else:
-                gsea_dict[metric] = gsea_score
+                gsea_hits = gsea_result.loc[gsea_result.index==metric,:]['matched_size'].to_list()[0]
+                gsea_dict[metric] = (gsea_score, gsea_hits)
+            else:  # not enriched
+                gsea_dict[metric] = (0,0)
     return gsea_dict
 
 
@@ -214,7 +216,13 @@ def reassign_score(adata,key,marker):
         pick = marker_genes[:num]  # if the list doesn't have more than 30 markers, it is oK, python will automatically choose all
         pool.extend(pick)
     pool = list(set(pool))
-    adata_now = adata[:,pool]
+    adata_now = adata[:,pool].copy()
+
+    # mean-centered and divide the std of the data
+    tmp = adata_now.X
+    from sklearn.preprocessing import scale
+    tmp_scaled = scale(tmp,axis=0)
+    adata_now.X = tmp_scaled
     
     # reducing dimension 
     from sklearn.decomposition import PCA
@@ -339,9 +347,15 @@ def SCCAF_score(adata, key, species, criterion):
     # define X and Y and remove artifact genes in the first place
     artifact = read_artifact_genes(species,criterion)
     artifact_genes = set(artifact.index.to_list())
-    X = adata[:,~adata.var_names.isin(artifact_genes)].X
+    X = adata[:,~adata.var_names.isin(artifact_genes)].X.copy()  # from ArrayView to ndarray
     Y = adata.obs[key].values
 
+    # mean-centered and divide the std of the data
+    tmp = X
+    from sklearn.preprocessing import scale
+    tmp_scaled = scale(tmp,axis=0)
+    X = tmp_scaled
+       
     # label encoding Y to numerical values
     le = LabelEncoder()
     Y = le.fit_transform(Y)
