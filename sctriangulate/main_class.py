@@ -521,7 +521,7 @@ class ScTriangulate(object):
         df = df.apply(func=lambda x:x/x.sum(),axis=1)
         sns.heatmap(df,cmap='bwr',**kwargs)
         if save:
-            plt.savefig(os.path.join(self.dir,'confusion_{}_{}.pdf'.format(name,key)),bbox_inches='tight')
+            plt.savefig(os.path.join(self.dir,'confusion_{}_{}.png'.format(name,key)),bbox_inches='tight')
             plt.close()
     
     def plot_cluster_feature(self,key,cluster,feature,enrichment_type='enrichr',save=False):

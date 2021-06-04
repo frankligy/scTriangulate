@@ -16,7 +16,7 @@ import anndata as ad
 
 
 def reassign_pruning(sctri):
-    adata = sctri.adata
+
     obs = adata.obs
     invalid = copy.deepcopy(sctri.invalid)
     size_dict = sctri.size_dict
@@ -43,8 +43,6 @@ def reassign_pruning(sctri):
   
     # for invalid ones, find nearest centroid in valid one
     ## get pool
-    if issparse(adata.X):
-        adata.X = adata.X.toarray()
     num = 30
     pool = []
     for key in query:
@@ -55,6 +53,9 @@ def reassign_pruning(sctri):
             pool.extend(pick)
     pool = list(set(pool))
     adata_now = adata[:,pool].copy()
+
+    if issparse(adata_now.X):
+        adata_now.X = adata_now.X.toarray()
 
 
     ## mean-centered and divide the std of the data
