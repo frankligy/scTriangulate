@@ -175,6 +175,8 @@ class ScTriangulate(object):
         df = pd.DataFrame(data=row_metrics,index=query,columns=total_metrics)
         row_shapley = row.loc[shapley_cols].values
         df['shapley'] = row_shapley
+        row_cluster = row.loc[query].values
+        df['cluster'] = row_cluster
         if save:
             df.to_csv(os.path.join(self.dir,'sctri_metrics_and_shapley_df_{}.txt'.format(barcode)),sep='\t')
         return df
