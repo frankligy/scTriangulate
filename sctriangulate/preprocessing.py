@@ -12,7 +12,7 @@ import logging
 import scanpy as sc
 import anndata as ad
 from scipy.io import mmread,mmwrite
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix,issparse
 
 
 def large_txt_to_mtx(int_file,out_folder,gene_is_index=True):  # whether the txt if gene * cell
@@ -95,7 +95,8 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
                 sc.tl.umap(adata)
             # put raw back to X, and make sure it is sparse matrix
             adata = adata.raw.to_adata()
-            adata.X = csr_matrix(adata.X)
+            if not issparse(adata.X):
+                adata.X = csr_matrix(adata.X)
             if save:
                 resolutions = '_'.join([str(item) for item in resolutions])
                 adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
@@ -117,7 +118,8 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
                 sc.tl.umap(adata)
             # put raw back to X, and make sure it is sparse matrix
             adata = adata.raw.to_adata()
-            adata.X = csr_matrix(adata.X)
+            if not issparse(adata.X):
+                adata.X = csr_matrix(adata.X)
             if save:
                 resolutions = '_'.join([str(item) for item in resolutions])
                 adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
@@ -137,7 +139,24 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
             if umap:
                 sc.tl.umap(adata)
             adata = adata.raw.to_adata()
-            adata.X = csr_matrix(adata.X)
+            if not issparse(adata.X):
+                adata.X = csr_matrix(adata.X)
+            if save:
+                resolutions = '_'.join([str(item) for item in resolutions])
+                adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
+
+    elif modality == 'adt':
+        if not is_log:
+            pass
+        else:
+            sc.tl.pca(adata)
+            sc.pp.neighbors(adata)
+            for resolution in resolutions:
+                sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
+            if umap:
+                sc.tl.umap(adata)
+            if not issparse(adata.X):
+                adata.X = csr_matrix(adata.X)
             if save:
                 resolutions = '_'.join([str(item) for item in resolutions])
                 adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
@@ -150,6 +169,15 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
 
 
 def concat_rna_and_other(adata_rna,adata_other,umap,name):
+    adata_rna = adata_rna.copy()
+    adata_other = adata_other.copy()
+    # remove layers, [!obsm], varm, obsp, varp, raw
+    for adata in [adata_rna,adata_other]:
+        del adata.layers
+        del adata.varm
+        del adata.obsp
+        del adata.varp
+        del adata.raw
     adata_other = adata_other[adata_rna.obs_names,:]  # make sure the obs order is the same
     adata_combine = ad.concat([adata_rna,adata_other],axis=1,join='outer',merge='first',label='modality',keys=['rna','{}'.format(name)])
     if umap == 'rna':
@@ -163,12 +191,13 @@ def concat_rna_and_other(adata_rna,adata_other,umap,name):
 
 
 
-def umap_dual_view_save(adata,col):
-    fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
-    sc.pl.umap(adata,color=col,frameon=False,ax=ax[0])
-    sc.pl.umap(adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
-    plt.savefig('./umap_dual_view_{}.pdf'.format(col),bbox_inches='tight')
-    plt.close()
+def umap_dual_view_save(adata,cols):
+    for col in cols:
+        fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
+        sc.pl.umap(adata,color=col,frameon=False,ax=ax[0])
+        sc.pl.umap(adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
+        plt.savefig('./umap_dual_view_{}.pdf'.format(col),bbox_inches='tight')
+        plt.close()
 
 
 def just_log_norm(adata):
@@ -227,42 +256,23 @@ class GeneConvert(object):
 
 
 
-def rna_10x_recipe(h5file,write,output=None,azimuth=None):
-    # reading
-    adata = sc.read_10x_h5(h5file)
-    adata.var_names_make_unique()
-    # normal analysis
-    adata.var['mt'] = adata.var_names.str.startswith('MT-')
-    sc.pp.calculate_qc_metrics(adata,qc_vars=['mt'],percent_top=None,inplace=True,log1p=False)
-    sc.pp.normalize_total(adata,target_sum=1e4)
-    sc.pp.log1p(adata)
-    sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=3000)
-    adata.raw = adata
-    adata = adata[:,adata.var['highly_variable']]
-    sc.pp.regress_out(adata,['total_counts','pct_counts_mt'])
-    sc.pp.scale(adata,max_value=10)
-    sc.tl.pca(adata)
-    sc.pp.neighbors(adata,n_pcs=40,n_neighbors=15)
-    sc.tl.leiden(adata,resolution=1,key_added='leiden1')
-    sc.tl.leiden(adata,resolution=2,key_added='leiden2')
-    sc.tl.leiden(adata,resolution=3,key_added='leiden3')
-    sc.tl.umap(adata)
-    # put azimuth result to adata, using azimuth default options, l2 annotation
-    if azimuth is not None:
-        azimuth = pd.read_csv(azimuth,sep='\t',index_col=0)
-        azimuth_map = azimuth['predicted.celltype.l2'].to_dict()
-        azimuth_prediction = azimuth['predicted.celltype.l2.score'].to_dict()
-        azimuth_mapping = azimuth['mapping.score'].to_dict()
-        adata.obs['azimuth'] = adata.obs_names.map(azimuth_map).values
-        adata.obs['prediction_score'] = adata.obs_names.map(azimuth_prediction).values
-        adata.obs['mapping_score'] = adata.obs_names.map(azimuth_mapping).values
-    adata = adata.raw.to_adata()
-    if write:
-        adata.write(output)
-    return adata
+
+def make_sure_mat_dense(mat):
+    if not issparse(mat):
+        pass
+    else:
+        mat = mat.toarray()
+    return mat
+
+def make_sure_mat_sparse(mat):  # will be csr if the input mat is a dense array
+    if not issparse(mat):
+        mat = csr_matrix(mat)
+    else:
+        pass
+    return mat
 
 class Normalization(object):
-    '''matrix should be cell x ADT, expecting a ndarray'''
+    '''matrix should be cell x feature, expecting a ndarray'''
 
     @staticmethod
     def CLR_normalization(mat):
@@ -272,7 +282,7 @@ class Normalization(object):
         return post
 
     @staticmethod
-    def total_normalization(mat,target=1e6):
+    def total_normalization(mat,target=1e4):
         total = np.sum(mat,axis=1).reshape(-1,1)
         sf = total/target
         post = np.log(mat/sf + 1)
