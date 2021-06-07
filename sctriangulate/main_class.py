@@ -639,6 +639,98 @@ class ScTriangulate(object):
                 
         elif style == 'cellxgene':
             adata_s.write(os.path.join(self.dir,'{}_heterogeneity_{}.h5ad'.format(cluster,style)))
+
+
+        elif style == 'sankey':
+            try:
+                import plotly.graph_objects as go
+                import kaleido
+            except:
+                logger_sctriangulate.warning('no plotly or kaleido library, fall back to matplotlib sankey plot')
+                # processing the obs
+                df = pd.DataFrame()
+                df['ref'] = ['ref'+':'+item.split('|')[0] for item in adata_s.obs['prefixed']]   # ref:gs@ERP4
+                df['query'] = [item.split('|')[1].split('@')[0] for item in adata_s.obs['prefixed']]  # leiden1
+                df['cluster'] = [item.split('|')[1] for item in adata_s.obs['prefixed']]  # leiden1@5
+                from matplotlib.sankey import Sankey
+                fig,ax = plt.subplots()
+                sankey = Sankey(ax=ax,head_angle=120,shoulder=0)
+                # gs to query
+                info1 = {target:-sub.shape[0]/df.shape[0] for target,sub in df.groupby(by='query')}
+                flows1 = [1]
+                flows1.extend(list(info1.values()))
+                labels1 = [df['ref'].values[0]]
+                labels1.extend(list(info1.keys()))
+                orientations1 = [0,0]
+                orientations1.extend(np.random.choice([-1,1],size=len(info1)-1).tolist())
+                print(info1,flows1,labels1,orientations1)
+                sankey.add(flows=flows1,labels=labels1,trunklength=4,orientations=orientations1)
+                # each query to cluster
+                for target,sub in df.groupby(by='query'):
+                    prior_index_connect = labels1.index(target)
+                    info2 = {cluster3:-subsub.shape[0]/sub.shape[0] for cluster3,subsub in sub.groupby(by='cluster')}
+                    flows2 = [-flows1[prior_index_connect]]
+                    flows2.extend(list(info2.values()))
+                    labels2 = [target]
+                    labels2.extend(list(info2.keys()))
+                    orientations2 = [0,0]
+                    orientations2.extend(np.random.choice([-1,1],size=len(info2)-1).tolist())
+                    print(info2,flows2,labels2,orientations2)
+                    sankey.add(flows=flows2,labels=labels2,trunklength=4,orientations=orientations2,prior=0,connect=(prior_index_connect,0))
+                diagrams = sankey.finish()
+                # adjust the text labels
+                all_text = []
+                for plot in diagrams:
+                    all_text.append(plot.text)
+                    all_text.extend(plot.texts)
+                [item.set_fontsize(2) for item in all_text]
+                # from adjustText import adjust_text
+                # adjust_text(all_text,arrowprops=dict(arrowstyle='->',color='orange'))
+                if save:
+                    plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}.png'.format(cluster,genes,style)),bbox_inches='tight')
+                    plt.close()
+
+            else:
+                df = pd.DataFrame()
+                df['ref'] = ['ref'+':'+item.split('|')[0] for item in adata_s.obs['prefixed']]   # ref:gs@ERP4
+                df['query'] = [item.split('|')[1].split('@')[0] for item in adata_s.obs['prefixed']]  # leiden1
+                df['cluster'] = [item.split('|')[1] for item in adata_s.obs['prefixed']]  # leiden1@5
+
+                unique_ref = df['ref'].unique().tolist() # not lexicographically sorted, only one
+                unique_query = df['query'].unique().tolist()  # not lexicographically sorted
+                unique_cluster = df['cluster'].unique().tolist() # not lexicographically sorted
+
+                # get node label and node color
+                node_label = unique_ref + unique_query + unique_cluster
+                from matplotlib import cm,colors
+                node_color = [colors.to_hex(item) for item in cm.get_cmap('tab20').colors[:len(node_label)]]
+
+                # get link information [(source,target,value),(),()]    
+                link = []
+                for target, sub in df.groupby(by='query'):
+                    link_ref2query = (sub['ref'].values[0],target,sub.shape[0])
+                    link.append(link_ref2query)
+                    for cluster3, subsub in sub.groupby(by='cluster'):
+                        link_query2cluster = (target,cluster3,subsub.shape[0])
+                        link.append(link_query2cluster)
+                link_info = list(zip(*link))
+                link_source = [node_label.index(item) for item in link_info[0]]
+                link_target = [node_label.index(item) for item in link_info[1]]
+                link_value = link_info[2]
+                link_color = [node_color[i] for i in link_source]
+
+                print(node_label,node_color,link_source,link_target,link_value,link_color)
+
+                # start to draw using plotly and save using kaleido
+                node_plotly = dict(pad = 15, thickness = 20,line = dict(color = "black", width = 0.5),label = node_label,color = node_color)
+                link_plotly = dict(source=link_source,target=link_target,value=link_value,color=link_color)
+                fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
+                fig.update_layout(title_text="{}_heterogeneity_{}".format(cluster,style), font_size=10)
+                fig.write_image(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,style)))
+
+
+
+
             
 
     def _atomic_viewer_figure(self,key):

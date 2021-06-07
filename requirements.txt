@@ -4,3 +4,7 @@ scrublet
 yattag
 anytree
 mygene
+plotly
+kaleido
+adjustText
+
