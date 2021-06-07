@@ -729,6 +729,62 @@ class ScTriangulate(object):
                 fig.write_image(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,style)))
 
 
+    def plot_circular_barplot(self,col,save=False):
+        # col can be 'raw' or 'pruned'
+        obs = copy.deepcopy(self.adata.obs)
+        reference = self.reference
+        obs['value'] = np.full(shape=obs.shape[0], fill_value=1)
+        obs = obs.loc[:, [reference, col, 'value']]
+        obs4plot = obs.groupby(by=[reference, col])['value'].sum().reset_index()
+        from matplotlib import cm
+        #colors = [cm.jet(round(i)) for i in np.linspace(0, 255, len(obs4plot[reference].unique()))]
+        colors = cm.get_cmap('tab20').colors[:len(obs4plot[reference].unique())]
+        cmap = pd.Series(index=obs4plot[reference].unique(), data=colors).to_dict()
+        obs4plot['color'] = obs4plot[reference].map(cmap).values
+
+        # plot layout
+        upper_limit = 100
+        lower_limit = 30
+        outer_label_padding = 4
+        inner_label_padding = 2
+
+        # rescale the heights
+        maximum = obs4plot['value'].max()
+        minimum = obs4plot['value'].min()
+        heights = (upper_limit - lower_limit)/(maximum - minimum)*(obs4plot['value'].values-minimum) + lower_limit
+        obs4plot['value'] = heights
+
+
+        # plotting
+        fig = plt.figure(figsize=(20, 20))
+        ax = fig.add_subplot(111, polar=True)
+        ax.axis('off')
+        width = 2 * np.pi / obs4plot.shape[0]
+        angles = [width * (i + 1) for i in np.arange(obs4plot.shape[0])]
+        bars = ax.bar(x=angles, height=obs4plot['value'].values, width=width, bottom=lower_limit, linewidth=2,
+                    edgecolor='white', color=obs4plot['color'].values)
+
+
+        # labels
+        ax.text(x=0,y=0,s=reference,ha='center',va='center')
+        for angle, height, label, ref in zip(angles, obs4plot['value'], obs4plot[col], obs4plot[reference]):
+            rotation = np.rad2deg(angle)
+            alignment = ''
+            if angle >= np.pi/2 and angle < 3*np.pi/2:
+                alignment = 'right'
+                rotation = rotation + 180
+            else:
+                alignment = 'left'
+            ax.text(x=angle, y=lower_limit + height + outer_label_padding, s=label,ha=alignment,va='center',
+                    rotation=rotation, rotation_mode='anchor')  # outer labels
+            ax.text(x=angle, y=lower_limit - inner_label_padding, s=ref, va='center')  # inner labels
+
+        if save:
+            plt.savefig(os.path.join(self.dir,'sctri_circular_barplot_{}.png'.format(col)),bbox_inches='tight')
+            plt.close()
+
+        
+
 
 
             
