@@ -15,8 +15,9 @@ import anndata as ad
 
 
 
-def reassign_pruning(sctri):
+def reassign_pruning(sctri,abs_thresh=10,remove1=True): #if you want to build viewer,set it to True
 
+    adata = sctri.adata
     obs = adata.obs
     invalid = copy.deepcopy(sctri.invalid)
     size_dict = sctri.size_dict
@@ -26,14 +27,13 @@ def reassign_pruning(sctri):
 
     # add too small clusters to invaild list as well
     obs['ori'] = np.arange(obs.shape[0])     
-    abs_thresh = 10 if obs.shape[0] < 50000 else 30
     vc = obs['raw'].value_counts()
     for key_cluster in vc.index:
         size = size_dict[key_cluster.split('@')[0]][key_cluster.split('@')[1]]
         if vc[key_cluster] < abs_thresh:
             invalid.append(key_cluster)
-        elif vc[key_cluster] < 0.05 * size:
-            invalid.append(key_cluster)
+        # elif vc[key_cluster] < 0.05 * size:
+        #     invalid.append(key_cluster)
     
     invalid = list(set(invalid))
 
@@ -109,17 +109,18 @@ def reassign_pruning(sctri):
 
 
     # for plotting purpose, any cluster within a reference = 1 will be reassigned to most abundant cluster
-    bucket = []
-    for ref,subset in modified_obs.groupby(by=reference):
-        vc2 = subset['pruned'].value_counts()
-        most_abundant_cluster = vc2.loc[vc2==vc2.max()].index[0]  # if multiple, just pick the first one
-        exclude_clusters = vc2.loc[vc2==1].index
-        for i in range(subset.shape[0]):
-            if subset.iloc[i]['pruned'] in exclude_clusters:
-                subset.loc[:,'pruned'].iloc[i] = most_abundant_cluster   # caution that Settingwithcopy issue
-        bucket.append(subset)
-    modified_obs = pd.concat(bucket)
-    modified_obs.sort_values(by='ori',inplace=True)
+    if remove1:
+        bucket = []
+        for ref,subset in modified_obs.groupby(by=reference):
+            vc2 = subset['pruned'].value_counts()
+            most_abundant_cluster = vc2.loc[vc2==vc2.max()].index[0]  # if multiple, just pick the first one
+            exclude_clusters = vc2.loc[vc2==1].index
+            for i in range(subset.shape[0]):
+                if subset.iloc[i]['pruned'] in exclude_clusters:
+                    subset.loc[:,'pruned'].iloc[i] = most_abundant_cluster   # caution that Settingwithcopy issue
+            bucket.append(subset)
+        modified_obs = pd.concat(bucket)
+        modified_obs.sort_values(by='ori',inplace=True)
 
     return modified_obs,invalid
     
