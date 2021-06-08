@@ -15,6 +15,16 @@ from scipy.io import mmread,mmwrite
 from scipy.sparse import csr_matrix,issparse
 
 
+def small_txt_to_adata(int_file,gene_is_index=True):
+    df = pd.read_csv(int_file,sep='\t',index_col=0)
+    if gene_is_index:
+        adata = ad.AnnData(X=csr_matrix(df.values.T),var=pd.DataFrame(index=df.index),obs=pd.DataFrame(index=df.columns))
+    else:
+        adata = ad.AnnData(X=csr_matrix(df.values),var=pd.DataFrame(index=df.columns),obs=pd.DataFrame(index=df.index))
+    adata.var_names_make_unique()
+    return adata
+
+
 def large_txt_to_mtx(int_file,out_folder,gene_is_index=True):  # whether the txt if gene * cell
     '''since expression matrix is too large, I need to do iteration'''
     reader = pd.read_csv(int_file,sep='\t',index_col=0,chunksize=1000)
@@ -71,6 +81,29 @@ def adding_azimuth(adata,result,name='predicted.celltype.l2'):
     adata.obs['prediction_score'] = adata.obs_names.map(azimuth_prediction).values
     adata.obs['mapping_score'] = adata.obs_names.map(azimuth_mapping).values
 
+def add_annotations(adata,inputs,cols=None,index_col=0):
+    # means a single file such that one column is barcodes, annotations are within other columns
+    annotations = pd.read_csv(inputs,sep='\t',index_col=index_col).loc[:,cols]
+    mappings = []
+    for col in cols:
+        mapping = annotations[col].to_dict()
+        mappings.append(mapping)
+    for i,col in enumerate(cols):
+        adata.obs[col] = adata.obs_names.map(mappings[i]).fillna('Unknown').values
+
+
+def add_umap(adata,inputs,mode,cols=None,index_col=0):
+    # make sure cols are [umap_x, umap_y]
+    if mode == 'pandas':
+        df = pd.read_csv(inputs,sep='\t',index_col=index_col)
+        umap_x = df[cols[0]].to_dict()
+        umap_y = df[cols[1]].to_dict()
+        adata.obs['umap_x'] = adata.obs_names.map(umap_x).values
+        adata.obs['umap_y'] = adata.obs_names.map(umap_y).values
+        adata.obsm['X_umap'] = adata.obs.loc[:,['umap_x','umap_y']].values
+        adata.obs.drop(columns=['umap_x','umap_y'],inplace=True)
+    elif mode == 'numpy':  # assume the order is correct
+        adata.obsm['X_umap'] = inputs
 
 
 def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,save=True):
@@ -205,31 +238,6 @@ def just_log_norm(adata):
     sc.pp.log1p(adata)
     return adata
 
-
-def add_annotations(adata,inputs,cols=None):
-    # means a single file such that first column is barcodes, annotations are in the following columns
-    annotations = pd.read_csv(inputs,sep='\t',index_col=0).loc[:,cols]
-    mappings = []
-    for col in cols:
-        mapping = annotations[col].to_dict()
-        mappings.append(mapping)
-    for i,col in enumerate(cols):
-        adata.obs[col] = adata.obs_names.map(mappings[i]).values
-    return adata
-
-def add_umap(adata,inputs,mode,cols=None,index_col=0):
-    # make sure cols are [umap_x, umap_y]
-    if mode == 'pandas':
-        df = pd.read_csv(inputs,sep='\t',index_col=0)
-        umap_x = df[cols[0]].to_dict()
-        umap_y = df[cols[1]].to_dict()
-        adata.obs['umap_x'] = adata.obs_names.map(umap_x).values
-        adata.obs['umap_y'] = adata.obs_names.map(umap_y).values
-        adata.obsm['X_umap'] = adata.obs.loc[:,['umap_x','umap_y']].values
-        adata.obs.drop(columns=['umap_x','umap_y'],inplace=True)
-    elif mode == 'numpy':  # assume the order is correct
-        adata.obsm['X_umap'] = inputs
-    return adata
 
 
 

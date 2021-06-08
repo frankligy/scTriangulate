@@ -744,6 +744,8 @@ class ScTriangulate(object):
         heights = (upper_limit - lower_limit)/(maximum - minimum)*(obs4plot['value'].values-minimum) + lower_limit
         obs4plot['value'] = heights
 
+        print(obs4plot)
+
 
         # plotting
         fig = plt.figure(figsize=(10, 10))
@@ -753,6 +755,7 @@ class ScTriangulate(object):
         angles = [width * (i + 1) for i in np.arange(obs4plot.shape[0])]
         bars = ax.bar(x=angles, height=obs4plot['value'].values, width=width, bottom=lower_limit, linewidth=2,
                     edgecolor='white', color=obs4plot['color'].values)
+
 
 
         # labels
@@ -774,6 +777,7 @@ class ScTriangulate(object):
         ax.legend(handles=[mpatches.Patch(color=i) for i in cmap.values()], labels=list(cmap.keys()),
                     loc='upper left', bbox_to_anchor=(0, 0), ncol=4, frameon=False, columnspacing=10,
                     title='Reference:{}'.format(reference),borderaxespad=4)
+
         
 
         if save:
