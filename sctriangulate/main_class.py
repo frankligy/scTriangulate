@@ -24,6 +24,9 @@ from .shapley import *
 from .metrics import *
 from .viewer import *
 from .prune import *
+from .colors import *
+
+
 
 
 
@@ -48,8 +51,7 @@ class ScTriangulate(object):
         self.add_metrics = {}                           # user can add their own, key is metric name, value is callable
         self.total_metrics = self.metrics               # all metrics considered
 
-        self._set_logging()         
-        self._special_cmap()  
+        self._set_logging()          
         self._check_adata()
         self.size_dict, _ = get_size(self.adata.obs,self.query)
         self.invalid = []
@@ -61,14 +63,14 @@ class ScTriangulate(object):
     def __str__(self):  # when you print(instance) in REPL
         return 'ScTriangualate Object:\nWorking directory is {0}\nQuery Annotation: {1}\nReference Annotation: {2}\n'\
             'Species: {3}\nCriterion: {4}\nTotal Metrics: {5}\nScore slot contains: {6}\nCluster slot contains: {7}\nUns slot contains: {8}\n'\
-            'cmap contains: {9}'.format(self.dir, self.query,self.reference,self.species,self.criterion,self.total_metrics, list(self.score.keys()),
-            list(self.cluster.keys()),list(self.uns.keys()),list(self.cmap.keys()))
+            'Invalid cluster: {9}'.format(self.dir, self.query,self.reference,self.species,self.criterion,self.total_metrics, list(self.score.keys()),
+            list(self.cluster.keys()),list(self.uns.keys()),self.invalid)
 
     def __repr__(self):  # when you type the instance in REPL
         return 'ScTriangualate Object:\nWorking directory is {0}\nQuery Annotation: {1}\nReference Annotation: {2}\n'\
             'Species: {3}\nCriterion: {4}\nTotal Metrics: {5}\nScore slot contains: {6}\nCluster slot contains: {7}\nUns slot contains: {8}\n'\
-            'cmap contains: {9}'.format(self.dir, self.query,self.reference,self.species,self.criterion,self.total_metrics, list(self.score.keys()),
-            list(self.cluster.keys()),list(self.uns.keys()),list(self.cmap.keys()))
+            'Invalid cluster: {9}'.format(self.dir, self.query,self.reference,self.species,self.criterion,self.total_metrics, list(self.score.keys()),
+            list(self.cluster.keys()),list(self.uns.keys()),self.invalid)
 
     def _create_dir_if_not_exist(self):
         if not os.path.exists(self.dir):
@@ -140,15 +142,6 @@ class ScTriangulate(object):
         
     def _to_sparse(self):
         self.adata.X = csr_matrix(self.adata.X)
-
-    def _special_cmap(self):
-        self.cmap = {}
-        cmap = copy.copy(cm.get_cmap('viridis'))
-        cmap.set_under('lightgrey')
-        self.cmap['viridis'] = cmap
-        cmap = copy.copy(cm.get_cmap('YlOrRd'))
-        cmap.set_under('lightgrey')
-        self.cmap['YlOrRd'] = cmap
 
     def obs_to_df(self,name='sctri_inspect_obs.txt'):
         self.adata.obs.to_csv(os.path.join(self.dir,name),sep='\t')
@@ -513,7 +506,7 @@ class ScTriangulate(object):
                 plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.png'.format(col)),bbox_inches='tight')
                 plt.close()
         elif kind == 'continuous':
-            sc.pl.umap(self.adata,color=col,frameon=False,cmap=self.cmap['viridis'],vmin=1e-5)
+            sc.pl.umap(self.adata,color=col,frameon=False,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
             if save:
                 plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.png'.format(col)),bbox_inches='tight')
                 plt.close()
@@ -521,7 +514,7 @@ class ScTriangulate(object):
     def plot_confusion(self,name,key,save,**kwargs):
         df = self.uns[name][key]
         df = df.apply(func=lambda x:x/x.sum(),axis=1)
-        sns.heatmap(df,cmap='bwr',**kwargs)
+        sns.heatmap(df,cmap=scphere_cmap,**kwargs)  
         if save:
             plt.savefig(os.path.join(self.dir,'confusion_{}_{}.png'.format(name,key)),bbox_inches='tight')
             plt.close()
@@ -542,7 +535,7 @@ class ScTriangulate(object):
             a = self.uns['marker_genes'][key].loc[cluster,:]['purify']
             top = a[:10]
             # change cmap a bit
-            sc.pl.umap(self.adata,color=top,ncols=5,cmap=self.cmap['viridis'],vmin=1e-5)
+            sc.pl.umap(self.adata,color=top,ncols=5,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
             if save:
                 plt.savefig(os.path.join(self.dir,'{0}_{1}_marker_umap.png'.format(key,cluster)),bbox_inches='tight')
                 plt.close()
@@ -550,14 +543,14 @@ class ScTriangulate(object):
             a = self.uns['exclusive_genes'][key][cluster]  # self.uns['exclusive_genes'][key] is a pd.Series
             a = list(a.keys())
             top = a[:10]
-            sc.pl.umap(self.adata,color=top,ncols=5,cmap=self.cmap['viridis'],vmin=1e-5)
+            sc.pl.umap(self.adata,color=top,ncols=5,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
             if save:
                 plt.savefig(os.path.join(self.dir,'{0}_{1}_exclusive_umap.png'.format(key,cluster)),bbox_inches='tight')
                 plt.close()
         elif feature == 'location':
             col = [1 if item == str(cluster) else 0 for item in self.adata.obs[key]]
             self.adata.obs['tmp_plot'] = col
-            sc.pl.umap(self.adata,color='tmp_plot',cmap=self.cmap['YlOrRd'],vmin=1e-5)
+            sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5)
             if save:
                 plt.savefig(os.path.join(self.dir,'{0}_{1}_location_umap.png'.format(key,cluster)),bbox_inches='tight')
                 plt.close()
@@ -578,7 +571,7 @@ class ScTriangulate(object):
             # ax2
             col = [1 if item == str(cluster) else 0 for item in self.adata.obs[self.reference]]
             self.adata.obs['tmp_plot'] = col
-            sc.pl.umap(self.adata,color='tmp_plot',cmap=self.cmap['YlOrRd'],vmin=1e-5,ax=axes[1])
+            sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5,ax=axes[1])
             if save:
                 plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,'umap')),bbox_inches='tight')
                 plt.close()
@@ -609,7 +602,7 @@ class ScTriangulate(object):
             # ax2
             col = [1 if item == str(cluster) else 0 for item in self.adata.obs[self.reference]]
             self.adata.obs['tmp_plot'] = col
-            sc.pl.umap(self.adata,color='tmp_plot',cmap=self.cmap['YlOrRd'],vmin=1e-5,ax=axes[1])
+            sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5,ax=axes[1])
             if save:
                 plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,style)),bbox_inches='tight')
                 plt.close()
@@ -703,7 +696,7 @@ class ScTriangulate(object):
                 # get node label and node color
                 node_label = unique_ref + unique_query + unique_cluster
                 from matplotlib import cm,colors
-                node_color = [colors.to_hex(item) for item in cm.get_cmap('tab20').colors[:len(node_label)]]
+                node_color = pick_n_colors(len(node_label))
 
                 # get link information [(source,target,value),(),()]    
                 link = []
@@ -735,11 +728,8 @@ class ScTriangulate(object):
         reference = self.reference
         obs['value'] = np.full(shape=obs.shape[0], fill_value=1)
         obs = obs.loc[:, [reference, col, 'value']]
-        obs4plot = obs.groupby(by=[reference, col])['value'].sum().reset_index()
-        from matplotlib import cm
-        #colors = [cm.jet(round(i)) for i in np.linspace(0, 255, len(obs4plot[reference].unique()))]
-        colors = cm.get_cmap('tab20').colors[:len(obs4plot[reference].unique())]
-        cmap = pd.Series(index=obs4plot[reference].unique(), data=colors).to_dict()
+        obs4plot = obs.groupby(by=[reference, col])['value'].sum().reset_index()    
+        cmap = colors_for_set(obs4plot[reference].unique().tolist())
         obs4plot['color'] = obs4plot[reference].map(cmap).values
 
         # plot layout
@@ -756,7 +746,7 @@ class ScTriangulate(object):
 
 
         # plotting
-        fig = plt.figure(figsize=(20, 20))
+        fig = plt.figure(figsize=(10, 10))
         ax = fig.add_subplot(111, polar=True)
         ax.axis('off')
         width = 2 * np.pi / obs4plot.shape[0]
@@ -777,7 +767,14 @@ class ScTriangulate(object):
                 alignment = 'left'
             ax.text(x=angle, y=lower_limit + height + outer_label_padding, s=label,ha=alignment,va='center',
                     rotation=rotation, rotation_mode='anchor')  # outer labels
-            ax.text(x=angle, y=lower_limit - inner_label_padding, s=ref, va='center')  # inner labels
+            #ax.text(x=angle, y=lower_limit - inner_label_padding, s=ref, va='center')  # inner labels
+
+        # legend
+        import matplotlib.patches as mpatches
+        ax.legend(handles=[mpatches.Patch(color=i) for i in cmap.values()], labels=list(cmap.keys()),
+                    loc='upper left', bbox_to_anchor=(0, 0), ncol=4, frameon=False, columnspacing=10,
+                    title='Reference:{}'.format(reference),borderaxespad=4)
+        
 
         if save:
             plt.savefig(os.path.join(self.dir,'sctri_circular_barplot_{}.png'.format(col)),bbox_inches='tight')
