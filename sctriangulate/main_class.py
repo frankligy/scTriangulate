@@ -27,7 +27,12 @@ from .prune import *
 from .colors import *
 
 
+import matplotlib as mpl
 
+# for publication ready figure
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'Arial'
 
 
 
@@ -325,8 +330,6 @@ class ScTriangulate(object):
                 self._add_to_uns('confusion_sccaf',key,collect)
                 self._add_to_uns('marker_genes',key,collect)
                 self._add_to_uns('exclusive_genes',key,collect)
-            if self.reference not in self.query:
-                self.cluster[self.reference] = self.adata.obs[self.reference].unique() 
             subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr/'))])
             self._to_sparse()
 
@@ -343,10 +346,24 @@ class ScTriangulate(object):
                 self._add_to_uns('confusion_sccaf',key,collect)
                 self._add_to_uns('marker_genes',key,collect)
                 self._add_to_uns('exclusive_genes',key,collect)
-            if self.reference not in self.query:
-                self.cluster[self.reference] = self.adata.obs[self.reference].unique() 
             subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr/'))])
             self._to_sparse()
+
+    def run_single_key_assessment(self,key):
+        collect = each_key_run(self,key)
+        self.process_collect_object(collect)
+
+    def process_collect_object(self,collect):
+        key = collect['key']
+        for metric in self.total_metrics:
+            self.adata.obs['{}@{}'.format(metric,key)] = collect['col_{}'.format(metric)]
+            self.score[key] = collect['score_info']
+            self.cluster[key] = collect['cluster_info']  
+            self._add_to_uns('confusion_reassign',key,collect)
+            self._add_to_uns('confusion_sccaf',key,collect)
+            self._add_to_uns('marker_genes',key,collect)
+            self._add_to_uns('exclusive_genes',key,collect)
+
             
 
     def penalize_artifact(self,mode,stamps=None):
@@ -512,30 +529,30 @@ class ScTriangulate(object):
         self.adata.obs['user_choice'] = self.adata.obs['prefixed'].map(mapping).values
         
 
-    def plot_umap(self,col,kind='category',save=True):
+    def plot_umap(self,col,kind='category',save=True,format='pdf'):
         # col means which column in obs to draw umap on
         if kind == 'category':
             fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
             sc.pl.umap(self.adata,color=col,frameon=False,ax=ax[0])
             sc.pl.umap(self.adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
             if save:
-                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.png'.format(col)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.{}'.format(col,format)),bbox_inches='tight')
                 plt.close()
         elif kind == 'continuous':
             sc.pl.umap(self.adata,color=col,frameon=False,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
             if save:
-                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.png'.format(col)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.{}'.format(col,format)),bbox_inches='tight')
                 plt.close()
 
-    def plot_confusion(self,name,key,save,**kwargs):
+    def plot_confusion(self,name,key,save,format='pdf',**kwargs):
         df = self.uns[name][key]
         df = df.apply(func=lambda x:x/x.sum(),axis=1)
         sns.heatmap(df,cmap=scphere_cmap,**kwargs)  
         if save:
-            plt.savefig(os.path.join(self.dir,'confusion_{}_{}.png'.format(name,key)),bbox_inches='tight')
+            plt.savefig(os.path.join(self.dir,'confusion_{}_{}.{}'.format(name,key,format)),bbox_inches='tight')
             plt.close()
     
-    def plot_cluster_feature(self,key,cluster,feature,enrichment_type='enrichr',save=False):
+    def plot_cluster_feature(self,key,cluster,feature,enrichment_type='enrichr',save=False,format='pdf'):
         if feature == 'enrichment':
             fig,ax = plt.subplots()
             a = self.uns['marker_genes'][key].loc[cluster,:][enrichment_type]
@@ -545,37 +562,37 @@ class ScTriangulate(object):
             ax.set_title('Marker gene enrichment')
             ax.set_xlabel('-Log10(adjusted_pval)')
             if save:
-                plt.savefig(os.path.join(self.dir,'{0}_{1}_enrichment.png'.format(key,cluster)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{0}_{1}_enrichment.{}'.format(key,cluster,format)),bbox_inches='tight')
                 plt.close()
-        elif feature == 'marker_gene':
+        elif feature == 'marker_genes':
             a = self.uns['marker_genes'][key].loc[cluster,:]['purify']
             top = a[:10]
             # change cmap a bit
             sc.pl.umap(self.adata,color=top,ncols=5,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
             if save:
-                plt.savefig(os.path.join(self.dir,'{0}_{1}_marker_umap.png'.format(key,cluster)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{0}_{1}_marker_umap.{}'.format(key,cluster,format)),bbox_inches='tight')
                 plt.close()
-        elif feature == 'exclusive_gene':
+        elif feature == 'exclusive_genes':
             a = self.uns['exclusive_genes'][key][cluster]  # self.uns['exclusive_genes'][key] is a pd.Series
             a = list(a.keys())
             top = a[:10]
             sc.pl.umap(self.adata,color=top,ncols=5,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
             if save:
-                plt.savefig(os.path.join(self.dir,'{0}_{1}_exclusive_umap.png'.format(key,cluster)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{0}_{1}_exclusive_umap.{}'.format(key,cluster,format)),bbox_inches='tight')
                 plt.close()
         elif feature == 'location':
             col = [1 if item == str(cluster) else 0 for item in self.adata.obs[key]]
             self.adata.obs['tmp_plot'] = col
             sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5)
             if save:
-                plt.savefig(os.path.join(self.dir,'{0}_{1}_location_umap.png'.format(key,cluster)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{0}_{1}_location_umap.{}'.format(key,cluster.format)),bbox_inches='tight')
                 plt.close()
 
-    def plot_heterogeneity(self,cluster,style,save=False,genes=None): 
-        adata_s = self.adata[self.adata.obs[self.reference]==cluster,:]  
+    def plot_heterogeneity(self,key,cluster,col,style,save=False,format='pdf',genes=None): 
+        adata_s = self.adata[self.adata.obs[key]==cluster,:]  
         # remove prior color stamps
         tmp = adata_s.uns
-        tmp.pop('prefixed_colors',None)
+        tmp.pop('{}_colors'.format(col),None)
         adata_s.uns = tmp
 
         if style == 'build':  # draw umap and heatmap
@@ -583,71 +600,74 @@ class ScTriangulate(object):
             # umap
             fig,axes = plt.subplots(nrows=2,ncols=1,gridspec_kw={'hspace':0.5},figsize=(5,10))
             # ax1
-            sc.pl.umap(adata_s,color=['prefixed'],ax=axes[0])
+            sc.pl.umap(adata_s,color=[col],ax=axes[0])
             # ax2
-            col = [1 if item == str(cluster) else 0 for item in self.adata.obs[self.reference]]
-            self.adata.obs['tmp_plot'] = col
+            tmp_col = [1 if item == str(cluster) else 0 for item in self.adata.obs[key]]
+            self.adata.obs['tmp_plot'] = tmp_col
             sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5,ax=axes[1])
             if save:
-                plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,'umap')),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,'umap',format)),bbox_inches='tight')
                 plt.close()
+            self.adata.obs.drop(columns=['tmp_plot'])
 
             # heatmap
             tmp = adata_s.uns
             tmp.pop('rank_genes_groups',None)
             adata_s.uns = tmp
 
-            if len(adata_s.obs['prefixed'].unique()) == 1: # it is already unique
+            if len(adata_s.obs[col].unique()) == 1: # it is already unique
                 logger_sctriangulate.info('{0} entirely being assigned to one type, no need to do DE'.format(cluster))
                 return None
             else:
-                sc.tl.rank_genes_groups(adata_s,groupby='prefixed')
+                sc.tl.rank_genes_groups(adata_s,groupby=col)
                 adata_s = filter_DE_genes(adata_s,self.species,self.criterion)
-                number_of_groups = len(adata_s.obs['prefixed'].unique())
+                number_of_groups = len(adata_s.obs[col].unique())
                 genes_to_pick = 50 // number_of_groups
                 sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_gruops_filtered')
                 if save:
-                    plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,'heatmap')),bbox_inches='tight')
+                    plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,'heatmap',format)),bbox_inches='tight')
                     plt.close()
 
 
         elif style == 'umap':
             fig,axes = plt.subplots(nrows=2,ncols=1,gridspec_kw={'hspace':0.5},figsize=(5,10))
             # ax1
-            sc.pl.umap(adata_s,color=['prefixed'],ax=axes[0])
+            sc.pl.umap(adata_s,color=[col],ax=axes[0])
             # ax2
-            col = [1 if item == str(cluster) else 0 for item in self.adata.obs[self.reference]]
-            self.adata.obs['tmp_plot'] = col
+            tmp_col = [1 if item == str(cluster) else 0 for item in self.adata.obs[key]]
+            self.adata.obs['tmp_plot'] = tmp_col
             sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5,ax=axes[1])
             if save:
-                plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,style)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),bbox_inches='tight')
                 plt.close()
+            self.adata.obs.drop(columns=['tmp_plot'])
 
         elif style == 'heatmap':
             tmp = adata_s.uns
             tmp.pop('rank_genes_groups',None)
             adata_s.uns = tmp
-            if len(adata_s.obs['prefixed'].unique()) == 1: # it is already unique
+            if len(adata_s.obs[col].unique()) == 1: # it is already unique
                 logger_sctriangulate.info('{0} entirely being assigned to one type, no need to do DE'.format(cluster))
                 return None
             else:
-                sc.tl.rank_genes_groups(adata_s,groupby='prefixed')
+                sc.tl.rank_genes_groups(adata_s,groupby=col)
                 adata_s = filter_DE_genes(adata_s,self.species,self.criterion)
-                number_of_groups = len(adata_s.obs['prefixed'].unique())
+                number_of_groups = len(adata_s.obs[col].unique())
                 genes_to_pick = 50 // number_of_groups
                 sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_gruops_filtered')
                 if save:
-                    plt.savefig(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,style)),bbox_inches='tight')
+                    plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),bbox_inches='tight')
                     plt.close()
 
         elif style == 'violin':
-            sc.pl.violin(adata_s,genes,groupby='prefixed')
+            sc.pl.violin(adata_s,genes,groupby=col)
             if save:
-                plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}.png'.format(cluster,genes,style)),bbox_inches='tight')
+                genes = '_'.join(genes)
+                plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}_{}.{}'.format(key,cluster,col,genes,style,format)),bbox_inches='tight')
                 plt.close()
                 
         elif style == 'cellxgene':
-            adata_s.write(os.path.join(self.dir,'{}_heterogeneity_{}.h5ad'.format(cluster,style)))
+            adata_s.write(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.h5ad'.format(key,cluster,col,style)))
 
 
         elif style == 'sankey':
@@ -658,9 +678,9 @@ class ScTriangulate(object):
                 logger_sctriangulate.warning('no plotly or kaleido library, fall back to matplotlib sankey plot')
                 # processing the obs
                 df = pd.DataFrame()
-                df['ref'] = ['ref'+':'+item.split('|')[0] for item in adata_s.obs['prefixed']]   # ref:gs@ERP4
-                df['query'] = [item.split('|')[1].split('@')[0] for item in adata_s.obs['prefixed']]  # leiden1
-                df['cluster'] = [item.split('|')[1] for item in adata_s.obs['prefixed']]  # leiden1@5
+                df['ref'] = ['ref'+':'+key+'@'+cluster for _ in range(adata_s.obs.shape[0])]   # ref:gs@ERP4
+                df['query'] = [item.split('@')[0] for item in adata_s.obs[col]]  # leiden1
+                df['cluster'] = [item for item in adata_s.obs[col]]  # leiden1@5
                 from matplotlib.sankey import Sankey
                 fig,ax = plt.subplots()
                 sankey = Sankey(ax=ax,head_angle=120,shoulder=0)
@@ -696,14 +716,14 @@ class ScTriangulate(object):
                 # from adjustText import adjust_text
                 # adjust_text(all_text,arrowprops=dict(arrowstyle='->',color='orange'))
                 if save:
-                    plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}.png'.format(cluster,genes,style)),bbox_inches='tight')
+                    plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),bbox_inches='tight')
                     plt.close()
 
             else:
                 df = pd.DataFrame()
-                df['ref'] = ['ref'+':'+item.split('|')[0] for item in adata_s.obs['prefixed']]   # ref:gs@ERP4
-                df['query'] = [item.split('|')[1].split('@')[0] for item in adata_s.obs['prefixed']]  # leiden1
-                df['cluster'] = [item.split('|')[1] for item in adata_s.obs['prefixed']]  # leiden1@5
+                df['ref'] = ['ref'+':'+key+'@'+cluster for _ in range(adata_s.obs.shape[0])]   # ref:gs@ERP4
+                df['query'] = [item.split('@')[0] for item in adata_s.obs[col]]  # leiden1
+                df['cluster'] = [item for item in adata_s.obs[col]]  # leiden1@5
 
                 unique_ref = df['ref'].unique().tolist() # not lexicographically sorted, only one
                 unique_query = df['query'].unique().tolist()  # not lexicographically sorted
@@ -734,19 +754,21 @@ class ScTriangulate(object):
                 node_plotly = dict(pad = 15, thickness = 20,line = dict(color = "black", width = 0.5),label = node_label,color = node_color)
                 link_plotly = dict(source=link_source,target=link_target,value=link_value,color=link_color)
                 fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
-                fig.update_layout(title_text="{}_heterogeneity_{}".format(cluster,style), font_size=10)
-                fig.write_image(os.path.join(self.dir,'{}_heterogeneity_{}.png'.format(cluster,style)))
+                fig.update_layout(title_text='{}_{}_heterogeneity_{}_{}'.format(key,cluster,col,style), font_size=10)
+                fig.write_image(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)))
 
 
-    def plot_circular_barplot(self,col,save=False):
+    def plot_circular_barplot(self,key,col,save=False,format='pdf'):
         # col can be 'raw' or 'pruned'
         obs = copy.deepcopy(self.adata.obs)
-        reference = self.reference
+        reference = key
         obs['value'] = np.full(shape=obs.shape[0], fill_value=1)
         obs = obs.loc[:, [reference, col, 'value']]
         obs4plot = obs.groupby(by=[reference, col])['value'].sum().reset_index()    
         cmap = colors_for_set(obs4plot[reference].unique().tolist())
         obs4plot['color'] = obs4plot[reference].map(cmap).values
+
+        print(obs4plot)
 
         # plot layout
         upper_limit = 100
@@ -797,29 +819,26 @@ class ScTriangulate(object):
         
 
         if save:
-            plt.savefig(os.path.join(self.dir,'sctri_circular_barplot_{}.png'.format(col)),bbox_inches='tight')
+            plt.savefig(os.path.join(self.dir,'sctri_circular_barplot_{}.{}'.format(col,format)),bbox_inches='tight')
             plt.close()
 
         
-
-
 
             
 
     def _atomic_viewer_figure(self,key):
         for cluster in self.cluster[key]:
-            self.plot_cluster_feature(key,cluster,'enrichment','enrichr',True)
-            self.plot_cluster_feature(key,cluster,'marker_gene','enrichr',True)
-            self.plot_cluster_feature(key,cluster,'exclusive_gene','enrichr',True)
-            self.plot_cluster_feature(key,cluster,'location','enrichr',True)
+            self.plot_cluster_feature(key,cluster,'enrichment','enrichr',True,'png')
+            self.plot_cluster_feature(key,cluster,'marker_gene','enrichr',True,'png')
+            self.plot_cluster_feature(key,cluster,'exclusive_gene','enrichr',True,'png')
+            self.plot_cluster_feature(key,cluster,'location','enrichr',True,'png')
 
-    def _atomic_viewer_hetero(self):
-        for cluster in self.cluster[self.reference]:
-            self.plot_heterogeneity(cluster,'build',True)
+    def _atomic_viewer_hetero(self,key):
+        for cluster in self.cluster[key]:
+            self.plot_heterogeneity(key,cluster,'pruned','build',True,'png')
 
 
-
-    def building_viewer_fig(self,parallel=True):
+    def viewer_cluster_feature_figure(self,parallel=True):
         logger_sctriangulate.info('Building viewer requires generating all the necessary figures, may take several minutes')
         # create a folder to store all the figures
         if not os.path.exists(os.path.join(self.dir,'figure4viewer')):
@@ -830,43 +849,58 @@ class ScTriangulate(object):
         # generate all the figures
         '''doublet plot'''
         self.plot_umap('doublet_scores','continuous',True)
-
         if platform.system() == 'Linux':    # can parallelize
-            '''heterogeneity'''
-            logger_sctriangulate.info('spawn 1 sub process for inspection figure genearation')
-            p = mp.Process(target=self._atomic_viewer_hetero)
-            p.start()
-            '''other figures'''
             cores = mp.cpu_count()
             pool = mp.Pool(processes=cores)
-            logger_sctriangulate.info('spawn {} sub processes for viewer figure generation'.format(cores))
+            logger_sctriangulate.info('spawn {} sub processes for viewer cluster feature figure generation'.format(cores))
             raw_results = [pool.apply_async(func=self._atomic_viewer_figure,args=(key,)) for key in self.cluster.keys()]
             p.join()
             pool.close()
             pool.join()
         else:                               # Windows and Darwin can not parallelize if plotting
-            '''heterogeneity'''
-            self._atomic_viewer_hetero()
-            '''other figures'''
             for key in self.cluster.keys():
                 self._atomic_viewer_figure(key)
+        self.dir = ori_dir 
+
+    def viewer_cluster_feature_html(self):
+        with open(os.path.join(self.dir,'figure4viewer','viewer.html'),'w') as f:
+            f.write(to_html(self.cluster,self.score,self.total_metrics))
+        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.js'),os.path.join(self.dir,'figure4viewer')))
+        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.css'),os.path.join(self.dir,'figure4viewer')))
+
+    def viewer_heterogeneity_figure(self,keys):
+        logger_sctriangulate.info('Building viewer requires generating all the necessary figures, may take several minutes')
+        # create a folder to store all the figures
+        if not os.path.exists(os.path.join(self.dir,'figure4viewer')):
+            os.mkdir(os.path.join(self.dir,'figure4viewer'))
+        ori_dir = self.dir
+        new_dir = os.path.join(self.dir,'figure4viewer')
+        self.dir = new_dir
+        
+        if platform.system() == 'Linux':
+            cores1 = len(keys)
+            cores2 = mp.cpu_count()
+            cores = min(cores1,cores2)
+            pool = mp.Pool(processes=cores)
+            logger_sctriangulate.info('spawn {} sub processes for viewer heterogeneity figure generation'.format(cores))
+            raw_results = [pool.apply_async(func=self._atomic_viewer_hetero,args=(key,)) for key in keys]
+            pool.close()
+            pool.join()
+        else:
+            for key in keys:
+                self._atomic_viewer_hetero(key)
 
         self.dir = ori_dir
 
-    def building_viewer_html(self):
-        with open(os.path.join(self.dir,'figure4viewer','viewer.html'),'w') as f:
-            f.write(to_html(self.cluster,self.score,self.total_metrics))
-        with open(os.path.join(self.dir,'figure4viewer','inspection.html'),'w') as f:
-            f.write(inspection_html(self.cluster,self.reference))
-        
-        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.js'),os.path.join(self.dir,'figure4viewer')))
-        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.css'),os.path.join(self.dir,'figure4viewer')))
+    def viewer_heterogeneity_html(self,keys):
+         with open(os.path.join(self.dir,'figure4viewer','inspection.html'),'w') as f:
+            f.write(inspection_html(self.cluster,keys))       
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/inspection.js'),os.path.join(self.dir,'figure4viewer')))
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/inspection.css'),os.path.join(self.dir,'figure4viewer')))
 
 
-        
-        
+
+
 
 
 # ancillary functions for main class

@@ -23,8 +23,9 @@ from .metrics import *
 def rank_pruning(sctri,discard=None):
 
     # construct data for shapley
-    collect = each_key_run(sctri,key='raw')
-    score_info = collect['score_info']
+    sctri.run_single_key_assessment(key='raw')
+    subprocess.run(['rm','-r','{}'.format(os.path.join(sctri.dir,'scTriangulate_local_mode_enrichr/'))])
+    score_info = copy.deepcopy(sctri.score['raw'])
     score_info.pop('cluster_to_doublet',None)  # don't consider doublet score
     print(score_info)
     data_shape0 = len(score_info['cluster_to_reassign'])
@@ -256,63 +257,5 @@ def reference_pruning(obs,reference,size_dict):
 
     
 
-def each_key_run(sctri,key):
-    folder = sctri.dir
-    adata = sctri.adata
-    species = sctri.species
-    criterion = sctri.criterion
-    metrics = sctri.metrics
-    add_metrics = sctri.add_metrics
-    total_metrics = sctri.total_metrics
-
-    try:
-        assert issparse(adata.X) == False
-    except AssertionError:
-        adata.X = adata.X.toarray()  
-
-    # remove cluster that only have 1 cell, for DE analysis
-    adata_to_compute = check_filter_single_cluster(adata,key)  
-
-    # a dynamically named dict
-    cluster_to_metric = {}
-    '''marker gene'''
-    marker_genes = marker_gene(adata_to_compute,key,species,criterion,folder)
-    print('Process {}, for {}, finished marker genes finding'.format(os.getpid(),key))
-    '''reassign score'''
-    cluster_to_metric['cluster_to_reassign'], confusion_reassign = reassign_score(adata_to_compute,key,marker_genes)
-    print('Process {}, for {}, finished reassign score computing'.format(os.getpid(),key))
-    '''tfidf10 score'''
-    cluster_to_metric['cluster_to_tfidf10'], exclusive_genes = tf_idf10_for_cluster(adata_to_compute,key,species,criterion)
-    print('Process {}, for {}, finished tfidf score computing'.format(os.getpid(),key))
-    '''SCCAF score'''
-    cluster_to_metric['cluster_to_SCCAF'], confusion_sccaf = SCCAF_score(adata_to_compute,key, species, criterion)
-    print('Process {}, for {}, finished SCCAF score computing'.format(os.getpid(),key))
-    '''doublet score'''
-    cluster_to_metric['cluster_to_doublet'] = doublet_compute(adata_to_compute,key)
-    print('Process {}, for {}, finished doublet score assigning'.format(os.getpid(),key))
-    '''added other scores'''
-    for metric,func in add_metrics.items():
-        cluster_to_metric['cluster_to_{}'.format(metric)] = func(adata_to_compute,key,species,criterion)
-        print('Process {}, for {}, finished {} score computing'.format(os.getpid(),key,metric))
-
-
-    collect = {'key':key}  # collect will be retured to main program
-    '''collect all default metrics and added metrics'''
-    for metric in total_metrics:
-        collect['col_{}'.format(metric)] = adata.obs[key].astype('str').map(cluster_to_metric['cluster_to_{}'.format(metric)]).fillna(0).values
-    '''collect score info and cluster info'''
-    score_info = cluster_to_metric  # {cluster_to_reassign:{cluster1:0.45}}
-    cluster_info = list(cluster_to_metric['cluster_to_reassign'].keys())  #[cluster1,cluster2,cluster3]
-    collect['score_info'] = score_info
-    collect['cluster_info'] = cluster_info
-    '''collect uns including genes and confusion matrix'''
-    collect['marker_genes'] = marker_genes
-    collect['exclusive_genes'] = exclusive_genes
-    collect['confusion_reassign'] = confusion_reassign
-    collect['confusion_sccaf'] = confusion_sccaf
-
-    subprocess.run(['rm','-r','{}'.format(os.path.join(folder,'scTriangulate_local_mode_enrichr/'))])
-
-    return collect
 
 
