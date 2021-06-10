@@ -12,7 +12,65 @@ import multiprocessing as mp
 import logging
 import scanpy as sc
 import anndata as ad
+import subprocess
 
+from .shapley import approximate_shapley_value
+from .metrics import *
+
+
+
+
+def rank_pruning(sctri,discard=None):
+
+    # construct data for shapley
+    collect = each_key_run(sctri,key='raw')
+    score_info = collect['score_info']
+    score_info.pop('cluster_to_doublet',None)  # don't consider doublet score
+    print(score_info)
+    data_shape0 = len(score_info['cluster_to_reassign'])
+    data_shape1 = len(score_info)
+    data = np.empty(shape=[data_shape0,data_shape1])
+    df_index = list(score_info['cluster_to_reassign'].keys())
+    df_columns = list(score_info.keys())
+    for m,(metric,info) in enumerate(score_info.items()):
+        for c,(cluster,score) in enumerate(info.items()):
+            data[c,m] = score
+    print(data)
+
+    # compute shapley
+    appro_shapley = approximate_shapley_value(data)
+    df = pd.DataFrame(data=data,index=df_index,columns=df_columns)
+    df['appro_shapley'] = appro_shapley
+    df.sort_values(by='appro_shapley',ascending=False,inplace=True)
+    print(df)
+
+    # concat clusters that have only one cells back to the df for completeness
+    all_clusters = sctri.adata.obs['raw'].unique()
+    ones_clusters = list(set(all_clusters).difference(set(df.index)))
+    data_ones = np.zeros(shape=[len(ones_clusters),data_shape1+1])  # add one for appro_shapley column
+    df_ones = pd.DataFrame(data=data_ones,index=ones_clusters,columns=df.columns)
+    df_total = pd.concat([df,df_ones])
+    # min-max scaler the appro_shapley
+    max_shapley = df_total['appro_shapley'].max()
+    min_shapley = df_total['appro_shapley'].min()
+    scaled = [(item - min_shapley) / (max_shapley - min_shapley) for item in df_total['appro_shapley'].values]
+    df_total['scaled_shapley'] = scaled
+    # add cluster size
+    raw_size_dict = sctri.adata.obs['raw'].value_counts().to_dict()
+    df_total['cluster_size'] = df_total.index.map(raw_size_dict).values
+
+    if discard is None:
+        modified_obs = copy.deepcopy(sctri.adata.obs)
+        modified_obs['pruned'] = modified_obs['raw'].values
+        return modified_obs,df_total
+    else:
+        assert discard < df_total.shape[0]
+        invalid = df_total.index.values[-discard:].tolist()
+        sctri.add_to_invalid(invalid)
+        modified_obs, invalid_now = reassign_pruning(sctri,abs_thresh=0,remove1=False)
+        confidence_dict = pd.Series(index=df_total.index,data=df_total['scaled_shapley'].values)
+        modified_obs['confidence'] = modified_obs['pruned'].map(confidence_dict).values
+        return modified_obs,df_total
 
 
 def reassign_pruning(sctri,abs_thresh=10,remove1=True): #if you want to build viewer,set it to True
@@ -198,6 +256,63 @@ def reference_pruning(obs,reference,size_dict):
 
     
 
+def each_key_run(sctri,key):
+    folder = sctri.dir
+    adata = sctri.adata
+    species = sctri.species
+    criterion = sctri.criterion
+    metrics = sctri.metrics
+    add_metrics = sctri.add_metrics
+    total_metrics = sctri.total_metrics
 
+    try:
+        assert issparse(adata.X) == False
+    except AssertionError:
+        adata.X = adata.X.toarray()  
+
+    # remove cluster that only have 1 cell, for DE analysis
+    adata_to_compute = check_filter_single_cluster(adata,key)  
+
+    # a dynamically named dict
+    cluster_to_metric = {}
+    '''marker gene'''
+    marker_genes = marker_gene(adata_to_compute,key,species,criterion,folder)
+    print('Process {}, for {}, finished marker genes finding'.format(os.getpid(),key))
+    '''reassign score'''
+    cluster_to_metric['cluster_to_reassign'], confusion_reassign = reassign_score(adata_to_compute,key,marker_genes)
+    print('Process {}, for {}, finished reassign score computing'.format(os.getpid(),key))
+    '''tfidf10 score'''
+    cluster_to_metric['cluster_to_tfidf10'], exclusive_genes = tf_idf10_for_cluster(adata_to_compute,key,species,criterion)
+    print('Process {}, for {}, finished tfidf score computing'.format(os.getpid(),key))
+    '''SCCAF score'''
+    cluster_to_metric['cluster_to_SCCAF'], confusion_sccaf = SCCAF_score(adata_to_compute,key, species, criterion)
+    print('Process {}, for {}, finished SCCAF score computing'.format(os.getpid(),key))
+    '''doublet score'''
+    cluster_to_metric['cluster_to_doublet'] = doublet_compute(adata_to_compute,key)
+    print('Process {}, for {}, finished doublet score assigning'.format(os.getpid(),key))
+    '''added other scores'''
+    for metric,func in add_metrics.items():
+        cluster_to_metric['cluster_to_{}'.format(metric)] = func(adata_to_compute,key,species,criterion)
+        print('Process {}, for {}, finished {} score computing'.format(os.getpid(),key,metric))
+
+
+    collect = {'key':key}  # collect will be retured to main program
+    '''collect all default metrics and added metrics'''
+    for metric in total_metrics:
+        collect['col_{}'.format(metric)] = adata.obs[key].astype('str').map(cluster_to_metric['cluster_to_{}'.format(metric)]).fillna(0).values
+    '''collect score info and cluster info'''
+    score_info = cluster_to_metric  # {cluster_to_reassign:{cluster1:0.45}}
+    cluster_info = list(cluster_to_metric['cluster_to_reassign'].keys())  #[cluster1,cluster2,cluster3]
+    collect['score_info'] = score_info
+    collect['cluster_info'] = cluster_info
+    '''collect uns including genes and confusion matrix'''
+    collect['marker_genes'] = marker_genes
+    collect['exclusive_genes'] = exclusive_genes
+    collect['confusion_reassign'] = confusion_reassign
+    collect['confusion_sccaf'] = confusion_sccaf
+
+    subprocess.run(['rm','-r','{}'.format(os.path.join(folder,'scTriangulate_local_mode_enrichr/'))])
+
+    return collect
 
 

@@ -13,6 +13,12 @@ import scanpy as sc
 import anndata as ad
 from scipy.io import mmread,mmwrite
 from scipy.sparse import csr_matrix,issparse
+import matplotlib as mpl
+
+# for publication ready figure
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'Arial'
 
 
 def small_txt_to_adata(int_file,gene_is_index=True):

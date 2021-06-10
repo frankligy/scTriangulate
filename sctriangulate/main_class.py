@@ -174,6 +174,16 @@ class ScTriangulate(object):
             df.to_csv(os.path.join(self.dir,'sctri_metrics_and_shapley_df_{}.txt'.format(barcode)),sep='\t')
         return df
 
+    def add_to_invalid(self,invalid):
+        try:
+            self.invalid.extend(invalid)
+        except AttributeError:
+            self.invalid = []
+            self.invalid.extend(invalid)
+        finally:
+            tmp = list(set(self.invalid))
+            self.invalid = tmp
+
     def serialize(self,name='sctri_pickle.p'):
         with open(os.path.join(self.dir,name),'wb') as f:
             pickle.dump(self,f)
@@ -460,16 +470,22 @@ class ScTriangulate(object):
         self.adata.obs['prefixed'] = col
 
 
-    def pruning(self,method='reference',parallel=True):
+    def pruning(self,method='reassign',discard=None,abs_thresh=10,remove1=True,parallel=True):
         if parallel:
             if method == 'reference':
                 obs = reference_pruning(self.adata.obs,self.reference,self.size_dict)
                 self.adata.obs = obs
 
             elif method == 'reassign':
-                obs, invalid = reassign_pruning(self)
+                obs, invalid = reassign_pruning(self,abs_thresh=abs_thresh,remove1=remove1)
                 self.adata.obs = obs
                 self.invalid = invalid
+
+            elif method == 'rank':
+                obs, df = rank_pruning(self,discard=discard)
+                self.adata.obs = obs
+                self.uns['raw_cluster_goodness'] = df
+
         self._prefixing(col='pruned')
 
         # finally, generate a celltype sheet
@@ -776,7 +792,7 @@ class ScTriangulate(object):
         import matplotlib.patches as mpatches
         ax.legend(handles=[mpatches.Patch(color=i) for i in cmap.values()], labels=list(cmap.keys()),
                     loc='upper left', bbox_to_anchor=(0, 0), ncol=4, frameon=False, columnspacing=10,
-                    title='Reference:{}'.format(reference),borderaxespad=4)
+                    title='Reference:{}'.format(reference),borderaxespad=10)
 
         
 
