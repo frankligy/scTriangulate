@@ -189,6 +189,10 @@ class ScTriangulate(object):
             tmp = list(set(self.invalid))
             self.invalid = tmp
 
+    def clear_invalid(self):
+        del self.invalid
+        self.invaild = []
+
     def serialize(self,name='sctri_pickle.p'):
         with open(os.path.join(self.dir,name),'wb') as f:
             pickle.dump(self,f)
@@ -366,25 +370,30 @@ class ScTriangulate(object):
 
             
 
-    def penalize_artifact(self,mode,stamps=None):
+    def penalize_artifact(self,mode,stamps=None,parallel=True):
         '''void mode is to set stamp position to 0, stamp is like {leiden1:5}'''
         if mode == 'void':
             obs = self.adata.obs
-            obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
-            cores = mp.cpu_count()
-            sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
-            sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
-            pool = mp.Pool(processes=cores)
-            logger_sctriangulate.info('spawn {} sub processes for penalizing artifact with mode-{}'.format(cores,mode))
-            r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamps,self.total_metrics,)) for chunk in sub_obs]
-            pool.close()
-            pool.join()
-            results = []
-            for collect in r:
-                result = collect.get()  # [sub_obs,sub_obs...]
-                results.append(result)
-            obs = pd.concat(results)
-            self.adata.obs = obs
+            self.add_to_invalid(stamps)
+            if parallel:
+                obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
+                cores = mp.cpu_count()
+                sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
+                sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
+                pool = mp.Pool(processes=cores)
+                logger_sctriangulate.info('spawn {} sub processes for penalizing artifact with mode-{}'.format(cores,mode))
+                r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamps,self.total_metrics,)) for chunk in sub_obs]
+                pool.close()
+                pool.join()
+                results = []
+                for collect in r:
+                    result = collect.get()  # [sub_obs,sub_obs...]
+                    results.append(result)
+                obs = pd.concat(results)
+                self.adata.obs = obs
+            else:
+                result = penalize_artifact_void(obs,self.query,stamps,self.total_metrics)
+                self.adata.obs = result
 
         elif mode == 'cellcycle':
             # all the clusters that have cell-cycle enrichment > 0 will be collected into stamps
@@ -399,21 +408,25 @@ class ScTriangulate(object):
             logger_sctriangulate.info('stamps are: {}'.format(str(stamps)))
             self.invalid.extend(stamps)
             obs = self.adata.obs
-            obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
-            cores = mp.cpu_count()
-            sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
-            sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
-            pool = mp.Pool(processes=cores)
-            logger_sctriangulate.info('spawn {} sub processes for penalizing artifact with mode-{}'.format(cores,mode))
-            r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamps,self.total_metrics,)) for chunk in sub_obs]
-            pool.close()
-            pool.join()
-            results = []
-            for collect in r:
-                result = collect.get()  # [sub_obs,sub_obs...]
-                results.append(result)
-            obs = pd.concat(results)
-            self.adata.obs = obs
+            if parallel:
+                obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
+                cores = mp.cpu_count()
+                sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
+                sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
+                pool = mp.Pool(processes=cores)
+                logger_sctriangulate.info('spawn {} sub processes for penalizing artifact with mode-{}'.format(cores,mode))
+                r = [pool.apply_async(func=penalize_artifact_void,args=(chunk,self.query,stamps,self.total_metrics,)) for chunk in sub_obs]
+                pool.close()
+                pool.join()
+                results = []
+                for collect in r:
+                    result = collect.get()  # [sub_obs,sub_obs...]
+                    results.append(result)
+                obs = pd.concat(results)
+                self.adata.obs = obs
+            else:
+                result = penalize_artifact_void(obs,self.query,stamps,self.total_metrics)
+                self.adata.obs = result
             
 
 
@@ -477,6 +490,45 @@ class ScTriangulate(object):
             # prefixing
             self._prefixing(col='raw')
 
+        else:
+            # compute shaley value
+            score_colname = copy.deepcopy(self.total_metrics)
+            score_colname.remove('doublet')
+            data = np.empty([len(self.query),self.adata.obs.shape[0],len(score_colname)])  # store the metric data for each cell
+            '''
+            data:
+            depth is how many sets of annotations
+            height is how many cells
+            width is how many score metrics
+            '''
+            for i,key in enumerate(self.query):
+                practical_colname = [name + '@' + key for name in score_colname]
+                data[i,:,:] = self.adata.obs[practical_colname].values
+            final = []
+            intermediate = []
+
+            # computing
+            obs = self.adata.obs
+            collect = run_shapley(obs,self.query,self.reference,self.size_dict,data)
+            final.extend(collect[0])
+            intermediate.extend(collect[1])
+            self.adata.obs['final_annotation'] = final
+            decisions = list(zip(*intermediate))
+            for i,d in enumerate(decisions):
+                self.adata.obs['{}_shapley'.format(self.query[i])] = d
+
+
+            # get raw sctriangulate result
+            obs = self.adata.obs
+            obs = run_assign(obs)
+            self.adata.obs = obs
+
+            # prefixing
+            self._prefixing(col='raw')
+
+
+
+
     def _prefixing(self,col):
         col1 = self.adata.obs[col]
         col2 = self.adata.obs[self.reference]
@@ -487,14 +539,14 @@ class ScTriangulate(object):
         self.adata.obs['prefixed'] = col
 
 
-    def pruning(self,method='reassign',discard=None,abs_thresh=10,remove1=True,parallel=True):
+    def pruning(self,method='reassign',discard=None,abs_thresh=10,remove1=True,reference=None,parallel=True):
         if parallel:
             if method == 'reference':
                 obs = reference_pruning(self.adata.obs,self.reference,self.size_dict)
                 self.adata.obs = obs
 
             elif method == 'reassign':
-                obs, invalid = reassign_pruning(self,abs_thresh=abs_thresh,remove1=remove1)
+                obs, invalid = reassign_pruning(self,abs_thresh=abs_thresh,remove1=remove1,reference=reference)
                 self.adata.obs = obs
                 self.invalid = invalid
 
@@ -562,7 +614,7 @@ class ScTriangulate(object):
             ax.set_title('Marker gene enrichment')
             ax.set_xlabel('-Log10(adjusted_pval)')
             if save:
-                plt.savefig(os.path.join(self.dir,'{0}_{1}_enrichment.{}'.format(key,cluster,format)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{0}_{1}_enrichment.{2}'.format(key,cluster,format)),bbox_inches='tight')
                 plt.close()
         elif feature == 'marker_genes':
             a = self.uns['marker_genes'][key].loc[cluster,:]['purify']
@@ -570,7 +622,7 @@ class ScTriangulate(object):
             # change cmap a bit
             sc.pl.umap(self.adata,color=top,ncols=5,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
             if save:
-                plt.savefig(os.path.join(self.dir,'{0}_{1}_marker_umap.{}'.format(key,cluster,format)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{0}_{1}_marker_umap.{2}'.format(key,cluster,format)),bbox_inches='tight')
                 plt.close()
         elif feature == 'exclusive_genes':
             a = self.uns['exclusive_genes'][key][cluster]  # self.uns['exclusive_genes'][key] is a pd.Series
@@ -578,14 +630,14 @@ class ScTriangulate(object):
             top = a[:10]
             sc.pl.umap(self.adata,color=top,ncols=5,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
             if save:
-                plt.savefig(os.path.join(self.dir,'{0}_{1}_exclusive_umap.{}'.format(key,cluster,format)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{0}_{1}_exclusive_umap.{2}'.format(key,cluster,format)),bbox_inches='tight')
                 plt.close()
         elif feature == 'location':
             col = [1 if item == str(cluster) else 0 for item in self.adata.obs[key]]
             self.adata.obs['tmp_plot'] = col
             sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5)
             if save:
-                plt.savefig(os.path.join(self.dir,'{0}_{1}_location_umap.{}'.format(key,cluster.format)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{0}_{1}_location_umap.{2}'.format(key,cluster,format)),bbox_inches='tight')
                 plt.close()
 
     def plot_heterogeneity(self,key,cluster,col,style,save=False,format='pdf',genes=None): 
@@ -755,7 +807,9 @@ class ScTriangulate(object):
                 link_plotly = dict(source=link_source,target=link_target,value=link_value,color=link_color)
                 fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
                 fig.update_layout(title_text='{}_{}_heterogeneity_{}_{}'.format(key,cluster,col,style), font_size=10)
-                fig.write_image(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)))
+                fig.show()
+                if save:
+                    fig.write_image(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)))
 
 
     def plot_circular_barplot(self,key,col,save=False,format='pdf'):
@@ -764,11 +818,13 @@ class ScTriangulate(object):
         reference = key
         obs['value'] = np.full(shape=obs.shape[0], fill_value=1)
         obs = obs.loc[:, [reference, col, 'value']]
-        obs4plot = obs.groupby(by=[reference, col])['value'].sum().reset_index()    
+        obs4plot = obs.groupby(by=[reference, col])['value'].sum().reset_index()
+        print(obs.groupby(by=[reference, col])['value'])
+        print(obs.groupby(by=[reference, col])['value'].sum())    
+        print(obs.groupby(by=[reference, col])['value'].sum().reset_index())
         cmap = colors_for_set(obs4plot[reference].unique().tolist())
         obs4plot['color'] = obs4plot[reference].map(cmap).values
 
-        print(obs4plot)
 
         # plot layout
         upper_limit = 100
@@ -782,7 +838,6 @@ class ScTriangulate(object):
         heights = (upper_limit - lower_limit)/(maximum - minimum)*(obs4plot['value'].values-minimum) + lower_limit
         obs4plot['value'] = heights
 
-        print(obs4plot)
 
 
         # plotting
@@ -829,8 +884,8 @@ class ScTriangulate(object):
     def _atomic_viewer_figure(self,key):
         for cluster in self.cluster[key]:
             self.plot_cluster_feature(key,cluster,'enrichment','enrichr',True,'png')
-            self.plot_cluster_feature(key,cluster,'marker_gene','enrichr',True,'png')
-            self.plot_cluster_feature(key,cluster,'exclusive_gene','enrichr',True,'png')
+            self.plot_cluster_feature(key,cluster,'marker_genes','enrichr',True,'png')
+            self.plot_cluster_feature(key,cluster,'exclusive_genes','enrichr',True,'png')
             self.plot_cluster_feature(key,cluster,'location','enrichr',True,'png')
 
     def _atomic_viewer_hetero(self,key):
@@ -848,9 +903,11 @@ class ScTriangulate(object):
         self.dir = new_dir
         # generate all the figures
         '''doublet plot'''
-        self.plot_umap('doublet_scores','continuous',True)
+        self.plot_umap('doublet_scores','continuous',True,'png')
         if platform.system() == 'Linux':    # can parallelize
-            cores = mp.cpu_count()
+            cores1 = mp.cpu_count()
+            cores2 = len(self.cluster)
+            cores = min(cores1,cores2)
             pool = mp.Pool(processes=cores)
             logger_sctriangulate.info('spawn {} sub processes for viewer cluster feature figure generation'.format(cores))
             raw_results = [pool.apply_async(func=self._atomic_viewer_figure,args=(key,)) for key in self.cluster.keys()]
@@ -892,9 +949,10 @@ class ScTriangulate(object):
 
         self.dir = ori_dir
 
-    def viewer_heterogeneity_html(self,keys):
-         with open(os.path.join(self.dir,'figure4viewer','inspection.html'),'w') as f:
-            f.write(inspection_html(self.cluster,keys))       
+    def viewer_heterogeneity_html(self,key):
+        with open(os.path.join(self.dir,'figure4viewer','inspection_{}.html'.format(key)),'w') as f:
+            f.write(inspection_html(self.cluster,key)) 
+        # first copy      
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/inspection.js'),os.path.join(self.dir,'figure4viewer')))
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/inspection.css'),os.path.join(self.dir,'figure4viewer')))
 

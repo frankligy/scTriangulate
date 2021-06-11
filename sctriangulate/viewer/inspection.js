@@ -4,15 +4,19 @@ function display(key,cluster) {
     var h2_div = document.getElementById('identity');
     h2_div.innerText = cluster;
 
-    var path = `./UMAP_${cluster}.pdf`;
+    var path = `./${key}_${cluster}_heterogeneity_pruned_umap.png`;
     var umap_div = document.getElementById('umap');
     umap_div.src = path;
 
-    var path = `../scTriangulate_diagnose/${key}_${cluster}_identity_umap.png`;
-    var location_div = document.getElementById('location');
-    location_div.src = path;
-
-    var path = `./DE_heatmap_${cluster}.pdf`;
+    var path = `./${key}_${cluster}_heterogeneity_pruned_heatmap.png`;
     var heatmap_div = document.getElementById('heatmap');
     heatmap_div.src = path;
+}
+
+function change_color(object) {
+    object.style.color = 'blue';
+}
+
+function change_color_back(object) {
+    object.style.color = 'black';
 }

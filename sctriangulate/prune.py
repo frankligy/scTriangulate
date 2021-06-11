@@ -74,7 +74,7 @@ def rank_pruning(sctri,discard=None):
         return modified_obs,df_total
 
 
-def reassign_pruning(sctri,abs_thresh=10,remove1=True): #if you want to build viewer,set it to True
+def reassign_pruning(sctri,abs_thresh=10,remove1=True,reference=None): #if you want to build viewer,set it to True
 
     adata = sctri.adata
     obs = adata.obs
@@ -82,7 +82,10 @@ def reassign_pruning(sctri,abs_thresh=10,remove1=True): #if you want to build vi
     size_dict = sctri.size_dict
     marker_genes = sctri.uns['marker_genes']
     query = sctri.query
-    reference = sctri.reference
+    if reference is None:
+        reference = sctri.reference
+    else:
+        reference = reference
 
     # add too small clusters to invaild list as well
     obs['ori'] = np.arange(obs.shape[0])     

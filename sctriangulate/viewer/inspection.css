@@ -6,14 +6,16 @@
     height: 100px;
     line-height: 100px;
     text-align: center;
-    border: 1px solid red;
+    border: 1px solid rgba(0,0,0,0.1);
+    margin: 0px 0px 20px 0px;
 }
 
 /* left */
 #left_nav {
     float: left;
     width: 20%;
-    border: 1px solid red;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
 }
 
 /* right */
@@ -22,7 +24,6 @@
     float: right;
     width: 75%;
     height: 100%;
-    border: 1px solid red;
 }
 
 
@@ -30,7 +31,7 @@
     height: 50px;
     line-height: 50px;
     text-align: center;
-    border: 1px solid red;
+    border: 1px solid rgba(0,0,0,0.1);
     color: blue;
 }
 
@@ -38,35 +39,26 @@
     float: left;
     width: 40%;
     height: 50%;
-    border: 1px solid red;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
 }
 
 
 .umap_div {
-    border: 1px dashed green;
+    border: 1px solid rgba(0,0,0,0.1);
 }
 
 .umap_div h2 {
     text-align: center;
 }
 
-.location_div {
-    border: 1px dashed green;
-}
 
-.location_div h2 {
-    text-align: center;
-}
-
-.location_div #location {
-    width: 80%;
-
-}
 
 .heatmap_div {
     float: right;
     width: 50%;
-    border: 1px dashed green;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 5px;
 }
 
 .heatmap_div h2 {
@@ -84,7 +76,7 @@
 .viewer_div {
     margin-top: 20px;
     display: inline-block;
-    border: 1px solid purple;
+    border: 1px solid rgba(0,0,0,0.1);
     clear: both;
     width: 100%;
     height: 50px;

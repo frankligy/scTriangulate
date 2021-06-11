@@ -1,5 +1,3 @@
-#!/data/salomonis2/LabFiles/Frank-Li/citeseq/scanpy_new_env/bin/python3.6
-
 from yattag import Doc
 import json
 
@@ -21,10 +19,11 @@ def html_left_nav(key_cluster_dict):
             with tag('ul'):
                 doc.attr(id='{}'.format(key))
                 for cluster in value:
-                    line('li',cluster,onclick='display_score(this.parentElement.id,this.textContent);display_plot(this.parentElement.id,this.textContent)')
+                    line('li',cluster,onclick='display_score(this.parentElement.id,this.textContent);display_plot(this.parentElement.id,this.textContent)',
+                    onmouseover='change_color(this)',onmouseout='change_color_back(this)')
     return doc.getvalue()
 
-def html_right_show(key_cluster_data):
+def html_right_show(key_cluster_data,total_metrics):
     doc,tag,text,line = Doc().ttl()
     with tag('div'):
         doc.attr(id='right_show')
@@ -34,34 +33,37 @@ def html_right_show(key_cluster_data):
                 text('Scoring information:')
                 with tag('span'):
                     text(' ')
-            line('p','reassign score:')
-            line('p','tfidf score:')
-            line('p','SCCAF score:')
-        with tag('div'):
-            doc.attr(id='doublet')
-            line('h2','Average doublet score:')
-            doc.stag('img',src='./doublet.png',width='40%',height='40%')
+            with tag('table'):
+                for metric in total_metrics:
+                    with tag('tr'):
+                        line('td',metric)
+                        line('td','',id='cluster_to_{}'.format(metric))
 
         with tag('div'):
             doc.attr(id='identity')
             line('h2','Cluster location')
-            doc.stag('img',src='./init.png',width='40%',height='40%',alt='Choose key and cluster',klass='img_identity')
+            doc.stag('img',src='./init.png',width='60%',height='60%',alt='Choose key and cluster',klass='img_identity')                
+        
+        with tag('div'):
+            doc.attr(id='doublet')
+            line('h2','doublet distribution')
+            doc.stag('img',src='./umap_sctriangulate_doublet_scores.png',width='60%',height='60%')
 
         with tag('div'):
             doc.attr(id='enrichment')
             line('h2','Enrichment plot')
-            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_enrichment',width='40%',height='40%')
+            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_enrichment',width='60%',height='60%')
         with tag('div'):
             doc.attr(klass='marker_umap')
             line('h2','Marker gene umap')
-            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_marker',width='90%')
+            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_marker',width='100%')
         with tag('div'):
             doc.attr(klass='exclusive_umap')
             line('h2','Exclusive gene umap')
-            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_exclusive',width='90%')
+            doc.stag('img',src='./init.png',alt='Choose key and cluster',klass='img_exclusive',width='100%')
         with tag('div'):
             doc.attr(klass='inspection_div')
-            line('a','Go to Inspection',href='../scTriangulate_inspection/inspection.html')
+            line('a','Go to Inspection',href='./inspection.html')
         with tag('div'):
             doc.attr('hidden',klass='pass_to_js')
             with tag('p'):
@@ -69,7 +71,7 @@ def html_right_show(key_cluster_data):
     return doc.getvalue()
 
 
-def to_html(key_cluster_dict,key_cluster_data):
+def to_html(key_cluster_dict,key_cluster_data,total_metrics):
     doc,tag,text,line = Doc().ttl()
     doc.asis('<!DOCTYPE html>')
     with tag('html'):
@@ -81,7 +83,7 @@ def to_html(key_cluster_dict,key_cluster_data):
         with tag('body'):
             doc.asis(html_banner())
             doc.asis(html_left_nav(key_cluster_dict))
-            doc.asis(html_right_show(key_cluster_data))
+            doc.asis(html_right_show(key_cluster_data,total_metrics))
         with tag('script'):
             doc.attr(src='./viewer.js')
     return doc.getvalue()
@@ -104,7 +106,7 @@ def left_nav(key_cluster_dict,reference):
         with tag('ul'):
             doc.attr(id=reference)
             for cluster in data:
-                line('li',cluster,onclick='display(this.parentElement.id,this.textContent)')
+                line('li',cluster,onclick='display(this.parentElement.id,this.textContent)',onmouseover='change_color(this)',onmouseout='change_color_back(this)')
     return doc.getvalue()
 
 def right_show():
@@ -118,17 +120,13 @@ def right_show():
                 doc.attr(klass='umap_div')
                 line('h2','UMAP view')
                 doc.stag('img', id='umap', src='./init.png', alt='please check cluster on the left')
-            with tag('div'):
-                doc.attr(klass='location_div')
-                line('h2','cluster location')
-                doc.stag('img',id='location', src='./init.png',alt='the location of this cluster')
         with tag('div'):
             doc.attr(klass='heatmap_div')
             line('h2','heatmap view')
             doc.stag('img', id='heatmap', src='./init.png', alt='please check cluster on the left')
         with tag('div'):
             doc.attr(klass='viewer_div')
-            line('a','Go to Viewer',href='../scTriangulate_diagnose/viewer.html')
+            line('a','Go to Viewer',href='./viewer.html')
     return doc.getvalue()
 
 
