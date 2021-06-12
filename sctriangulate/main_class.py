@@ -189,6 +189,11 @@ class ScTriangulate(object):
             tmp = list(set(self.invalid))
             self.invalid = tmp
 
+    def add_to_invalid_by_win_fraction(self,percent):
+        df = self.uns['raw_cluster_goodness']
+        invalid = df.loc[df['win_fraction']<percent,:].index.tolist()
+        self.add_to_invalid(invalid)
+
     def clear_invalid(self):
         del self.invalid
         self.invaild = []
@@ -355,6 +360,7 @@ class ScTriangulate(object):
 
     def run_single_key_assessment(self,key):
         collect = each_key_run(self,key)
+        self._to_sparse()
         self.process_collect_object(collect)
 
     def process_collect_object(self,collect):
@@ -675,7 +681,7 @@ class ScTriangulate(object):
                 adata_s = filter_DE_genes(adata_s,self.species,self.criterion)
                 number_of_groups = len(adata_s.obs[col].unique())
                 genes_to_pick = 50 // number_of_groups
-                sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_gruops_filtered')
+                sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered')
                 if save:
                     plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,'heatmap',format)),bbox_inches='tight')
                     plt.close()
@@ -706,10 +712,26 @@ class ScTriangulate(object):
                 adata_s = filter_DE_genes(adata_s,self.species,self.criterion)
                 number_of_groups = len(adata_s.obs[col].unique())
                 genes_to_pick = 50 // number_of_groups
-                sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_gruops_filtered')
+                print(adata_s.uns.keys())
+                sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered')
                 if save:
                     plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),bbox_inches='tight')
                     plt.close()
+                # return scanpy marker genes for each sub-populations
+                sc_marker_dict = {}  # key is subgroup, value is a df containing markers
+                col_dict = {}   # key is a colname, value is a numpy record array
+                colnames = ['names','scores','pvals','pvals_adj','logfoldchanges']
+                print(adata_s.uns.keys())
+                for item in colnames:
+                    col_dict[item] = adata_s.uns['rank_genes_groups_filtered'][item]
+                for group in adata_s.obs[col].unique():
+                    df = pd.DataFrame()
+                    for item in colnames:
+                        df[item] = col_dict[item][group]
+                    df.dropna(axis=0,how='any',inplace=True)
+                    df.set_index(keys='names',inplace=True)
+                    sc_marker_dict[group] = df
+                return sc_marker_dict
 
         elif style == 'violin':
             sc.pl.violin(adata_s,genes,groupby=col)
@@ -904,14 +926,13 @@ class ScTriangulate(object):
         # generate all the figures
         '''doublet plot'''
         self.plot_umap('doublet_scores','continuous',True,'png')
-        if platform.system() == 'Linux':    # can parallelize
+        if platform.system() == 'Linux' and parallel:    # can parallelize
             cores1 = mp.cpu_count()
             cores2 = len(self.cluster)
             cores = min(cores1,cores2)
             pool = mp.Pool(processes=cores)
             logger_sctriangulate.info('spawn {} sub processes for viewer cluster feature figure generation'.format(cores))
             raw_results = [pool.apply_async(func=self._atomic_viewer_figure,args=(key,)) for key in self.cluster.keys()]
-            p.join()
             pool.close()
             pool.join()
         else:                               # Windows and Darwin can not parallelize if plotting
@@ -925,27 +946,18 @@ class ScTriangulate(object):
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.js'),os.path.join(self.dir,'figure4viewer')))
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.css'),os.path.join(self.dir,'figure4viewer')))
 
-    def viewer_heterogeneity_figure(self,keys):
+    def viewer_heterogeneity_figure(self,key):
         logger_sctriangulate.info('Building viewer requires generating all the necessary figures, may take several minutes')
         # create a folder to store all the figures
         if not os.path.exists(os.path.join(self.dir,'figure4viewer')):
             os.mkdir(os.path.join(self.dir,'figure4viewer'))
+        else:  # if already exsiting figure4viewer folder, need to clean previous figures for the specific key
+            os.system('rm {}'.format(os.path.join(self.dir,'figure4viewer','{}_*_heterogeneity_*'.format(key))))          
         ori_dir = self.dir
         new_dir = os.path.join(self.dir,'figure4viewer')
         self.dir = new_dir
         
-        if platform.system() == 'Linux':
-            cores1 = len(keys)
-            cores2 = mp.cpu_count()
-            cores = min(cores1,cores2)
-            pool = mp.Pool(processes=cores)
-            logger_sctriangulate.info('spawn {} sub processes for viewer heterogeneity figure generation'.format(cores))
-            raw_results = [pool.apply_async(func=self._atomic_viewer_hetero,args=(key,)) for key in keys]
-            pool.close()
-            pool.join()
-        else:
-            for key in keys:
-                self._atomic_viewer_hetero(key)
+        self._atomic_viewer_hetero(key)
 
         self.dir = ori_dir
 
@@ -1064,8 +1076,8 @@ def filter_DE_genes(adata,species,criterion):
     de_gene = pd.DataFrame.from_records(adata.uns['rank_genes_groups']['names']) #column use field name, index is none by default, so incremental int value
     artifact = set(read_artifact_genes(species,criterion).index)
     de_gene.mask(de_gene.isin(artifact),inplace=True)
-    adata.uns['rank_genes_gruops_filtered'] = adata.uns['rank_genes_groups'].copy()
-    adata.uns['rank_genes_gruops_filtered']['names'] = de_gene.to_records(index=False)
+    adata.uns['rank_genes_groups_filtered'] = adata.uns['rank_genes_groups'].copy()
+    adata.uns['rank_genes_groups_filtered']['names'] = de_gene.to_records(index=False)
     return adata
 
 

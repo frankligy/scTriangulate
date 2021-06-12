@@ -27,7 +27,7 @@ def rank_pruning(sctri,discard=None):
     subprocess.run(['rm','-r','{}'.format(os.path.join(sctri.dir,'scTriangulate_local_mode_enrichr/'))])
     score_info = copy.deepcopy(sctri.score['raw'])
     score_info.pop('cluster_to_doublet',None)  # don't consider doublet score
-    print(score_info)
+
     data_shape0 = len(score_info['cluster_to_reassign'])
     data_shape1 = len(score_info)
     data = np.empty(shape=[data_shape0,data_shape1])
@@ -36,14 +36,14 @@ def rank_pruning(sctri,discard=None):
     for m,(metric,info) in enumerate(score_info.items()):
         for c,(cluster,score) in enumerate(info.items()):
             data[c,m] = score
-    print(data)
+
 
     # compute shapley
     appro_shapley = approximate_shapley_value(data)
     df = pd.DataFrame(data=data,index=df_index,columns=df_columns)
     df['appro_shapley'] = appro_shapley
     df.sort_values(by='appro_shapley',ascending=False,inplace=True)
-    print(df)
+
 
     # concat clusters that have only one cells back to the df for completeness
     all_clusters = sctri.adata.obs['raw'].unique()
@@ -58,7 +58,17 @@ def rank_pruning(sctri,discard=None):
     df_total['scaled_shapley'] = scaled
     # add cluster size
     raw_size_dict = sctri.adata.obs['raw'].value_counts().to_dict()
-    df_total['cluster_size'] = df_total.index.map(raw_size_dict).values
+    df_total['raw_cluster_size'] = df_total.index.map(raw_size_dict).values
+    # add original cluster
+    ori_size_dict = {}
+    for key,clusters in sctri.size_dict.items():
+        for cluster,size in clusters.items():
+            label = key + '@' + cluster
+            size = size
+            ori_size_dict[label] = size
+    df_total['ori_cluster_size'] = df_total.index.map(ori_size_dict).values
+    # add winning fraction
+    df_total['win_fraction'] = df_total['raw_cluster_size'].values / df_total['ori_cluster_size'].values
 
     if discard is None:
         modified_obs = copy.deepcopy(sctri.adata.obs)

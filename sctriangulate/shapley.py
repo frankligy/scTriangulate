@@ -103,7 +103,6 @@ def approximate_shapley_value(data,n_sample=6,n_time=1000):  # for big coalition
     counts = np.zeros(shape=data.shape[0])
     indices = np.arange(data.shape[0])
     for t in range(n_time):
-        print(t)
         sampled = np.random.choice(a=indices,size=n_sample)
         sub_data = data[sampled,:]
         sub_data_shapley = []
