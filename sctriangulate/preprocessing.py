@@ -24,10 +24,11 @@ mpl.rcParams['font.family'] = 'Arial'
 def small_txt_to_adata(int_file,gene_is_index=True):
     df = pd.read_csv(int_file,sep='\t',index_col=0)
     if gene_is_index:
-        adata = ad.AnnData(X=csr_matrix(df.values.T),var=pd.DataFrame(index=df.index),obs=pd.DataFrame(index=df.columns))
+        adata = ad.AnnData(X=csr_matrix(df.values.T),var=pd.DataFrame(index=df.index.values),obs=pd.DataFrame(index=df.columns.values))
     else:
-        adata = ad.AnnData(X=csr_matrix(df.values),var=pd.DataFrame(index=df.columns),obs=pd.DataFrame(index=df.index))
+        adata = ad.AnnData(X=csr_matrix(df.values),var=pd.DataFrame(index=df.columns.values),obs=pd.DataFrame(index=df.index.values))
     adata.var_names_make_unique()
+    adata.X = csr_matrix(adata.X)
     return adata
 
 
@@ -87,15 +88,19 @@ def adding_azimuth(adata,result,name='predicted.celltype.l2'):
     adata.obs['prediction_score'] = adata.obs_names.map(azimuth_prediction).values
     adata.obs['mapping_score'] = adata.obs_names.map(azimuth_mapping).values
 
-def add_annotations(adata,inputs,cols=None,index_col=0):
+def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None):
     # means a single file such that one column is barcodes, annotations are within other columns
-    annotations = pd.read_csv(inputs,sep='\t',index_col=index_col).loc[:,cols]
+    annotations = pd.read_csv(inputs,sep='\t',index_col=index_col).loc[:,cols_input]
     mappings = []
-    for col in cols:
+    for col in cols_input:
         mapping = annotations[col].to_dict()
         mappings.append(mapping)
-    for i,col in enumerate(cols):
-        adata.obs[col] = adata.obs_names.map(mappings[i]).fillna('Unknown').values
+    if cols_output is None:
+        for i,col in enumerate(cols_input):
+            adata.obs[col] = adata.obs_names.map(mappings[i]).fillna('Unknown').values
+    else:
+        for i in range(len(cols_input)):
+            adata.obs[cols_output[i]] = adata.obs_names.map(mappings[i]).fillna('Unknown').values
 
 
 def add_umap(adata,inputs,mode,cols=None,index_col=0):
@@ -207,7 +212,7 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
 
 
 
-def concat_rna_and_other(adata_rna,adata_other,umap,name):
+def concat_rna_and_other(adata_rna,adata_other,umap,name,prefix):
     adata_rna = adata_rna.copy()
     adata_other = adata_other.copy()
     # remove layers, [!obsm], varm, obsp, varp, raw
@@ -218,6 +223,7 @@ def concat_rna_and_other(adata_rna,adata_other,umap,name):
         del adata.varp
         del adata.raw
     adata_other = adata_other[adata_rna.obs_names,:]  # make sure the obs order is the same
+    adata_other.var_names = [prefix + item for item in adata_other.var_names]
     adata_combine = ad.concat([adata_rna,adata_other],axis=1,join='outer',merge='first',label='modality',keys=['rna','{}'.format(name)])
     if umap == 'rna':
         adata_combine.obsm['X_umap'] = adata_rna.obsm['X_umap']
@@ -327,6 +333,15 @@ def gene_activity_count_matrix(fall_in_promoter,fall_in_gene,valid=None):
     module load bedops
     bedmap --ec --delim "\t" --echo --echo-map-id hg19_promoters.sort.bed atac_fragments.sort.bed > atac_promoters_bc.bed
     bedmap --ec --delim "\t" --echo --echo-map-id hg19_genes.sort.bed atac_fragments.sort.bed > atac_genes_bc.bed
+
+
+    the following was taken from http://htmlpreview.github.io/?https://github.com/welch-lab/liger/blob/master/vignettes/Integrating_scRNA_and_scATAC_data.html
+
+    –delim. This changes output delimiter from ‘|’ to indicated delimiter between columns, which in our case is “\t”.
+    –ec. Adding this will check all problematic input files.
+    –echo. Adding this will print each line from reference file in output. The reference file in our case is gene or promoter index.
+    –echo-map-id. Adding this will list IDs of all overlapping elements from mapping files, which in our case are cell barcodes from fragment files.
+    
     '''
     gene_promoter = pd.read_csv(fall_in_promoter,sep='\t',header=None)
     gene_body = pd.read_csv(fall_in_gene,sep='\t',header=None)
