@@ -229,6 +229,8 @@ def concat_rna_and_other(adata_rna,adata_other,umap,name,prefix):
         adata_combine.obsm['X_umap'] = adata_rna.obsm['X_umap']
     elif umap == 'other':
         adata_combine.obsm['X_umap'] = adata_other.obsm['X_umap']
+    if not issparse(adata_combine.X):
+        adata_combine.X = csr_matrix(adata_combine.X)
     return adata_combine
 
 
@@ -319,12 +321,54 @@ class Normalization(object):
         bg_mean = means[bg_index,:].reshape(1,-1)
         post = mat - bg_mean
         return post
+
+
+def gene_activity_count_matrix_new_10x(fall_in_promoter,fall_in_gene,valid=None):
+    gene_promoter = pd.read_csv(fall_in_promoter,sep='\t',header=None)
+    gene_body = pd.read_csv(fall_in_gene,sep='\t',header=None)
+    bucket = []
+    for i in range(gene_promoter.shape[0]):
+        row = gene_promoter.iloc[i]
+        in_gene = row[3]
+        in_barcode = row[6]
+        in_count = row[7]
+        try:
+            in_barcode = in_barcode.split(';')
+            in_count = [int(item) for item in in_count.split(';')]
+        except AttributeError:  # means no fragments fall into the promoter
+            continue
+        # tmp will be three column, barcode, count, gene, no index
+        tmp = pd.DataFrame({'barcode':in_barcode,'count':in_count}).groupby(by='barcode')['count'].sum().to_frame()
+        tmp['gene'] = np.full(shape=tmp.shape[0],fill_value=in_gene)
+        tmp.reset_index(inplace=True)
+        bucket.append(tmp)
+    for i in range(gene_body.shape[0]):
+        row = gene_body.iloc[i]
+        in_gene = row[3]
+        in_barcode = row[6]
+        in_count = row[7]
+        try:
+            in_barcode = in_barcode.split(';')
+            in_count = [int(item) for item in in_count.split(';')]
+        except AttributeError:  # means no fragments fall into the promoter
+            continue
+        # tmp will be three column, barcode, count, gene, no index
+        tmp = pd.DataFrame({'barcode':in_barcode,'count':in_count}).groupby(by='barcode')['count'].sum().to_frame()
+        tmp['gene'] = np.full(shape=tmp.shape[0],fill_value=in_gene)
+        tmp.reset_index(inplace=True)
+        bucket.append(tmp)
+    df = pd.concat(bucket)
+    if valid is not None:
+        df = df.loc[df['barcode'].isin(valid),:]
+    final = df.groupby(by=['barcode','gene'])['count'].sum().unstack(fill_value=0)
+    return final
+
     
 
-def gene_activity_count_matrix(fall_in_promoter,fall_in_gene,valid=None):
+def gene_activity_count_matrix_old_10x(fall_in_promoter,fall_in_gene,valid=None):
     '''
     how to get these two arguments? (LIGER team approach)
-    - sort the fragment, gene and promoter bed
+    - sort the fragment, gene and promoter bed, or use function in this module to sort the reference bed files
     sort -k1,1 -k2,2n -k3,3n pbmc_granulocyte_sorted_10k_atac_fragments.tsv > atac_fragments.sort.bed
     sort -k 1,1 -k2,2n -k3,3n hg19_genes.bed > hg19_genes.sort.bed
     sort -k 1,1 -k2,2n -k3,3n hg19_promoters.bed > hg19_promoters.sort.bed
@@ -375,6 +419,88 @@ def gene_activity_count_matrix(fall_in_promoter,fall_in_gene,valid=None):
         df = df.loc[df['index'].isin(valid),:]
     final = df.groupby(by=['index','gene'])['count'].sum().unstack(fill_value=0)
     return final
+
+
+def gene_bed_to_promoter_bed(gene_bed_path,promoter_bed_path,up_bp=3000):
+    gene_bed = pd.read_csv(gene_bed_path,header=None,sep='\t')
+    with open(promoter_bed_path,'w') as f:
+        for i in range(gene_bed.shape[0]):
+            row = gene_bed.iloc[i]
+            chro = row[0]
+            start = row[1]
+            end = row[2]
+            name = row[3]
+            score = row[4]
+            strand = row[5]
+            if strand == '+':
+                new_start = start - up_bp
+                new_end = start
+            else:
+                new_start = end
+                new_end = end + up_bp
+            f.write('{}\t{}\t{}\t{}\t{}\t{}\n'.format(chro,new_start,new_end,name,score,strand))
+
+
+def ensembl_gtf_to_gene_bed(gtf_path,bed_path,sort=True):
+
+    # only interested in gene feature
+    hg38_gtf = pd.read_csv(gtf_path,skiprows=5,header=None,sep='\t')
+    hg38_gtf_gene = hg38_gtf.loc[hg38_gtf[2]=='gene',:]
+
+    # gotta have gene symbol
+    col = []
+    for i in range(hg38_gtf_gene.shape[0]):
+        metadata = hg38_gtf_gene.iloc[i,8]
+        if 'gene_name' in metadata:
+            col.append(True)
+        else:
+            col.append(False)
+    hg38_gtf_gene_have_symbol = hg38_gtf_gene.loc[col,:]
+
+    # add biotype and gene name
+    col1 = []
+    col2 = []
+    for i in range(hg38_gtf_gene_have_symbol.shape[0]):
+        metadata = hg38_gtf_gene_have_symbol.iloc[i, 8]
+        biotype = metadata.split('; ')[-1].split(' ')[-1].strip(';').strip('"')
+        name = metadata.split('; ')[2].split(' ')[1].strip('"')
+        col1.append(biotype)
+        col2.append(name)
+    hg38_gtf_gene_have_symbol['biotype'] = col1
+    hg38_gtf_gene_have_symbol['name'] = col2
+
+    # biotype has to be either protein_coding, IG or TR gene
+    col = (hg38_gtf_gene_have_symbol['biotype']=='protein_coding') |\
+          (hg38_gtf_gene_have_symbol['biotype']=='IG_C_gene') |\
+          (hg38_gtf_gene_have_symbol['biotype']=='IG_D_gene') |\
+          (hg38_gtf_gene_have_symbol['biotype']=='IG_J_gene') |\
+          (hg38_gtf_gene_have_symbol['biotype']=='IG_V_gene') |\
+          (hg38_gtf_gene_have_symbol['biotype']=='TR_C_gene') |\
+          (hg38_gtf_gene_have_symbol['biotype']=='TR_D_gene') |\
+          (hg38_gtf_gene_have_symbol['biotype']=='TR_J_gene') |\
+          (hg38_gtf_gene_have_symbol['biotype']=='TR_V_gene')
+    hg38_gtf_gene_have_symbol_biotype_correct = hg38_gtf_gene_have_symbol.loc[col,:]
+
+    # chromsome need to be correct
+    chr_need_chr = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22']
+    chr_need_int = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
+    chr_need_other = ['X','Y'] # don't include MT decause fragment.tsv file doesn't output that
+    chr_need = chr_need_chr + chr_need_int + chr_need_other
+
+    hg38_gtf_gene_have_symbol_biotype_correct_chr = hg38_gtf_gene_have_symbol_biotype_correct.loc[hg38_gtf_gene_have_symbol_biotype_correct[0].isin(chr_need),:]
+
+    prefixed_chr = ['chr' + str(item) for item in hg38_gtf_gene_have_symbol_biotype_correct_chr[0]]
+    hg38_gtf_gene_have_symbol_biotype_correct_chr[0] = prefixed_chr
+
+    # get final result, BED6 format
+    final = hg38_gtf_gene_have_symbol_biotype_correct_chr.loc[:,[0,3,4,'name',5,6]]
+    if sort:
+        '''
+        equivalent to:
+        sort -k1,1 -k2,2n -k3,3n gene.bed
+        '''
+        final.sort_values(by=[0,3,4],inplace=True)
+    final.to_csv(bed_path,sep='\t',index=None,header=None)
 
     
 
