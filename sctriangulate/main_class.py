@@ -945,11 +945,8 @@ class ScTriangulate(object):
         self.dir = ori_dir 
 
     def viewer_cluster_feature_html(self):
-        key_cluster_dict = copy.deepcopy(self.cluster)
-        if key not in key_cluster_dict.keys():
-            key_cluster_dict[key] = self.adata.obs[key].unique().tolist()
         with open(os.path.join(self.dir,'figure4viewer','viewer.html'),'w') as f:
-            f.write(to_html(key_cluster_dict,self.score,self.total_metrics))
+            f.write(to_html(self.cluster,self.score,self.total_metrics))
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.js'),os.path.join(self.dir,'figure4viewer')))
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.css'),os.path.join(self.dir,'figure4viewer')))
 
