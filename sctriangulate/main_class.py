@@ -905,10 +905,14 @@ class ScTriangulate(object):
 
     def _atomic_viewer_figure(self,key):
         for cluster in self.adata.obs[key].unique():
-            self.plot_cluster_feature(key,cluster,'enrichment','enrichr',True,'png')
-            self.plot_cluster_feature(key,cluster,'marker_genes','enrichr',True,'png')
-            self.plot_cluster_feature(key,cluster,'exclusive_genes','enrichr',True,'png')
-            self.plot_cluster_feature(key,cluster,'location','enrichr',True,'png')
+            try:
+                self.plot_cluster_feature(key,cluster,'enrichment','enrichr',True,'png')
+                self.plot_cluster_feature(key,cluster,'marker_genes','enrichr',True,'png')
+                self.plot_cluster_feature(key,cluster,'exclusive_genes','enrichr',True,'png')
+                self.plot_cluster_feature(key,cluster,'location','enrichr',True,'png')
+            except KeyError:  # the cluster only have one cell, so not in adata_compute when calculating metrics
+                continue
+
 
     def _atomic_viewer_hetero(self,key):
         for cluster in self.adata.obs[key].unique():

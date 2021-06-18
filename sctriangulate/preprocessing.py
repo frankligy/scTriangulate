@@ -205,7 +205,6 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
                 resolutions = '_'.join([str(item) for item in resolutions])
                 adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
 
-
     return adata
     
 
