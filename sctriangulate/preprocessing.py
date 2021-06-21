@@ -117,7 +117,7 @@ def add_umap(adata,inputs,mode,cols=None,index_col=0):
         adata.obsm['X_umap'] = inputs
 
 
-def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,save=True):
+def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,save=True,pca_n_comps=None):
     adata.var_names_make_unique()
     # normal analysis
     if modality == 'rna':
@@ -131,7 +131,7 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
             adata = adata[:,adata.var['highly_variable']]
             sc.pp.regress_out(adata,['total_counts','pct_counts_mt'])
             sc.pp.scale(adata,max_value=10)
-            sc.tl.pca(adata)
+            sc.tl.pca(adata,n_comps=pca_n_comps)
             sc.pp.neighbors(adata)
             for resolution in resolutions:
                 sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
@@ -154,7 +154,7 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
             adata = adata[:,adata.var['highly_variable']]
             sc.pp.regress_out(adata,['total_counts','pct_counts_mt'])
             sc.pp.scale(adata,max_value=10)
-            sc.tl.pca(adata)
+            sc.tl.pca(adata,n_comps=pca_n_comps)
             sc.pp.neighbors(adata)
             for resolution in resolutions:
                 sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
@@ -176,7 +176,7 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
             adata.raw = adata
             adata = adata[:,adata.var['highly_variable']]
             sc.pp.scale(adata,max_value=10)
-            sc.tl.pca(adata)
+            sc.tl.pca(adata,n_comps=pca_n_comps)
             sc.pp.neighbors(adata)
             for resolution in resolutions:
                 sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
@@ -193,7 +193,7 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
         if not is_log:
             pass
         else:
-            sc.tl.pca(adata)
+            sc.tl.pca(adata,n_comps=pca_n_comps)
             sc.pp.neighbors(adata)
             for resolution in resolutions:
                 sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
