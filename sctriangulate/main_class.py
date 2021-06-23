@@ -959,7 +959,7 @@ class ScTriangulate(object):
 
     def _atomic_viewer_hetero(self,key):
         for cluster in self.adata.obs[key].unique():
-            self.plot_heterogeneity(key,cluster,'pruned','build',True,'png')
+            self.plot_heterogeneity(key,cluster,'build',format='png')
 
 
     def viewer_cluster_feature_figure(self,parallel=True):
