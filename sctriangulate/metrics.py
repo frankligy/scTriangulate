@@ -339,7 +339,7 @@ def tf_idf1_for_cluster(adata,key,species,criterion):
 
 
 
-def SCCAF_score(adata, key, species, criterion):
+def SCCAF_score(adata, key, species, criterion, scale_sccaf):
     from sklearn.preprocessing import LabelEncoder
     from sklearn.model_selection import StratifiedShuffleSplit
     from sklearn.linear_model import LogisticRegression
@@ -350,14 +350,13 @@ def SCCAF_score(adata, key, species, criterion):
     X = adata[:,~adata.var_names.isin(artifact_genes)].X.copy()  # from ArrayView to ndarray
     Y = adata.obs[key].values
 
-    # mean-centered and divide the std of the data, if 50000 cells, no scale, liblinear solver is robust to unscaled data
-    if X.shape[0] < 50000:
+    # mean-centered and divide the std of the data, if too many cells (>50000), no scale, liblinear solver is robust to unscaled data
+    if scale_sccaf:
         tmp = X
         from sklearn.preprocessing import scale
         tmp_scaled = scale(tmp,axis=0)
         X = tmp_scaled
-
-       
+     
     # label encoding Y to numerical values
     le = LabelEncoder()
     Y = le.fit_transform(Y)

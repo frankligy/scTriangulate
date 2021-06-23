@@ -39,21 +39,24 @@ mpl.rcParams['font.family'] = 'Arial'
 # define ScTriangulate Object
 class ScTriangulate(object):
 
-    def __init__(self,dir,adata,query,reference,species='mice',criterion=2,verbose=1):
+    def __init__(self,dir,adata,query,species='human',criterion=2,verbose=1,reference=None,add_metrics={'tfidf5':tf_idf5_for_cluster}):
 
         self.verbose = verbose
         self.dir = dir
         self._create_dir_if_not_exist()
         self.adata = adata
         self.query = query
-        self.reference = reference
+        if reference is None:
+            self.reference = self.query[0]
+        else:
+            self.reference = reference
         self.species = species
         self.criterion = criterion
         self.score = {}
         self.cluster = {}
         self.uns = {}
         self.metrics = ['reassign','tfidf10','SCCAF','doublet']   # default metrics
-        self.add_metrics = {}                           # user can add their own, key is metric name, value is callable
+        self.add_metrics = {}                         # user can add their own, key is metric name, value is callable
         self.total_metrics = self.metrics               # all metrics considered
 
         self._set_logging()          
@@ -61,8 +64,11 @@ class ScTriangulate(object):
         self.size_dict, _ = get_size(self.adata.obs,self.query)
         self.invalid = []
 
+        # run doublet predict by default in the initialization
+        self.doublet_predict()
 
-
+        # add add_metrics by default in the initialization
+        self.add_new_metrics(add_metrics)
 
 
     def __str__(self):  # when you print(instance) in REPL
@@ -178,6 +184,7 @@ class ScTriangulate(object):
         if save:
             df.to_csv(os.path.join(self.dir,'sctri_metrics_and_shapley_df_{}.txt'.format(barcode)),sep='\t')
         return df
+
 
     def add_to_invalid(self,invalid):
         try:
@@ -317,7 +324,7 @@ class ScTriangulate(object):
 
 
 
-    def compute_metrics(self,parallel=True):
+    def compute_metrics(self,parallel=True,scale_sccaf=True):
         if parallel:
             cores1 = len(self.query)  # make sure to request same numeber of cores as the length of query list
             cores2 = mp.cpu_count()
@@ -325,7 +332,7 @@ class ScTriangulate(object):
             logger_sctriangulate.info('Spawn to {} processes'.format(cores))
             pool = mp.Pool(processes=cores)
             self._to_sparse()
-            raw_results = [pool.apply_async(each_key_run,args=(self,key)) for key in self.query]
+            raw_results = [pool.apply_async(each_key_run,args=(self,key,scale_sccaf,)) for key in self.query]
             pool.close()
             pool.join()
             for collect in raw_results:
@@ -345,7 +352,7 @@ class ScTriangulate(object):
         else:
             logger_sctriangulate.info('choosing to compute metrics sequentially')
             for key in self.query:
-                collect = each_key_run(self,key)
+                collect = each_key_run(self,key,scale_sccaf)
                 key = collect['key']
                 for metric in self.metrics + list(self.add_metrics.keys()):
                     self.adata.obs['{}@{}'.format(metric,key)] = collect['col_{}'.format(metric)]
@@ -358,8 +365,8 @@ class ScTriangulate(object):
             subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr/'))])
             self._to_sparse()
 
-    def run_single_key_assessment(self,key):
-        collect = each_key_run(self,key)
+    def run_single_key_assessment(self,key,scale_sccaf):
+        collect = each_key_run(self,key,scale_sccaf)
         self._to_sparse()
         self.process_collect_object(collect)
 
@@ -545,7 +552,7 @@ class ScTriangulate(object):
         self.adata.obs['prefixed'] = col
 
 
-    def pruning(self,method='reassign',discard=None,abs_thresh=10,remove1=True,reference=None,parallel=True):
+    def pruning(self,method='reassign',discard=None,scale_sccaf=True,abs_thresh=10,remove1=True,reference=None,parallel=True):
         if parallel:
             if method == 'reference':
                 obs = reference_pruning(self.adata.obs,self.reference,self.size_dict)
@@ -557,7 +564,7 @@ class ScTriangulate(object):
                 self.invalid = invalid
 
             elif method == 'rank':
-                obs, df = rank_pruning(self,discard=discard)
+                obs, df = rank_pruning(self,discard=discard,scale_sccaf=scale_sccaf)
                 self.adata.obs = obs
                 self.uns['raw_cluster_goodness'] = df
 
@@ -994,7 +1001,7 @@ def penalize_artifact_void(obs,query,stamps,metrics):
 
 
 
-def each_key_run(sctri,key):
+def each_key_run(sctri,key,scale_sccaf):
     folder = sctri.dir
     adata = sctri.adata
     species = sctri.species
@@ -1023,7 +1030,7 @@ def each_key_run(sctri,key):
     cluster_to_metric['cluster_to_tfidf10'], exclusive_genes = tf_idf10_for_cluster(adata_to_compute,key,species,criterion)
     logger_sctriangulate.info('Process {}, for {}, finished tfidf score computing'.format(os.getpid(),key))
     '''SCCAF score'''
-    cluster_to_metric['cluster_to_SCCAF'], confusion_sccaf = SCCAF_score(adata_to_compute,key, species, criterion)
+    cluster_to_metric['cluster_to_SCCAF'], confusion_sccaf = SCCAF_score(adata_to_compute,key, species, criterion,scale_sccaf)
     logger_sctriangulate.info('Process {}, for {}, finished SCCAF score computing'.format(os.getpid(),key))
     '''doublet score'''
     cluster_to_metric['cluster_to_doublet'] = doublet_compute(adata_to_compute,key)
@@ -1031,7 +1038,7 @@ def each_key_run(sctri,key):
     '''added other scores'''
     for metric,func in add_metrics.items():
         cluster_to_metric['cluster_to_{}'.format(metric)] = func(adata_to_compute,key,species,criterion)
-        logging.info('Process {}, for {}, finished {} score computing'.format(os.getpid(),key,metric))
+        logger_sctriangulate.info('Process {}, for {}, finished {} score computing'.format(os.getpid(),key,metric))
 
 
     collect = {'key':key}  # collect will be retured to main program

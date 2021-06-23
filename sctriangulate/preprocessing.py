@@ -54,8 +54,8 @@ def large_txt_to_mtx(int_file,out_folder,gene_is_index=True):  # whether the txt
         mmwrite(os.path.join(out_folder,'matrix.mtx'),csr_matrix(data.values.T))        
 
 
-def mtx_to_adata(int_folder,gene_is_index=True):  # whether the mtx file is gene * cell
-    gene = pd.read_csv(os.path.join(int_folder,'genes.tsv'),sep='\t',index_col=0,header=None).index
+def mtx_to_adata(int_folder,gene_is_index=True,feature='genes'):  # whether the mtx file is gene * cell
+    gene = pd.read_csv(os.path.join(int_folder,'{}.tsv'.format(feature)),sep='\t',index_col=0,header=None).index
     cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None).index
     value = mmread(os.path.join(int_folder,'matrix.mtx')).toarray()
     if gene_is_index:
@@ -115,6 +115,17 @@ def add_umap(adata,inputs,mode,cols=None,index_col=0):
         adata.obs.drop(columns=['umap_x','umap_y'],inplace=True)
     elif mode == 'numpy':  # assume the order is correct
         adata.obsm['X_umap'] = inputs
+
+def doublet_predict(adata):  # gave RNA count or log matrix
+    from scipy.sparse import issparse
+    import scrublet as scr
+    if issparse(adata.X):
+        adata.X = adata.X.toarray()
+    counts_matrix = adata.X
+    scrub = scr.Scrublet(counts_matrix)
+    doublet_scores, predicted_doublets = scrub.scrub_doublets(min_counts=1, min_cells=1)
+    adata.obs['doublet_scores'] = doublet_scores
+    return adata.obs['doublet_scores'].to_dict()
 
 
 def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,save=True,pca_n_comps=None):
@@ -191,7 +202,19 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
 
     elif modality == 'adt':
         if not is_log:
-            pass
+            sc.pp.calculate_qc_metrics(adata,percent_top=None,inplace=True,log1p=False)
+            adata.X = make_sure_mat_sparse(Normalization.CLR_normalization(make_sure_mat_dense(adata.X)))
+            sc.tl.pca(adata,n_comps=pca_n_comps)
+            sc.pp.neighbors(adata)
+            for resolution in resolutions:
+                sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
+            if umap:
+                sc.tl.umap(adata)
+            if not issparse(adata.X):
+                adata.X = csr_matrix(adata.X)
+            if save:
+                resolutions = '_'.join([str(item) for item in resolutions])
+                adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
         else:
             sc.tl.pca(adata,n_comps=pca_n_comps)
             sc.pp.neighbors(adata)
