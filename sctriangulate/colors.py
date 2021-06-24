@@ -162,10 +162,25 @@ godsnot_102 = [
     "#324E72",
 ]
 
+pub_icgs2 = [
+    '#F26D6D',  # red
+    '#BF9004',  # brown
+    '#62BF04',  # blue
+    '#2BB7EC',  # cyan
+    '#A38BFD',  # purple
+    '#F263DA',  # pink
+]
+
+pub_shap = [
+    '#F2075D',   # red
+    '#158BFB',    # blue
+]
+
+
 def pick_n_colors(n):
-    if n <= 12:
-        _colors = [to_hex(color) for color in cm.get_cmap('Set3').colors[:n]]
-    elif n > 12 and n <= 20:
+    if n <= 10:
+        _colors = [to_hex(color) for color in cm.get_cmap('tab10').colors[:n]]
+    elif n > 10 and n <= 20:
         _colors = [to_hex(color) for color in cm.get_cmap('tab20').colors[:n]]
     elif n > 20 and n <= 28:
         _colors = zeileis_28[:n]

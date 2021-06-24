@@ -250,10 +250,10 @@ class ScTriangulate(object):
                 plt.close()
         return winners_stats
 
-    def plot_clusterability(self,col,plot=True,save=True):
+    def plot_clusterability(self,key,col,plot=True,save=True):
         bucket = {}   # {ERP4:5}
         obs = self.adata.obs
-        for ref,grouped_df in obs.groupby(by=self.reference):
+        for ref,grouped_df in obs.groupby(by=key):
             unique = grouped_df[col].unique()
             bucket[ref] = len(unique)
         bucket = {k: v for k, v in sorted(bucket.items(), key=lambda x: x[1])}
@@ -606,7 +606,7 @@ class ScTriangulate(object):
         self.adata.obs['user_choice'] = self.adata.obs['prefixed'].map(mapping).values
         
 
-    def plot_umap(self,col,kind='category',save=True,format='pdf',umap_dot_size=None):
+    def plot_umap(self,col,kind='category',save=True,format='pdf',umap_dot_size=None,umap_cmap='YlOrRd'):
         # col means which column in obs to draw umap on
         if umap_dot_size is None:
             dot_size = 120000/self.adata.obs.shape[0]
@@ -620,15 +620,15 @@ class ScTriangulate(object):
                 plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.{}'.format(col,format)),bbox_inches='tight')
                 plt.close()
         elif kind == 'continuous':
-            sc.pl.umap(self.adata,color=col,frameon=False,cmap=bg_greyed_cmap('viridis'),vmin=1e-5,size=dot_size)
+            sc.pl.umap(self.adata,color=col,frameon=False,cmap=bg_greyed_cmap(umap_cmap),vmin=1e-5,size=dot_size)
             if save:
                 plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.{}'.format(col,format)),bbox_inches='tight')
                 plt.close()
 
-    def plot_confusion(self,name,key,save=True,format='pdf',**kwargs):
+    def plot_confusion(self,name,key,save=True,format='pdf',cmap=scphere_cmap,**kwargs):
         df = self.uns[name][key]
         df = df.apply(func=lambda x:x/x.sum(),axis=1)
-        sns.heatmap(df,cmap=scphere_cmap,**kwargs)  
+        sns.heatmap(df,cmap=cmap,**kwargs)  
         if save:
             plt.savefig(os.path.join(self.dir,'confusion_{}_{}.{}'.format(name,key,format)),bbox_inches='tight')
             plt.close()
