@@ -65,6 +65,12 @@ sctri.plot_heterogeneity('leiden1','0','cellxgene')
 # build
 sctri.plot_heterogeneity('leiden1','0','build')
 
+# heatmap+umap
+sctri.plot_heterogeneity('leiden1','0','heatmap+umap',subset=['leiden1@0','leiden3@10'],marker_gene_dict=marker_gene_dict)
+
+# dual_gene
+sctri.plot_heterogeneity('leiden1','0','dual_gene',dual_gene=['MAPK14','CD52'])
+
 '''test other plotting function'''
 sctri.plot_circular_barplot('leiden1','pruned')
 sctri.plot_confusion('confusion_reassign','leiden1',annot=True)
