@@ -671,7 +671,7 @@ class ScTriangulate(object):
                 plt.close()
 
     def plot_heterogeneity(self,key,cluster,style,col='pruned',save=True,format='pdf',genes=None,umap_zoom_out=True,umap_dot_size=None,
-                           subset=None,marker_gene_dict=None,jitter=True,rotation=60,dual_gene=None): 
+                           subset=None,marker_gene_dict=None,jitter=True,rotation=60,dual_gene=None,tri_gene=None): 
         adata_s = self.adata[self.adata.obs[key]==cluster,:]  
         # remove prior color stamps
         tmp = adata_s.uns
@@ -725,6 +725,16 @@ class ScTriangulate(object):
             umap_y_lim = (umap_whole[:,1].min(),umap_whole[:,1].max())
             dual_gene_plot(adata_s,dual_gene[0],dual_gene[1],s=s,save=save,format=format,dir=self.dir,umap_lim=[umap_x_lim,umap_y_lim])
 
+        elif style == 'tri_gene':
+            if umap_dot_size is None:
+                s = 120000/self.adata.obs.shape[0]
+            else:
+                s = umap_dot_size            
+            umap_whole = self.adata.obsm['X_umap']
+            umap_x_lim = (umap_whole[:,0].min(),umap_whole[:,0].max())
+            umap_y_lim = (umap_whole[:,1].min(),umap_whole[:,1].max())
+            tri_gene_plot(adata_s,tri_gene[0],tri_gene[1],tri_gene[2],s=s,save=save,format=format,dir=self.dir,umap_lim=[umap_x_lim,umap_y_lim])
+
 
         elif style == 'heatmap+umap':
             '''first draw umap'''
@@ -746,14 +756,14 @@ class ScTriangulate(object):
             self.adata.obs['tmp_plot'] = tmp_col
             sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5,ax=axes[1])
             if save:
-                plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,'umap',format)),bbox_inches='tight')
                 plt.close()
             self.adata.obs.drop(columns=['tmp_plot']) 
 
             '''then draw heatmap'''  
             sc.pl.heatmap(adata_s,marker_gene_dict,groupby=col,swap_axes=True,dendrogram=True)
             if save:
-                plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),bbox_inches='tight')
+                plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,'heatmap_custom',format)),bbox_inches='tight')
                 plt.close()
 
 

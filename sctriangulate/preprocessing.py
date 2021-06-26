@@ -329,6 +329,42 @@ def dual_gene_plot(adata,gene1,gene2,s=8,save=True,format='pdf',dir='.',umap_lim
     return ax
 
 
+def tri_gene_plot(adata,gene1,gene2,gene3,s=8,save=True,format='pdf',dir='.',umap_lim=None):
+    from scipy.sparse import issparse
+    if issparse(adata.X):
+        adata.X = adata.X.toarray()
+    index1 = np.where(adata.var_names == gene1)[0][0]
+    index2 = np.where(adata.var_names == gene2)[0][0]
+    index3 = np.where(adata.var_names == gene3)[0][0]
+    exp1 = adata.X[:,index1]
+    exp2 = adata.X[:,index2]
+    exp3 = adata.X[:,index3]
+    color = []
+    for i in range(len(exp1)):
+        c = ['#04BFBF','#83A603','#F7766D']
+        b = '#BABABA'
+        l_exp = np.array([exp1[i],exp2[i],exp3[i]])
+        n_exp = np.count_nonzero(l_exp > 0)
+        if n_exp > 1:
+            color.append(c[np.where(l_exp==l_exp.max())[0][0]])
+        elif n_exp == 1:
+            color.append(c[np.where(l_exp>0)[0][0]])
+        elif n_exp == 0:
+            color.append(b)
+    fig, ax = plt.subplots()
+    if umap_lim is not None:
+        ax.set_xlim(umap_lim[0])
+        ax.set_ylim(umap_lim[1])
+    ax.scatter(x=adata.obsm['X_umap'][:,0],y=adata.obsm['X_umap'][:,1],s=s,c=color)
+    import matplotlib.lines as mlines
+    ax.legend(handles=[mlines.Line2D([],[],marker='o',color=i,linestyle='') for i in c+[b]],
+              labels=['{}'.format(gene1),'{}'.format(gene2),'{}'.format(gene3),'None'],frameon=False,
+              loc='upper left',bbox_to_anchor=[1,1])
+    if save:
+        plt.savefig(os.path.join(dir,'sctri_tri_gene_plot_{}_{}_{}.{}'.format(gene1,gene2,gene3,format)),bbox_inches='tight')
+        plt.close()
+    return ax
+
 
 def make_sure_mat_dense(mat):
     if not issparse(mat):
