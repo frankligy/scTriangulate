@@ -680,7 +680,7 @@ class ScTriangulate(object):
 
         # only consider the sub-populations in subset list
         if subset is not None:
-            adata_s = adata_s[adata_s.obs[col].isin(subset),:]
+            adata_s = adata_s[adata_s.obs[col].isin(subset),:].copy()
 
         if style == 'build':  # draw umap and heatmap
 
