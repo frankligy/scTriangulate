@@ -127,6 +127,45 @@ def doublet_predict(adata):  # gave RNA count or log matrix
     adata.obs['doublet_scores'] = doublet_scores
     return adata.obs['doublet_scores'].to_dict()
 
+def make_sure_adata_writable(adata,delete=False):
+    # check index, can not have name
+    var_names = adata.var_names
+    obs_names = adata.obs_names
+    var_names.name = None
+    obs_names.name = None
+    adata.var_names = var_names
+    adata.obs_names = obs_names
+
+    # make sure column is pure type, basically, if mixed tyep, delete the column, and print out the delete columns
+    # go to: https://github.com/theislab/scanpy/issues/1866
+
+    var = adata.var
+    obs = adata.obs
+    
+    for col in var.columns:
+        if var[col].dtypes == 'O':
+            all_type = np.array([type(item) for item in var[col]])
+            first = all_type[0]
+            if (first==all_type).all() and first == str:   # object, but every item is str
+                continue
+            else:   # mixed type
+                print('column {} in var will be deleted, because mixed types'.format(col))
+                if delete:
+                    adata.var.drop(columns=[col],inplace=True)
+    
+    for col in obs.columns:
+        if obs[col].dtypes == 'O':
+            all_type = np.array([type(item) for item in obs[col]])
+            first = all_type[0]
+            if (first==all_type).all() and first == str:   # object, but every item is str
+                continue
+            else:   # mixed type
+                print('column {} in obs will be deleted, because mixed types'.format(col))
+                if delete:
+                    adata.obs.drop(columns=[col],inplace=True)
+
+    return adata
+
 
 def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,save=True,pca_n_comps=None):
     adata.var_names_make_unique()

@@ -671,7 +671,7 @@ class ScTriangulate(object):
                 plt.close()
 
     def plot_heterogeneity(self,key,cluster,style,col='pruned',save=True,format='pdf',genes=None,umap_zoom_out=True,umap_dot_size=None,
-                           subset=None,marker_gene_dict=None,jitter=True,rotation=60,dual_gene=None,tri_gene=None): 
+                           subset=None,marker_gene_dict=None,jitter=True,rotation=60,single_gene=None,dual_gene=None,tri_gene=None,**kwarg): 
         adata_s = self.adata[self.adata.obs[key]==cluster,:]  
         # remove prior color stamps
         tmp = adata_s.uns
@@ -714,6 +714,25 @@ class ScTriangulate(object):
                 if save:
                     plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,'heatmap',format)),bbox_inches='tight')
                     plt.close()
+
+        elif style == 'single_gene':
+            fig,ax = plt.subplots()
+            if umap_dot_size is None:
+                s = 120000/self.adata.obs.shape[0]
+            else:
+                s = umap_dot_size
+            if umap_zoom_out:
+                umap_whole = self.adata.obsm['X_umap']
+                umap_x_lim = (umap_whole[:,0].min(),umap_whole[:,0].max())
+                umap_y_lim = (umap_whole[:,1].min(),umap_whole[:,1].max())
+                ax.set_xlim(umap_x_lim)
+                ax.set_ylim(umap_y_lim)
+            sc.pl.umap(adata_s,color=[single_gene],size=s,ax=ax,**kwarg)
+            if save:
+                plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}_{}.{}'.format(key,cluster,col,style,single_gene,format)),bbox_inches='tight')
+                plt.close()
+
+
         
         elif style == 'dual_gene':
             if umap_dot_size is None:
