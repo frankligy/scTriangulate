@@ -368,21 +368,25 @@ def dual_gene_plot(adata,gene1,gene2,s=8,save=True,format='pdf',dir='.',umap_lim
     return ax
 
 
-def tri_gene_plot(adata,gene1,gene2,gene3,s=8,save=True,format='pdf',dir='.',umap_lim=None):
+def multi_gene_plot(adata,genes,s=8,save=True,format='pdf',dir='.',umap_lim=None):
     from scipy.sparse import issparse
     if issparse(adata.X):
         adata.X = adata.X.toarray()
-    index1 = np.where(adata.var_names == gene1)[0][0]
-    index2 = np.where(adata.var_names == gene2)[0][0]
-    index3 = np.where(adata.var_names == gene3)[0][0]
-    exp1 = adata.X[:,index1]
-    exp2 = adata.X[:,index2]
-    exp3 = adata.X[:,index3]
+    exp_list = []
+    for gene in genes:
+        index_gene = np.where(adata.var_names == gene)[0][0]
+        exp_gene = adata.X[:,index_gene]
+        exp_list.append(exp_gene)
     color = []
-    for i in range(len(exp1)):
-        c = ['#04BFBF','#83A603','#F7766D']
+    for i in range(len(exp_list[0])):
+        if len(genes) == 3:
+            c = ['#04BFBF','#83A603','#F7766D']
+        elif len(genes) == 4:
+            c = ['#04BFBF','#83A603','#F7766D','#E36DF2']
+        elif len(genes) == 5:
+            c = ['#04BFBF','#83A603','#F7766D','#E36DF2','#A69B03']                       
         b = '#BABABA'
-        l_exp = np.array([exp1[i],exp2[i],exp3[i]])
+        l_exp = np.array([exp[i] for exp in exp_list])
         n_exp = np.count_nonzero(l_exp > 0)
         if n_exp > 1:
             color.append(c[np.where(l_exp==l_exp.max())[0][0]])
@@ -397,10 +401,11 @@ def tri_gene_plot(adata,gene1,gene2,gene3,s=8,save=True,format='pdf',dir='.',uma
     ax.scatter(x=adata.obsm['X_umap'][:,0],y=adata.obsm['X_umap'][:,1],s=s,c=color)
     import matplotlib.lines as mlines
     ax.legend(handles=[mlines.Line2D([],[],marker='o',color=i,linestyle='') for i in c+[b]],
-              labels=['{}'.format(gene1),'{}'.format(gene2),'{}'.format(gene3),'None'],frameon=False,
+              labels=genes + ['None'],frameon=False,
               loc='upper left',bbox_to_anchor=[1,1])
     if save:
-        plt.savefig(os.path.join(dir,'sctri_tri_gene_plot_{}_{}_{}.{}'.format(gene1,gene2,gene3,format)),bbox_inches='tight')
+        output = '_'.join(genes)
+        plt.savefig(os.path.join(dir,'sctri_multi_gene_plot_{}.{}'.format(output,format)),bbox_inches='tight')
         plt.close()
     return ax
 

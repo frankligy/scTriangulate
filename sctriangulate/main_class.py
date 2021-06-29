@@ -35,6 +35,10 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'Arial'
 
+# for publication and super large dataset
+mpl.rcParams['savefig.dpi'] = 600
+mpl.rcParams['figure.dpi'] = 600
+
 
 
 # define ScTriangulate Object
@@ -607,7 +611,7 @@ class ScTriangulate(object):
         self.adata.obs['user_choice'] = self.adata.obs['prefixed'].map(mapping).values
         
 
-    def plot_umap(self,col,kind='category',save=True,format='pdf',umap_dot_size=None,umap_cmap='YlOrRd'):
+    def plot_umap(self,col,kind='category',save=True,format='pdf',umap_dot_size=None,umap_cmap='YlOrRd',frameon=False):
         # col means which column in obs to draw umap on
         if umap_dot_size is None:
             dot_size = 120000/self.adata.obs.shape[0]
@@ -615,13 +619,13 @@ class ScTriangulate(object):
             dot_size = umap_dot_size
         if kind == 'category':
             fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
-            sc.pl.umap(self.adata,color=col,frameon=False,ax=ax[0],size=dot_size)
-            sc.pl.umap(self.adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1],size=dot_size)
+            sc.pl.umap(self.adata,color=col,frameon=frameon,ax=ax[0],size=dot_size)
+            sc.pl.umap(self.adata,color=col,frameon=frameon,legend_loc='on data',legend_fontsize=5,ax=ax[1],size=dot_size)
             if save:
                 plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.{}'.format(col,format)),bbox_inches='tight')
                 plt.close()
         elif kind == 'continuous':
-            sc.pl.umap(self.adata,color=col,frameon=False,cmap=bg_greyed_cmap(umap_cmap),vmin=1e-5,size=dot_size)
+            sc.pl.umap(self.adata,color=col,frameon=frameon,cmap=bg_greyed_cmap(umap_cmap),vmin=1e-5,size=dot_size)
             if save:
                 plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.{}'.format(col,format)),bbox_inches='tight')
                 plt.close()
@@ -671,8 +675,9 @@ class ScTriangulate(object):
                 plt.close()
 
     def plot_heterogeneity(self,key,cluster,style,col='pruned',save=True,format='pdf',genes=None,umap_zoom_out=True,umap_dot_size=None,
-                           subset=None,marker_gene_dict=None,jitter=True,rotation=60,single_gene=None,dual_gene=None,tri_gene=None,**kwarg): 
-        adata_s = self.adata[self.adata.obs[key]==cluster,:]  
+                           subset=None,marker_gene_dict=None,jitter=True,rotation=60,single_gene=None,dual_gene=None,multi_gene=None,merge=None,
+                           **kwarg): 
+        adata_s = self.adata[self.adata.obs[key]==cluster,:].copy()
         # remove prior color stamps
         tmp = adata_s.uns
         tmp.pop('{}_colors'.format(col),None)
@@ -681,6 +686,24 @@ class ScTriangulate(object):
         # only consider the sub-populations in subset list
         if subset is not None:
             adata_s = adata_s[adata_s.obs[col].isin(subset),:].copy()
+        if merge is not None:
+            # if merge is not None, merge the sub-populations that are in each list
+            # and make sure it execucate after subetting, so don't contain sub-populations that not in subset.
+            # merge argument should be a nested list [('leiden1@3','leiden2@3'),('leiden3@4','leiden4@5')]
+            the_map = {}
+            # first put all sub_pop that needs to be concated in the map
+            for need_merge in merge:
+                new_concat_name = '+'.join(need_merge)
+                for sub_pop in need_merge:
+                    the_map[sub_pop] = new_concat_name
+            # then check the remaining pop that doesn't neee to be concated, put into the_map
+            all_pop = adata_s.obs[col].unique()
+            remain_pop = [item for item in all_pop if item not in the_map.keys()]
+            for item in remain_pop:
+                the_map[item] = item
+            # now map and get new column, and modifiy it back to "col"
+            tmp_new_col = adata_s.obs[col].map(the_map).values
+            adata_s.obs[col] = tmp_new_col
 
         if style == 'build':  # draw umap and heatmap
 
@@ -744,7 +767,7 @@ class ScTriangulate(object):
             umap_y_lim = (umap_whole[:,1].min(),umap_whole[:,1].max())
             dual_gene_plot(adata_s,dual_gene[0],dual_gene[1],s=s,save=save,format=format,dir=self.dir,umap_lim=[umap_x_lim,umap_y_lim])
 
-        elif style == 'tri_gene':
+        elif style == 'multi_gene':
             if umap_dot_size is None:
                 s = 120000/self.adata.obs.shape[0]
             else:
@@ -752,7 +775,7 @@ class ScTriangulate(object):
             umap_whole = self.adata.obsm['X_umap']
             umap_x_lim = (umap_whole[:,0].min(),umap_whole[:,0].max())
             umap_y_lim = (umap_whole[:,1].min(),umap_whole[:,1].max())
-            tri_gene_plot(adata_s,tri_gene[0],tri_gene[1],tri_gene[2],s=s,save=save,format=format,dir=self.dir,umap_lim=[umap_x_lim,umap_y_lim])
+            multi_gene_plot(adata_s,multi_gene,s=s,save=save,format=format,dir=self.dir,umap_lim=[umap_x_lim,umap_y_lim])
 
 
         elif style == 'heatmap+umap':
