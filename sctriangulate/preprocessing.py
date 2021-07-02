@@ -167,7 +167,7 @@ def make_sure_adata_writable(adata,delete=False):
     return adata
 
 
-def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,save=True,pca_n_comps=None):
+def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,save=True,pca_n_comps=None,n_top_genes=3000):
     adata.var_names_make_unique()
     # normal analysis
     if modality == 'rna':
@@ -176,7 +176,7 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
             sc.pp.calculate_qc_metrics(adata,qc_vars=['mt'],percent_top=None,inplace=True,log1p=False)
             sc.pp.normalize_total(adata,target_sum=1e4)
             sc.pp.log1p(adata)
-            sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=3000)
+            sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=n_top_genes)
             adata.raw = adata
             adata = adata[:,adata.var['highly_variable']]
             sc.pp.regress_out(adata,['total_counts','pct_counts_mt'])
@@ -199,7 +199,7 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
         else:   # log(1+x) and depth normalized data
             adata.var['mt'] = adata.var_names.str.startswith('MT-')
             sc.pp.calculate_qc_metrics(adata,qc_vars=['mt'],percent_top=None,inplace=True,log1p=False)
-            sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=3000)
+            sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=n_top_genes)
             adata.raw = adata
             adata = adata[:,adata.var['highly_variable']]
             sc.pp.regress_out(adata,['total_counts','pct_counts_mt'])
@@ -222,10 +222,11 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
         if not is_log:
             pass
         else:
-            sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=3000)
+            sc.pp.calculate_qc_metrics(adata,percent_top=None,inplace=True,log1p=False)
+            sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=n_top_genes)
             adata.raw = adata
             adata = adata[:,adata.var['highly_variable']]
-            sc.pp.scale(adata,max_value=10)
+            #sc.pp.scale(adata,max_value=10)
             sc.tl.pca(adata,n_comps=pca_n_comps)
             sc.pp.neighbors(adata)
             for resolution in resolutions:
@@ -633,7 +634,105 @@ def ensembl_gtf_to_gene_bed(gtf_path,bed_path,sort=True):
         final.sort_values(by=[0,3,4],inplace=True)
     final.to_csv(bed_path,sep='\t',index=None,header=None)
 
+# this function is taken from episcanpy, all the credits to the original developer:
+# https://github.com/colomemaria/epiScanpy/blob/master/episcanpy/tools/_find_genes.py
+def find_genes(adata,
+                 gtf_file,
+                 key_added='gene_annotation',
+                 upstream=2000,
+                 downstream=0,
+                 feature_type='gene',
+                 annotation='HAVANA',
+                 raw=False):
+    """
+    merge values of peaks/windows/features overlapping genebodies + 2kb upstream. 
+    It is possible to extend the search for closest gene to a given number of bases downstream as well. 
+    There is commonly 2 set of annotations in a gtf file(HAVANA, ENSEMBL). By default, the function
+    will search annotation from HAVANA but other annotation label/source can be specifed. 
+   
+    It is possible to use other type of features than genes present in a gtf file such as transcripts or CDS.
     
+    """
+    ### extracting the genes
+    gtf = {}
+    with open(gtf_file) as f:
+        for line in f:
+            if line[0:2] != '##' and '\t'+feature_type+'\t' in line and '\t'+annotation+'\t' in line:
+                line = line.rstrip('\n').split('\t')
+                if line[6] == '-':
+                    if line[0] not in gtf.keys():
+                        gtf[line[0]] = [[int(line[3])-downstream, int(line[4])+upstream,line[-1].split(';')[:-1]]]
+                    else:
+                        gtf[line[0]].append([int(line[3])-downstream, int(line[4])+upstream,line[-1].split(';')[:-1]])
+                else:
+                    if line[0] not in gtf.keys():
+                        gtf[line[0]] = [[int(line[3])-upstream, int(line[4])+downstream,line[-1].split(';')[:-1]]]
+                    else:
+                        gtf[line[0]].append([int(line[3])-upstream, int(line[4])+downstream,line[-1].split(';')[:-1]])
+
+    # extracting the feature coordinates
+    raw_adata_features = {}
+    feature_index = 0
+    for line in adata.var_names.tolist():
+        line = line.split('_')
+        if line[0] not in raw_adata_features.keys():
+            raw_adata_features[line[0]] = [[int(line[1]),int(line[2]), feature_index]]
+        else:
+            raw_adata_features[line[0]].append([int(line[1]),int(line[2]), feature_index])
+        feature_index += 1
+    
+    ## find the genes overlaping the features.
+    gene_index = []
+    for chrom in raw_adata_features.keys():
+        if chrom in gtf.keys():
+            chrom_index = 0
+            previous_features_index = 0
+            for feature in raw_adata_features[chrom]:
+                gene_name = []
+                feature_start = feature[0]
+                feature_end = feature[1]
+                for gene in gtf[chrom]:
+                    if (gene[1]<= feature_start): # the gene is before the feature. we need to test the next gene.
+                        continue
+                    elif (feature_end <= gene[0]): # the gene is after the feature. we need to test the next feature.
+                        break
+                    else: # the window is overlapping the gene. 
+                        for n in gene[-1]:
+                            if 'gene_name' in n:
+                                gene_name.append(n.lstrip('gene_name "').rstrip('""'))
+                        
+                if gene_name == []:
+                    gene_index.append('intergenic')
+                elif len(gene_name)==1:
+                    gene_index.append(gene_name[0])
+                else:
+                    gene_index.append(";".join(list(set(gene_name))))
+                    
+    adata.var[key_added] = gene_index
+
+    
+def reformat_peak(adata,canonical_chr_only=True):
+    # an adata atac peak from 10X is like 'chr1:10109-10357'
+    # to use find_gene function, need to be 'chr1_10109_10357'
+    var_names = adata.var_names
+    valid = set(['chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16',
+             'chr17','chr18','chr19','chr20','chr21','chr22','chrX','chrY'])
+    col = []
+    for item in var_names:
+        chr_ = item.split(':')[0]
+        if chr_ in valid:
+            start = item.split(':')[1].split('-')[0]
+            end = item.split(':')[1].split('-')[1]
+            now = '_'.join([chr_,start,end])
+            col.append(now)
+        else:
+            col.append('non_canonical_chr')
+    adata.var_names = col
+    if canonical_chr_only:
+        adata = adata[:,adata.var_names!='non_canonical_chr'].copy()
+    return adata
+
+
 
 
 

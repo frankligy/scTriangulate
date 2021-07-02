@@ -35,9 +35,9 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'Arial'
 
-# for publication and super large dataset
-mpl.rcParams['savefig.dpi'] = 600
-mpl.rcParams['figure.dpi'] = 600
+# # for publication and super large dataset
+# mpl.rcParams['savefig.dpi'] = 600
+# mpl.rcParams['figure.dpi'] = 600
 
 
 
