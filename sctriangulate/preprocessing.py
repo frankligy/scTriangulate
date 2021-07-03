@@ -97,10 +97,10 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None):
         mappings.append(mapping)
     if cols_output is None:
         for i,col in enumerate(cols_input):
-            adata.obs[col] = adata.obs_names.map(mappings[i]).fillna('Unknown').values
+            adata.obs[col] = adata.obs_names.map(mappings[i]).fillna('Unknown').astype('category').values
     else:
         for i in range(len(cols_input)):
-            adata.obs[cols_output[i]] = adata.obs_names.map(mappings[i]).fillna('Unknown').values
+            adata.obs[cols_output[i]] = adata.obs_names.map(mappings[i]).fillna('Unknown').astype('category').values
 
 
 def add_umap(adata,inputs,mode,cols=None,index_col=0):
@@ -300,12 +300,12 @@ def concat_rna_and_other(adata_rna,adata_other,umap,name,prefix):
 
 
 
-def umap_dual_view_save(adata,cols):
+def umap_dual_view_save(adata,cols,dir):
     for col in cols:
         fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
         sc.pl.umap(adata,color=col,frameon=False,ax=ax[0])
         sc.pl.umap(adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
-        plt.savefig('./umap_dual_view_{}.pdf'.format(col),bbox_inches='tight')
+        plt.savefig(os.path.join(dir,'umap_dual_view_{}.pdf'.format(col)),bbox_inches='tight')
         plt.close()
 
 
