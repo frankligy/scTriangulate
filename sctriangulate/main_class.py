@@ -44,7 +44,8 @@ mpl.rcParams['font.family'] = 'Arial'
 # define ScTriangulate Object
 class ScTriangulate(object):
 
-    def __init__(self,dir,adata,query,species='human',criterion=2,verbose=1,reference=None,add_metrics={'tfidf5':tf_idf5_for_cluster}):
+    def __init__(self,dir,adata,query,species='human',criterion=2,verbose=1,reference=None,add_metrics={'tfidf5':tf_idf5_for_cluster},
+                    predict_doublet=True):
 
         self.verbose = verbose
         self.dir = dir
@@ -70,7 +71,11 @@ class ScTriangulate(object):
         self.invalid = []
 
         # run doublet predict by default in the initialization
-        self.doublet_predict()
+        if predict_doublet:
+            self.doublet_predict()
+        else:
+            doublet_scores = np.full(shape=self.adata.obs.shape[0],fill_value=0.5)  # add a dummy score
+            self.adata.obs['doublet_scores'] = doublet_scores
 
         # add add_metrics by default in the initialization
         self.add_new_metrics(add_metrics)
