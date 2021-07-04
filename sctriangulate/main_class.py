@@ -1061,7 +1061,7 @@ class ScTriangulate(object):
             self.plot_heterogeneity(key,cluster,'build',format='png')
 
 
-    def viewer_cluster_feature_figure(self,parallel=True):
+    def viewer_cluster_feature_figure(self,parallel=False,select_keys=None):
         logger_sctriangulate.info('Building viewer requires generating all the necessary figures, may take several minutes')
         # create a folder to store all the figures
         if not os.path.exists(os.path.join(self.dir,'figure4viewer')):
@@ -1082,11 +1082,19 @@ class ScTriangulate(object):
             pool.close()
             pool.join()
         else:                               # Windows and Darwin can not parallelize if plotting
-            for key in self.cluster.keys():
-                self._atomic_viewer_figure(key)
+            if select_keys is None:
+                for key in self.cluster.keys():
+                    self._atomic_viewer_figure(key)
+            else:
+                for key in select_keys:
+                    self._atomic_viewer_figure(key)
         self.dir = ori_dir 
 
     def viewer_cluster_feature_html(self):
+        # create a folder to store all the figures
+        if not os.path.exists(os.path.join(self.dir,'figure4viewer')):
+            os.mkdir(os.path.join(self.dir,'figure4viewer'))
+        # generate html
         with open(os.path.join(self.dir,'figure4viewer','viewer.html'),'w') as f:
             f.write(to_html(self.cluster,self.score,self.total_metrics))
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.js'),os.path.join(self.dir,'figure4viewer')))
