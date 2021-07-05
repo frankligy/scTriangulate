@@ -463,8 +463,59 @@ class ScTriangulate(object):
                 self.adata.obs = result
             
 
+    def regress_out_size_effect(self,regressor='background_zscore'):
+        sctri = self
+        '''
+        the logic of this function is:
+        1, take the score slot of sctriangulate object, reformat to {score:[df_a1,df_a2...],},each df_a is index(c_name),metric,size
+        2. for each score, concated df will be subjected to regress_size main function, replace metric in place, deal with NA as well
+        3. restore to original score slot {annotation:{score1:{value_dict}}}
+        4. map back to each metric column in adata.obs
+        '''
+        result = {}
+        order_of_keys = list(sctri.score.keys())
+        for key in sctri.score.keys():
+            size = get_size_in_metrics(sctri.adata.obs,key)
+            slot = sctri.score[key]
+            for score in slot.keys():
+                df = pd.concat([pd.Series(slot[score]),pd.Series(size)],axis=1)
+                try:
+                    result[score].append(df)
+                except KeyError:
+                    result[score] = []
+                    result[score].append(df)
 
-
+        restore_score = {}
+        for key,value in result.items():
+            df_inspect_have_na = pd.concat(value,axis=0)
+            df_inspect_have_na['ori'] = np.arange(df_inspect_have_na.shape[0])
+            mask = df_inspect_have_na[0].isna()
+            df_inspect = df_inspect_have_na.dropna(axis=0) # metric, size, ori, index is the cluster names
+            df_na = df_inspect_have_na.loc[mask,:] # metric, size, ori, index is the cluster names
+            df_inspect[0] = regress_size(df_inspect,regressor=regressor).values # change the metric col to regressed one
+            df_na[0] = df_inspect[0].values.min() - 1 # make sure the na has smaller value than non-na ones
+            df_all = pd.concat([df_inspect,df_na]).sort_values(by='ori')  # concat and reorder to the original order
+            # now need to split it up, back to each annotation df
+            rowptr = 0
+            chunk_length = [item.shape[0] for item in value]
+            for chunkptr,length in enumerate(chunk_length):
+                bound = (rowptr,rowptr+length)
+                target_df = df_all.iloc[bound[0]:bound[1],:]
+                annotation = order_of_keys[chunkptr]
+                target_dict = target_df[0].to_dict()
+                try:
+                    restore_score[annotation][key] = target_dict
+                except KeyError:
+                    restore_score[annotation] = {}
+                    restore_score[annotation][key] = target_dict
+                rowptr = bound[1]
+        sctri.score = restore_score
+        # map all back
+        for key in sctri.score.keys():
+            for metric in sctri.total_metrics:
+                sctri.adata.obs['{}@{}'.format(metric,key)] = sctri.adata.obs[key].map(sctri.score[key]['cluster_to_{}'.format(metric)]).fillna(0).values
+        
+        return df_inspect_have_na,df_all
 
 
 

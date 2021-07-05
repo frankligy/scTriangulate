@@ -207,7 +207,7 @@ def marker_gene(adata, key, species, criterion, folder):
     return result
 
 
-def reassign_score(adata,key,marker):
+def reassign_score(adata,key,marker,regress_size=False):
     # get gene pool, slice the adata
     num = 30
     pool = []
@@ -263,7 +263,100 @@ def reassign_score(adata,key,marker):
     cluster_to_accuracy = {}
     for i,cluster in enumerate(order):
         cluster_to_accuracy[cluster] = accuracy[i]
+
+    # whether to regress out the clutser size effect or not
+    if regress_size:
+        key_metric_dict = cluster_to_accuracy
+        key_size_dict = get_size_in_metrics(adata.obs,key)
+        df_inspect = pd.concat([pd.Series(key_metric_dict),pd.Series(key_size_dict)],axis=1) # index is cluster, col1 is metric, col2 is size
+        cluster_to_accuracy = regress_size(df_inspect,regressor='GLM',to_dict=True)
     return cluster_to_accuracy, confusion_reassign
+
+'''below is the part for regression score'''
+def background_normalizer(df,n_neighbors=10,scale=True):
+    # df is a two column dataframe where first column is metric and second column is size
+    from copy import deepcopy
+    df = deepcopy(df)
+    df['order'] = np.arange(df.shape[0])
+    col = []
+    for i in range(df.shape[0]):
+        this_metric = df[0][i]
+        distance_to_this = (df[0] - this_metric).abs()
+        df_tmp = deepcopy(df)
+        df_tmp['distance'] = distance_to_this.values
+        df_tmp.sort_values(by='distance',inplace=True)
+        neighbors_metric = df_tmp.iloc[:,0][:n_neighbors].values
+        mean_ = neighbors_metric.mean()
+        std_ = neighbors_metric.std()
+        if scale:
+            if std_ == 0:
+                col.append(0)
+            else:
+                col.append((this_metric-mean_)/std_)
+        else:
+            col.append(this_metric-mean_)
+    df['normalized'] = col
+    return df
+
+def regress_size(df_inspect,regressor='background_zscore',n_neighbors=10,to_dict=False):
+    
+    # df_inspect, index is cluster name, col1 is metric, col2 is size
+    if regressor == 'background_zscore':
+        df_now = background_normalizer(df_inspect,n_neighbors,True)
+        residual = df_now['normalized'].values
+        df_inspect[0] = residual
+        normalized_metric_series = df_inspect[0]
+    elif regressor == 'background_mean':
+        df_now = background_normalizer(df_inspect,n_neighbors,False)
+        residual = df_now['normalized'].values
+        df_inspect[0] = residual
+        normalized_metric_series = df_inspect[0]
+    elif regressor == 'GLM':
+        endog = df_inspect[0] # metric
+        exog = df_inspect[1]  # size
+        import statsmodels.api as sm
+        exog = sm.add_constant(exog,prepend=True)
+        model = sm.GLM(endog,exog,family=sm.families.Gaussian())
+        res = model.fit()
+        residual = res.resid_response
+        normalized_metric_series = residual
+    elif regressor == 'Huber':
+        endog = df_inspect[0] # metric
+        exog = df_inspect[1]  # size
+        from sklearn.linear_model import HuberRegressor
+        model = HuberRegressor().fit(exog.values.reshape(-1,1),endog.values)
+        prediction = model.predict(exog.values.reshape(-1,1))
+        residual = endog.values - prediction
+        # outliers = model.outliers_
+        df_inspect[0] = residual
+        normalized_metric_series = df_inspect[0]
+    elif regressor == 'RANSAC':
+        endog = df_inspect[0] # metric
+        exog = df_inspect[1]  # size
+        from sklearn.linear_model import RANSACRegressor
+        model = RANSACRegressor().fit(exog.values.reshape(-1,1),endog.values)
+        prediction = model.predict(exog.values.reshape(-1,1))
+        residual = endog.values - prediction
+        #outliers = np.logical_not(model.inlier_mask_)
+        df_inspect[0] = residual
+        normalized_metric_series = df_inspect[0]
+    elif regressor == 'TheilSen':
+        endog = df_inspect[0] # metric
+        exog = df_inspect[1]  # size
+        from sklearn.linear_model import TheilSenRegressor
+        model = TheilSenRegressor().fit(exog.values.reshape(-1,1),endog.values)
+        prediction = model.predict(exog.values.reshape(-1,1))
+        residual = endog.values - prediction
+        df_inspect[0] = residual
+        normalized_metric_series = df_inspect[0]
+    if to_dict:
+        normalized_metric_dict = normalized_metric_series.to_dict()
+        final = normalized_metric_dict
+    else:
+        final = normalized_metric_series
+    return final
+
+
 
 
 def tf_idf_bare_compute(df,cluster):
@@ -281,7 +374,21 @@ def tf_idf_bare_compute(df,cluster):
     tf_idf_ori = tf * idf  # (n_genes,)
     return tf_idf_ori
 
-def tf_idf10_for_cluster(adata,key,species,criterion):
+def single_size_query(obs,c):
+    # c would be {gs:ERP4}
+    key = list(c.keys())[0]
+    cluster = list(c.values())[0]
+    size = obs.loc[obs[key]==cluster,:].shape[0]
+    return size
+
+def get_size_in_metrics(obs,key):
+    key_size_dict = {}  # {ERP1:54,ERP2:100....}
+    for cluster in obs[key].unique():
+        size = single_size_query(obs,{key:cluster})
+        key_size_dict[cluster] = size
+    return key_size_dict
+
+def tf_idf10_for_cluster(adata,key,species,criterion,regress_size=False):
     df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
     df['cluster'] = adata.obs[key].astype('str').values
     cluster_to_tfidf10 = {} # store tfidf10 score
@@ -299,10 +406,17 @@ def tf_idf10_for_cluster(adata,key,species,criterion):
         cluster_to_tfidf10[item] = result10
         cluster_to_exclusive[item] = test.to_dict()
     exclusive_genes = pd.Series(cluster_to_exclusive,name='genes')
+
+    # whether to regress out the clutser size effect or not
+    if regress_size:
+        key_metric_dict = cluster_to_tfidf10
+        key_size_dict = get_size_in_metrics(adata.obs,key)
+        df_inspect = pd.concat([pd.Series(key_metric_dict),pd.Series(key_size_dict)],axis=1) # index is cluster, col1 is metric, col2 is size   
+        cluster_to_tfidf10 = regress_size(df_inspect,regressor='GLM',to_dict=True)
     return cluster_to_tfidf10, exclusive_genes
 
 
-def tf_idf5_for_cluster(adata,key,species,criterion):
+def tf_idf5_for_cluster(adata,key,species,criterion,regress_size=False):
     df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
     df['cluster'] = adata.obs[key].astype('str').values
     cluster_to_tfidf5 = {} # store tfidf1 score
@@ -317,9 +431,16 @@ def tf_idf5_for_cluster(adata,key,species,criterion):
         test_pure = test.loc[~test.index.isin(artifact_genes)]
         result5 = test_pure.iloc[4] 
         cluster_to_tfidf5[item] = result5
+
+    # whether to regress out the clutser size effect or not
+    if regress_size:
+        key_metric_dict = cluster_to_tfidf5
+        key_size_dict = get_size_in_metrics(adata.obs,key)
+        df_inspect = pd.concat([pd.Series(key_metric_dict),pd.Series(key_size_dict)],axis=1) # index is cluster, col1 is metric, col2 is size
+        cluster_to_tfidf5 = regress_size(df_inspect,regressor='GLM',to_dict=True)
     return cluster_to_tfidf5
 
-def tf_idf1_for_cluster(adata,key,species,criterion):
+def tf_idf1_for_cluster(adata,key,species,criterion,regress_size=False):
     df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
     df['cluster'] = adata.obs[key].astype('str').values
     cluster_to_tfidf1 = {} # store tfidf1 score
@@ -334,12 +455,19 @@ def tf_idf1_for_cluster(adata,key,species,criterion):
         test_pure = test.loc[~test.index.isin(artifact_genes)]
         result1 = test_pure.iloc[0] 
         cluster_to_tfidf1[item] = result1
+
+    # whether to regress out the clutser size effect or not
+    if regress_size:
+        key_metric_dict = cluster_to_tfidf1
+        key_size_dict = get_size_in_metrics(adata.obs,key)
+        df_inspect = pd.concat([pd.Series(key_metric_dict),pd.Series(key_size_dict)],axis=1) # index is cluster, col1 is metric, col2 is size
+        cluster_to_tfidf1 = regress_size(df_inspect,regressor='GLM',to_dict=True)
     return cluster_to_tfidf1
 
 
 
 
-def SCCAF_score(adata, key, species, criterion, scale_sccaf):
+def SCCAF_score(adata, key, species, criterion, scale_sccaf,regress_size=False):
     from sklearn.preprocessing import LabelEncoder
     from sklearn.model_selection import StratifiedShuffleSplit
     from sklearn.linear_model import LogisticRegression
@@ -379,6 +507,13 @@ def SCCAF_score(adata, key, species, criterion, scale_sccaf):
     cluster_to_SCCAF = {}
     for i in range(len(numeric2reliable)):
         cluster_to_SCCAF[le.classes_[i]] = numeric2reliable[i]
+
+    # whether to regress out the clustser size effect or not
+    if regress_size:
+        key_metric_dict = cluster_to_SCCAF
+        key_size_dict = get_size_in_metrics(adata.obs,key)
+        df_inspect = pd.concat([pd.Series(key_metric_dict),pd.Series(key_size_dict)],axis=1) # index is cluster, col1 is metric, col2 is size
+        cluster_to_SCCAF = regress_size(df_inspect,regressor='GLM',to_dict=True)
     return cluster_to_SCCAF, confusion_sccaf
 
 
