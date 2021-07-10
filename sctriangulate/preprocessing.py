@@ -636,6 +636,12 @@ def ensembl_gtf_to_gene_bed(gtf_path,bed_path,sort=True):
 
 # this function is taken from episcanpy, all the credits to the original developer:
 # https://github.com/colomemaria/epiScanpy/blob/master/episcanpy/tools/_find_genes.py
+
+# to download the gtf file
+'''
+https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz
+https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_38/gencode.v38.annotation.gtf.gz
+'''
 def find_genes(adata,
                  gtf_file,
                  key_added='gene_annotation',
