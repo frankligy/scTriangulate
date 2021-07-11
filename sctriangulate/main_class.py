@@ -850,7 +850,17 @@ class ScTriangulate(object):
                 sc.pl.umap(adata_s,color=[col],ax=axes[0],size=umap_dot_size)
             
             # ax2
-            tmp_col = [1 if item == str(cluster) else 0 for item in self.adata.obs[key]]
+            if subset is None:
+                tmp_col = [1 if item == str(cluster) else 0 for item in self.adata.obs[key]]
+            else:
+                tmp_col = []
+                for i in range(self.adata.obs.shape[0]):
+                    ori_cluster_label = self.adata.obs[key][i]
+                    prune_cluster_label = self.adata.obs[col][i]
+                    if ori_cluster_label == str(cluster) and prune_cluster_label in subset:
+                        tmp_col.append(1)
+                    else:
+                        tmp_col.append(0)
             self.adata.obs['tmp_plot'] = tmp_col
             sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5,ax=axes[1])
             if save:
@@ -880,7 +890,17 @@ class ScTriangulate(object):
                 sc.pl.umap(adata_s,color=[col],ax=axes[0],size=umap_dot_size)
             
             # ax2
-            tmp_col = [1 if item == str(cluster) else 0 for item in self.adata.obs[key]]
+            if subset is None:
+                tmp_col = [1 if item == str(cluster) else 0 for item in self.adata.obs[key]]
+            else:
+                tmp_col = []
+                for i in range(self.adata.obs.shape[0]):
+                    ori_cluster_label = self.adata.obs[key][i]
+                    prune_cluster_label = self.adata.obs[col][i]
+                    if ori_cluster_label == str(cluster) and prune_cluster_label in subset:
+                        tmp_col.append(1)
+                    else:
+                        tmp_col.append(0)
             self.adata.obs['tmp_plot'] = tmp_col
             sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5,ax=axes[1])
             if save:
