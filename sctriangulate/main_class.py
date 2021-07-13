@@ -732,7 +732,7 @@ class ScTriangulate(object):
 
     def plot_heterogeneity(self,key,cluster,style,col='pruned',save=True,format='pdf',genes=None,umap_zoom_out=True,umap_dot_size=None,
                            subset=None,marker_gene_dict=None,jitter=True,rotation=60,single_gene=None,dual_gene=None,multi_gene=None,merge=None,
-                           **kwarg): 
+                           to_sinto=False,to_samtools=False,**kwarg): 
         adata_s = self.adata[self.adata.obs[key]==cluster,:].copy()
         # remove prior color stamps
         tmp = adata_s.uns
@@ -806,7 +806,7 @@ class ScTriangulate(object):
                 umap_y_lim = (umap_whole[:,1].min(),umap_whole[:,1].max())
                 ax.set_xlim(umap_x_lim)
                 ax.set_ylim(umap_y_lim)
-            sc.pl.umap(adata_s,color=[single_gene],size=s,ax=ax,**kwarg)
+            sc.pl.umap(adata_s,color=[single_gene],size=s,ax=ax,cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5)
             if save:
                 plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}_{}.{}'.format(key,cluster,col,style,single_gene,format)),bbox_inches='tight')
                 plt.close()
@@ -953,8 +953,39 @@ class ScTriangulate(object):
                 plt.close()
                 
         elif style == 'cellxgene':
-            adata_s.write(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.h5ad'.format(key,cluster,col,style)))
+            if save:
+                adata_s.write(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.h5ad'.format(key,cluster,col,style)))
+            if to_sinto:
+                if not os.path.exists(os.path.join(self.dir,'sinto')):
+                    os.mkdir(os.path.join(self.dir,'sinto'))
+                adata_s.obs[col].to_csv(os.path.join(self.dir,'sinto','{}_{}_heterogeneity_{}_{}_to_sinto_cells.txt'.format(key,cluster,col,style)),sep='\t',header=None)
+            if to_samtools:
+                if not os.path.exists(os.path.join(self.dir,'samtools')):
+                    os.mkdir(os.path.join(self.dir,'samtools'))
+                for key_,sub_df in adata_s.obs[col].to_frame().groupby(by=col):
+                    sub_df.to_csv(os.path.join(self.dir,'samtools','{}_{}_heterogeneity_{}_{}_to_samtools_{}.txt'.format(key,cluster,col,style,key_)),sep='\t',header=None,columns=[])            
+            return adata_s
 
+        '''
+        how to use to_sinto or to_samtools file for visualization in IGV (take bigwig)?
+        1. if use to_sinto to build pseudobulk
+         <1> make sure you pip install sinto
+         <2> download whole bam file, assume barcode is in CB tag field
+         <3> run the following command:
+            sinto filterbarcodes -b /path/to/whole_bam.bam \
+                                 -c /sinto/azimuth_CD8_TCM_heterogeneity_pruned_cellxgene_to_sinto_cells.txt \
+                                 -p 30
+         <4> for each bam file, build bam.bai, then run bamCoverage:
+            bamCoverage -b $1.bam -o $1.bw --normalizeUsing CPM -p max -bs 1 -of bigwig
+
+        2. if use to_samtools to build pseudobulk
+         <1> make sure to load samtools/1.13.0
+         <2> download whole bam file, know where the barcode is stored
+         <3> run the following command:
+            samtools view -@ 30 -b -o subset.bam -D CB:test.txt pbmc_granulocyte_sorted_10k_atac_possorted_bam.bam
+            samtools index resultant.bam
+            bamCoverage -b $1.bam -o $1.bw --normalizeUsing CPM -p max -bs 1 -of bigwig
+        '''
 
         elif style == 'sankey':
             try:
