@@ -109,7 +109,7 @@ class ScTriangulate(object):
             self.adata.obs[key] = self.adata.obs[key].astype('category')
         # step2: replace invalid char in cluster and key name    
         ## replace cluster name
-        invalid_chars = ['/','@','$']
+        invalid_chars = ['/','@','$',' ']
         if self.reference in self.query:
             all_keys = self.query
         else:
@@ -964,28 +964,31 @@ class ScTriangulate(object):
                     os.mkdir(os.path.join(self.dir,'samtools'))
                 for key_,sub_df in adata_s.obs[col].to_frame().groupby(by=col):
                     sub_df.to_csv(os.path.join(self.dir,'samtools','{}_{}_heterogeneity_{}_{}_to_samtools_{}.txt'.format(key,cluster,col,style,key_)),sep='\t',header=None,columns=[])            
+            
+            # how to use to_sinto or to_samtools file for visualization in IGV (take bigwig)?
+            # 1. if use to_sinto to build pseudobulk
+            # <1> make sure you pip install sinto
+            # <2> download whole bam file, assume barcode is in CB tag field
+            # <3> run the following command:
+            #     sinto filterbarcodes -b /path/to/whole_bam.bam \
+            #                         -c /sinto/azimuth_CD8_TCM_heterogeneity_pruned_cellxgene_to_sinto_cells.txt \
+            #                         -p 30
+            # <4> for each bam file, build bam.bai, then run bamCoverage:
+            #     bamCoverage -b $1.bam -o $1.bw --normalizeUsing CPM -p max -bs 1 -of bigwig
+
+            # 2. if use to_samtools to build pseudobulk
+            # <1> make sure to load samtools/1.13.0
+            # <2> download whole bam file, know where the barcode is stored
+            # <3> run the following command:
+            #     samtools view -@ 30 -b -o subset.bam -D CB:test.txt pbmc_granulocyte_sorted_10k_atac_possorted_bam.bam
+            #     samtools index resultant.bam
+            #     bamCoverage -b $1.bam -o $1.bw --normalizeUsing CPM -p max -bs 1 -of bigwig            
+            
             return adata_s
 
-        '''
-        how to use to_sinto or to_samtools file for visualization in IGV (take bigwig)?
-        1. if use to_sinto to build pseudobulk
-         <1> make sure you pip install sinto
-         <2> download whole bam file, assume barcode is in CB tag field
-         <3> run the following command:
-            sinto filterbarcodes -b /path/to/whole_bam.bam \
-                                 -c /sinto/azimuth_CD8_TCM_heterogeneity_pruned_cellxgene_to_sinto_cells.txt \
-                                 -p 30
-         <4> for each bam file, build bam.bai, then run bamCoverage:
-            bamCoverage -b $1.bam -o $1.bw --normalizeUsing CPM -p max -bs 1 -of bigwig
 
-        2. if use to_samtools to build pseudobulk
-         <1> make sure to load samtools/1.13.0
-         <2> download whole bam file, know where the barcode is stored
-         <3> run the following command:
-            samtools view -@ 30 -b -o subset.bam -D CB:test.txt pbmc_granulocyte_sorted_10k_atac_possorted_bam.bam
-            samtools index resultant.bam
-            bamCoverage -b $1.bam -o $1.bw --normalizeUsing CPM -p max -bs 1 -of bigwig
-        '''
+
+
 
         elif style == 'sankey':
             try:
