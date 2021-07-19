@@ -32,12 +32,12 @@ def small_txt_to_adata(int_file,gene_is_index=True):
     return adata
 
 
-def large_txt_to_mtx(int_file,out_folder,gene_is_index=True):  # whether the txt if gene * cell
+def large_txt_to_mtx(int_file,out_folder,gene_is_index=True,type_convert_to='int16'):  # whether the txt if gene * cell
     '''since expression matrix is too large, I need to do iteration'''
     reader = pd.read_csv(int_file,sep='\t',index_col=0,chunksize=1000)
     store = []
     for chunk in reader:
-        tmp = chunk.astype('int16')
+        tmp = chunk.astype(type_convert_to)
         store.append(tmp)
     data = pd.concat(store)
     print(data.shape)
