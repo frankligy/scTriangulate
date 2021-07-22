@@ -1,0 +1,15 @@
+API
+======
+
+ScTriangulate Object
+---------------------
+
+.. autoclass:: sctriangulate.main_class.ScTriangulate
+    :members:
+    :exclude-members: plot_heterogeneity
+
+Plot heterogeneity
+~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.main_class.ScTriangulate.plot_heterogeneity
+
+

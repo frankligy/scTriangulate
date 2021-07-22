@@ -44,6 +44,20 @@ mpl.rcParams['font.family'] = 'Arial'
 # define ScTriangulate Object
 class ScTriangulate(object):
 
+    '''
+    ScTriangulate object.
+
+    Example::
+
+        adata = sc.read('pbmc3k_azimuth_umap.h5ad')
+        sctri = ScTriangulate(dir='./output',adata=adata,query=['leiden1','leiden2','leiden3'])
+
+    :param dir: Output folder path on the disk
+    :param adata: input adata file
+    :param query: a python list contains the annotation names to query
+
+    '''
+
     def __init__(self,dir,adata,query,species='human',criterion=2,verbose=1,reference=None,add_metrics={'tfidf5':tf_idf5_for_cluster},
                     predict_doublet=True):
 
@@ -733,6 +747,23 @@ class ScTriangulate(object):
     def plot_heterogeneity(self,key,cluster,style,col='pruned',save=True,format='pdf',genes=None,umap_zoom_out=True,umap_dot_size=None,
                            subset=None,marker_gene_dict=None,jitter=True,rotation=60,single_gene=None,dual_gene=None,multi_gene=None,merge=None,
                            to_sinto=False,to_samtools=False,**kwarg): 
+        '''
+        Core plotting function in scTriangulate.
+
+        Example::
+        
+            sctri.plot_heterogeneity('leiden1','0','umap',subset=['leiden1@0','leiden3@10'])
+            sctri.plot_heterogeneity('leiden1','0','heatmap',subset=['leiden1@0','leiden3@10'])
+            sctri.plot_heterogeneity('leiden1','0','violin',subset=['leiden1@0','leiden3@10'],genes=['MAPK14','ANXA1'])
+            sctri.plot_heterogeneity('leiden1','0','sankey')
+            sctri.plot_heterogeneity('leiden1','0','cellxgene')
+            sctri.plot_heterogeneity('leiden1','0','heatmap+umap',subset=['leiden1@0','leiden3@10'],marker_gene_dict=marker_gene_dict)
+            sctri.plot_heterogeneity('leiden1','0','dual_gene',dual_gene=['MAPK14','CD52'])
+
+        :param key: annotation key
+        :param cluster: cluster name in each annotation
+   
+        '''
         adata_s = self.adata[self.adata.obs[key]==cluster,:].copy()
         # remove prior color stamps
         tmp = adata_s.uns
@@ -1237,6 +1268,9 @@ class ScTriangulate(object):
 
 # ancillary functions for main class
 def penalize_artifact_void(obs,query,stamps,metrics):
+    '''
+    penalize_artifact_void core function
+    '''
     for stamp in stamps:
         metrics_cols = obs.loc[:,[item2+'@'+item1 for item1 in query for item2 in metrics]]
         cluster_cols = obs.loc[:,query]
