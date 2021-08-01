@@ -1240,7 +1240,7 @@ class ScTriangulate(object):
             adt_names.append(v[3])
         fig = plt.figure()
         gs = mpl.gridspec.GridSpec(nrows=2, ncols=len(data), height_ratios=(0.3, 0.7), hspace=0,wspace=0)
-        axes1 = [fig.add_subplot(gs[0,i]) for i in range(4)]
+        axes1 = [fig.add_subplot(gs[0,i]) for i in range(len(data))]
         ax2 = fig.add_subplot(gs[1, :])
         # ax2 is the stacked barplot
         width = 1/(2*len(data))
@@ -1260,9 +1260,12 @@ class ScTriangulate(object):
         # ax1 is the single pie chart in axes1 list
         for i,lis in enumerate(adt_names):
             n = len(lis)
-            axes1[i].pie(x=[100/n for i in range(n)],labels=lis,frame=True,labeldistance=None)
-            axes1[i].axis('equal')
-            axes1[i].tick_params(bottom=False,left=False,labelbottom=False,labelleft=False)
+            if n > 0:
+                axes1[i].pie(x=[100/n for i in range(n)],labels=lis,frame=True,labeldistance=None)
+                axes1[i].axis('equal')
+                axes1[i].tick_params(bottom=False,left=False,labelbottom=False,labelleft=False)
+            else:
+                axes1[i].tick_params(bottom=False,left=False,labelbottom=False,labelleft=False)
         axes1[0].set_ylabel('ADT features')
         axes1[-1].legend(loc='lower right',bbox_to_anchor=(1,1),ncol=len(data),frameon=False)
         fig.suptitle('{}_frac_{}_{}'.format(mode,key,cluster))
@@ -1326,7 +1329,7 @@ class ScTriangulate(object):
         im = ax1.imshow(X=draw_data,cmap=cmap,aspect='auto',interpolation='none')
         ax1.set_xticks([])
         ax1.set_yticks(np.arange(draw_data.shape[0]))
-        ax1.set_yticklabels(p_adata.var_names.tolist(),fontsize=feature_fontsize)
+        ax1.set_yticklabels(p_adata.var_names.tolist(),fontsize=feature_fontsize)  
         # ax2, column cell color bars
         p_adata.obs['plot_cluster'] = p_adata.obs_names.map(barcode_to_cluster)
         tmp_frac = [np.count_nonzero(p_adata.obs['plot_cluster'].values==c)/p_adata.obs.shape[0] for c in cluster_order]
@@ -1346,19 +1349,22 @@ class ScTriangulate(object):
         feature_row_cbar_mat_rgb = hex2_to_rgb3(feature_row_cbar_mat)
         ax3.imshow(X=feature_row_cbar_mat_rgb,aspect='auto',interpolation='none')
         ax3.tick_params(bottom=False,left=False,labelbottom=False,labelleft=False)
+        # add white vline
+        s,e = ax1.get_xlim()
+        vline_coords = tmp_cum * (e-s) + s
+        print(vline_coords)
+        for x in vline_coords:
+            ax1.axvline(x,ymin=0,ymax=1,color='white',linewidth=0.03) 
         # colorbar
         gs.update(right=0.8)
-        gs_cbar = mpl.gridspec.GridSpec(nrows=1,ncols=1,left=0.85)
+        gs_cbar = mpl.gridspec.GridSpec(nrows=1,ncols=1,left=0.85,top=0.3)
         ax4 = fig.add_subplot(gs_cbar[0,0])
         plt.colorbar(im,cax=ax4)
-        # add white vline
-        vline_coords = tmp_cum * p_adata.obs.shape[0]
-        for x in vline_coords:
-            ax1.axvline(x,ymin=0,ymax=1,color='white')       
+    
         if save:
             plt.savefig(os.path.join(self.dir,'sctri_long_umap.pdf'),bbox_inches='tight')
         # return that can be imported to morpheus
-        export = pd.DataFrame(data=draw_data,index=p_adata.obs_names,columns=p_adata.var_names)
+        export = pd.DataFrame(data=draw_data,columns=p_adata.obs_names,index=p_adata.var_names)
         return export
 
 
