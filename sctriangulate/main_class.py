@@ -1272,7 +1272,8 @@ class ScTriangulate(object):
             plt.close()
 
 
-    def plot_long_heatmap(self,clusters=None,key='pruned',n_features=5,mode='marker_genes',cmap='viridis',save=True,format='pdf'):
+    def plot_long_heatmap(self,clusters=None,key='pruned',n_features=5,mode='marker_genes',cmap='viridis',save=True,format='pdf',figsize=(6,4.8),
+                          feature_fontsize=3,cluster_fontsize=5):
         df = self.uns[mode][key]
         # get feature pool
         feature_pool = []
@@ -1308,7 +1309,7 @@ class ScTriangulate(object):
         barcode_to_cluster = barcode_cluster_df.groupby(by='barcode')['cluster'].apply(lambda x:x.values[0]).to_dict()
         cluster_to_barcode = barcode_cluster_df.groupby(by='cluster')['barcode'].apply(lambda x:x.tolist()).to_dict()
         # plotting
-        fig = plt.figure(figsize=(6,4.8))
+        fig = plt.figure(figsize=figsize)
         gs = mpl.gridspec.GridSpec(nrows=2,ncols=2,width_ratios=(0.97,0.03),height_ratios=(0.97,0.03),wspace=0.02,hspace=0.02)
         ax1 = fig.add_subplot(gs[0,0])  # heatmap
         ax2 = fig.add_subplot(gs[1,0])  # column cell color bars
@@ -1325,18 +1326,18 @@ class ScTriangulate(object):
         im = ax1.imshow(X=draw_data,cmap=cmap,aspect='auto',interpolation='none')
         ax1.set_xticks([])
         ax1.set_yticks(np.arange(draw_data.shape[0]))
-        ax1.set_yticklabels(p_adata.var_names.tolist(),fontsize=3)
+        ax1.set_yticklabels(p_adata.var_names.tolist(),fontsize=feature_fontsize)
         # ax2, column cell color bars
         p_adata.obs['plot_cluster'] = p_adata.obs_names.map(barcode_to_cluster)
         tmp_frac = [np.count_nonzero(p_adata.obs['plot_cluster'].values==c)/p_adata.obs.shape[0] for c in cluster_order]
         tmp_cum = np.cumsum(tmp_frac)
-        x_coords = [(tmp_cum[i] - tmp_frac[i]*1/2) * p_adata.obs.shape[0]  for i in range(len(cluster_order))]
+        x_coords = [(tmp_cum[i] - tmp_frac[i]*1/2) * p_adata.obs.shape[0] for i in range(len(cluster_order))]
         anno_to_color = colors_for_set(np.sort(p_adata.obs['plot_cluster'].unique()))
         cell_column_cbar_mat = p_adata.obs['plot_cluster'].map(anno_to_color).values.reshape(1,-1)
         cell_column_cbar_mat_rgb = hex2_to_rgb3(cell_column_cbar_mat)
         ax2.imshow(X=cell_column_cbar_mat_rgb,aspect='auto',interpolation='none')
         ax2.set_xticks(x_coords)
-        ax2.set_xticklabels(cluster_order,rotation=90,fontsize=5)
+        ax2.set_xticklabels(cluster_order,rotation=90,fontsize=cluster_fontsize)
         ax2.set_yticks([])
         ax2.set_yticklabels([])
         # ax3, row feature color bars
@@ -1349,9 +1350,16 @@ class ScTriangulate(object):
         gs.update(right=0.8)
         gs_cbar = mpl.gridspec.GridSpec(nrows=1,ncols=1,left=0.85)
         ax4 = fig.add_subplot(gs_cbar[0,0])
-        plt.colorbar()
+        plt.colorbar(im,cax=ax4)
+        # add white vline
+        vline_coords = tmp_cum * p_adata.obs.shape[0]
+        for x in vline_coords:
+            ax1.axvline(x,ymin=0,ymax=1,color='white')       
         if save:
-            plt.savefig(os.path.join(self.dir,'test.pdf'),bbox_inches='tight')
+            plt.savefig(os.path.join(self.dir,'sctri_long_umap.pdf'),bbox_inches='tight')
+        # return that can be imported to morpheus
+        export = pd.DataFrame(data=draw_data,index=p_adata.obs_names,columns=p_adata.var_names)
+        return export
 
 
         
