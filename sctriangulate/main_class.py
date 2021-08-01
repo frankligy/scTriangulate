@@ -10,10 +10,13 @@ import matplotlib as mpl
 import seaborn as sns
 from anytree import Node, RenderTree
 from scipy.sparse import issparse,csr_matrix
+from scipy.spatial.distance import pdist,squareform
+from scipy.cluster.hierarchy import linkage,leaves_list
 import multiprocessing as mp
 import platform
 import logging
 import subprocess
+import re
 
 import scanpy as sc
 import anndata as ad
@@ -164,6 +167,8 @@ class ScTriangulate(object):
             logger_sctriangulate.info('choosing console logging')
 
         elif self.verbose == 2:
+            if not os.path.exist(self.dir):
+                os.mkdir(self.dir)
             f_handler = logging.FileHandler(os.path.join(self.dir,'scTriangulate.log'))
             f_handler.setLevel(logging.INFO)
             f_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s' )
@@ -184,9 +189,35 @@ class ScTriangulate(object):
     def var_to_df(self,name='sctri_inspect_var.txt'):
         self.adata.var.to_csv(os.path.join(self.dir,name),sep='\t')
 
-    def gene_to_df(self,mode,key):
+    def gene_to_df(self,mode,key,raw=False,col='purify',n=100):
         '''mode is marker_genes or exclusive_genes'''
-        self.uns['{}'.format(mode)][key].to_csv(os.path.join(self.dir,'sctri_gene_to_df_{}_{}.txt'.format(mode,key)),sep='\t')
+        if not raw: # reformat the output to human readable
+            df = self.uns['{}'.format(mode)][key]
+            if mode == 'marker_genes':
+                result = pd.Series()
+                for i in range(df.shape[0]):
+                    cluster = df.index[i]
+                    markers = df.iloc[i][col]
+                    single_column = pd.Series(data=markers,name=cluster)
+                    result = pd.concat([result,single_column],axis=1,ignore_index=True)
+                result.drop(columns=0,inplace=True)
+                all_clusters = df.index
+                result.columns = all_clusters
+
+            elif mode == 'exclusive_genes':
+                result = pd.DataFrame({'cluster':[],'gene':[],'score':[]})
+                for i in range(df.shape[0]): #  here the exclusive gene df is actually a series
+                    cluster = df.index[i]
+                    gene = df[i]
+                    col_cluster = np.full(n,fill_value=cluster)
+                    col_gene = list(gene.keys())[:n]
+                    col_score = list(gene.values())[:n]
+                    chunk = pd.DataFrame({'cluster':col_cluster,'gene':col_gene,'score':col_score})
+                    result = pd.concat([result,chunk],axis=0)
+            result.to_csv(os.path.join(self.dir,'sctri_gene_to_df_{}_{}.txt'.format(mode,key)),sep='\t',index=None)
+
+        elif raw:
+            self.uns['{}'.format(mode)][key].to_csv(os.path.join(self.dir,'sctri_gene_to_df_{}_{}.txt'.format(mode,key)),sep='\t')
 
     def confusion_to_df(self,mode,key):
         '''mode is confusion_reassign or confusion_sccaf'''
@@ -1177,9 +1208,155 @@ class ScTriangulate(object):
             plt.savefig(os.path.join(self.dir,'sctri_circular_barplot_{}.{}'.format(col,format)),bbox_inches='tight')
             plt.close()
 
+    
+    def plot_multi_modal_feature_fraction(self,cluster,mode='marker_genes',key='pruned',tops=[10,20,30,50],
+                                    regex_adt=r'^AB_',regex_atac=r'^chr\d{1,2}',save=True,format='pdf'):
+        if mode == 'marker_genes':
+            features = self.uns[mode][key].loc[cluster]['purify']
+        elif mode == 'exclusive_genes':
+            features = self.uns[mode][key].loc[cluster]
+        data = {}
+        for top in tops:
+            top_rna,top_adt,top_atac = 0,0,0
+            top_adt_name = []
+            top_features = features[:top]
+            for item in top_features:
+                if re.search(pattern=regex_adt,string=item):
+                    top_adt += 1
+                    top_adt_name.append(item)
+                elif re.search(pattern=regex_atac,string=item):
+                    top_atac += 1
+                else:
+                    top_rna += 1
+            assert top_adt + top_atac + top_rna == top
+            data[top] = (top_rna,top_adt,top_atac,top_adt_name)
+        # plotting
+        frac_rna = []
+        frac_atac = []
+        adt_names = []
+        for k,v in data.items():
+            frac_rna.append(v[0]/k)
+            frac_atac.append(v[2]/k)
+            adt_names.append(v[3])
+        fig = plt.figure()
+        gs = mpl.gridspec.GridSpec(nrows=2, ncols=len(data), height_ratios=(0.3, 0.7), hspace=0,wspace=0)
+        axes1 = [fig.add_subplot(gs[0,i]) for i in range(4)]
+        ax2 = fig.add_subplot(gs[1, :])
+        # ax2 is the stacked barplot
+        width = 1/(2*len(data))
+        ax2.set_xlim([0,1])
+        x_coord = [1/(2*len(data)) * (i*2+1) for i in range(len(data))]
+        ax2.bar(x_coord,frac_rna,width=width,align='center',bottom=0,label='RNA feature',color='#D56DF2',edgecolor='k')
+        ax2.bar(x_coord,frac_atac,width=width,align='center',bottom=frac_rna,label='ATAC feature',color='#3FBF90',edgecolor='k')
+        ax2.legend(frameon=False,loc='upper left',bbox_to_anchor=(1,1))
+        text_lower = [(item[0]+item[1])/2 for item in zip(np.full(len(data),0),frac_rna)]
+        text_upper = [item[0] + 1/2 * item[1] for item in zip(frac_rna,frac_atac)]
+        for i in range(len(x_coord)):
+            ax2.text(x_coord[i],text_lower[i],'{:.2f}'.format(frac_rna[i]),va='center',ha='center')
+            ax2.text(x_coord[i],text_upper[i],'{:.2f}'.format(frac_atac[i]),va='center',ha='center')  
+        ax2.set_xticks(x_coord)
+        ax2.set_xticklabels(['top{}'.format(str(i)) for i in tops])  
+        ax2.set_ylabel('RNA/ATAC fractions')
+        # ax1 is the single pie chart in axes1 list
+        for i,lis in enumerate(adt_names):
+            n = len(lis)
+            axes1[i].pie(x=[100/n for i in range(n)],labels=lis,frame=True,labeldistance=None)
+            axes1[i].axis('equal')
+            axes1[i].tick_params(bottom=False,left=False,labelbottom=False,labelleft=False)
+        axes1[0].set_ylabel('ADT features')
+        axes1[-1].legend(loc='lower right',bbox_to_anchor=(1,1),ncol=len(data),frameon=False)
+        fig.suptitle('{}_frac_{}_{}'.format(mode,key,cluster))
+        if save:
+            stringy_tops = '_'.join([str(item) for item in tops])
+            plt.savefig(os.path.join(self.dir,'sctri_multi_modal_feature_frac_{}_{}_{}_{}.{}'.format(mode,key,cluster,stringy_tops,format)),bbox_inches='tight')
+            plt.close()
+
+
+    def plot_long_heatmap(self,clusters=None,key='pruned',n_features=5,mode='marker_genes',cmap='viridis',save=True,format='pdf'):
+        df = self.uns[mode][key]
+        # get feature pool
+        feature_pool = []
+        for i in range(df.shape[0]):
+            cluster = df.index[i]
+            features = df.iloc[i]['purify'][:n_features]
+            feature_pool.extend(features)
+        # determine cluster order
+        if clusters is None:
+            clusters = df.index
+        core_adata = self.adata[self.adata.obs[key].isin(clusters),feature_pool]
+        core_df = pd.DataFrame(data=make_sure_mat_dense(core_adata.copy().X),
+                               index=core_adata.obs_names,
+                               columns=core_adata.var_names)
+        core_df['label'] = core_adata.obs[key].values
+        centroid_df = core_df.groupby(by='label').apply(lambda x:x.iloc[:,:-1].mean(axis=0))
+        dense_distance_mat = pdist(centroid_df.values,'euclidean')
+        linkage_mat = linkage(dense_distance_mat,method='ward',metric='enclidean')
+        leaf_order = leaves_list(linkage_mat)
+        cluster_order = [centroid_df.index[i] for i in leaf_order]
+        # relationship feature-cluster and barcode-cluster, and vice-versa
+        feature_cluster_df = pd.DataFrame({'feature':[],'cluster':[]})
+        for i in range(df.shape[0]):
+            cluster = df.index[i]
+            features = df.iloc[i]['purify'][:n_features]   
+            chunk = pd.DataFrame({'feature':features,'cluster':np.full(n_features,fill_value=cluster)})
+            feature_cluster_df = pd.concat([feature_cluster_df,chunk],axis=0) 
+        feature_cluster_df.to_csv('test.txt',sep='\t')
+        feature_to_cluster = feature_cluster_df.groupby(by='feature')['cluster'].apply(lambda x:x.values[0]).to_dict()
+        cluster_to_feature = feature_cluster_df.groupby(by='cluster')['feature'].apply(lambda x:x.tolist()).to_dict()
+
+        barcode_cluster_df = pd.DataFrame({'barcode':core_adata.obs_names.tolist(),'cluster':core_adata.obs[key]})
+        barcode_to_cluster = barcode_cluster_df.groupby(by='barcode')['cluster'].apply(lambda x:x.values[0]).to_dict()
+        cluster_to_barcode = barcode_cluster_df.groupby(by='cluster')['barcode'].apply(lambda x:x.tolist()).to_dict()
+        # plotting
+        fig = plt.figure(figsize=(6,4.8))
+        gs = mpl.gridspec.GridSpec(nrows=2,ncols=2,width_ratios=(0.97,0.03),height_ratios=(0.97,0.03),wspace=0.02,hspace=0.02)
+        ax1 = fig.add_subplot(gs[0,0])  # heatmap
+        ax2 = fig.add_subplot(gs[1,0])  # column cell color bars
+        ax3 = fig.add_subplot(gs[0,1])  # row feature color bars
+        # ax1, heatmap
+        p_feature = []
+        for c in cluster_order:
+            p_feature.extend(cluster_to_feature[c])
+        p_cell = []
+        for c in cluster_order:
+            p_cell.extend(cluster_to_barcode[c])
+        p_adata = self.adata[p_cell,p_feature].copy()
+        draw_data = make_sure_mat_dense(p_adata.X).T
+        im = ax1.imshow(X=draw_data,cmap=cmap,aspect='auto',interpolation='none')
+        ax1.set_xticks([])
+        ax1.set_yticks(np.arange(draw_data.shape[0]))
+        ax1.set_yticklabels(p_adata.var_names.tolist(),fontsize=3)
+        # ax2, column cell color bars
+        p_adata.obs['plot_cluster'] = p_adata.obs_names.map(barcode_to_cluster)
+        tmp_frac = [np.count_nonzero(p_adata.obs['plot_cluster'].values==c)/p_adata.obs.shape[0] for c in cluster_order]
+        tmp_cum = np.cumsum(tmp_frac)
+        x_coords = [(tmp_cum[i] - tmp_frac[i]*1/2) * p_adata.obs.shape[0]  for i in range(len(cluster_order))]
+        anno_to_color = colors_for_set(np.sort(p_adata.obs['plot_cluster'].unique()))
+        cell_column_cbar_mat = p_adata.obs['plot_cluster'].map(anno_to_color).values.reshape(1,-1)
+        cell_column_cbar_mat_rgb = hex2_to_rgb3(cell_column_cbar_mat)
+        ax2.imshow(X=cell_column_cbar_mat_rgb,aspect='auto',interpolation='none')
+        ax2.set_xticks(x_coords)
+        ax2.set_xticklabels(cluster_order,rotation=90,fontsize=5)
+        ax2.set_yticks([])
+        ax2.set_yticklabels([])
+        # ax3, row feature color bars
+        p_adata.var['plot_cluster'] = p_adata.var_names.map(feature_to_cluster)
+        feature_row_cbar_mat = p_adata.var['plot_cluster'].map(anno_to_color).values.reshape(-1,1)
+        feature_row_cbar_mat_rgb = hex2_to_rgb3(feature_row_cbar_mat)
+        ax3.imshow(X=feature_row_cbar_mat_rgb,aspect='auto',interpolation='none')
+        ax3.tick_params(bottom=False,left=False,labelbottom=False,labelleft=False)
+        # colorbar
+        gs.update(right=0.8)
+        gs_cbar = mpl.gridspec.GridSpec(nrows=1,ncols=1,left=0.85)
+        ax4 = fig.add_subplot(gs_cbar[0,0])
+        plt.colorbar()
+        if save:
+            plt.savefig(os.path.join(self.dir,'test.pdf'),bbox_inches='tight')
+
+
         
 
-            
+
 
     def _atomic_viewer_figure(self,key):
         for cluster in self.adata.obs[key].unique():
@@ -1197,8 +1374,12 @@ class ScTriangulate(object):
             self.plot_heterogeneity(key,cluster,'build',format='png')
 
 
-    def viewer_cluster_feature_figure(self,parallel=False,select_keys=None):
+    def viewer_cluster_feature_figure(self,parallel=False,select_keys=None,other_umap=None):
         logger_sctriangulate.info('Building viewer requires generating all the necessary figures, may take several minutes')
+        # see if needs to change the umap embedding
+        if other_umap is not None:
+            ori_umap = self.adata.obsm['X_umap']
+            self.adata.obsm['X_umap'] = other_umap
         # create a folder to store all the figures
         if not os.path.exists(os.path.join(self.dir,'figure4viewer')):
             os.mkdir(os.path.join(self.dir,'figure4viewer'))
@@ -1224,7 +1405,9 @@ class ScTriangulate(object):
             else:
                 for key in select_keys:
                     self._atomic_viewer_figure(key)
+        # dial back the dir and umap
         self.dir = ori_dir 
+        self.adata.obsm['X_umap'] = ori_umap
 
     def viewer_cluster_feature_html(self):
         # create a folder to store all the figures
@@ -1236,8 +1419,12 @@ class ScTriangulate(object):
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.js'),os.path.join(self.dir,'figure4viewer')))
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.css'),os.path.join(self.dir,'figure4viewer')))
 
-    def viewer_heterogeneity_figure(self,key):
+    def viewer_heterogeneity_figure(self,key,other_umap=None):
         logger_sctriangulate.info('Building viewer requires generating all the necessary figures, may take several minutes')
+        # see if needs to change umap embedding
+        if other_umap is not None:
+            ori_umap = self.adata.obsm['X_umap']
+            self.adata.obsm['X_umap'] = other_umap            
         # create a folder to store all the figures
         if not os.path.exists(os.path.join(self.dir,'figure4viewer')):
             os.mkdir(os.path.join(self.dir,'figure4viewer'))
@@ -1248,8 +1435,9 @@ class ScTriangulate(object):
         self.dir = new_dir
         
         self._atomic_viewer_hetero(key)
-
+        # dial back
         self.dir = ori_dir
+        self.adata.obsm['X_umap'] = ori_umap
 
     def viewer_heterogeneity_html(self,key):
         key_cluster_dict = copy.deepcopy(self.cluster)

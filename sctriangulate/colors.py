@@ -1,7 +1,7 @@
 from matplotlib import cm
 import pandas as pd
 import numpy as np
-from matplotlib.colors import LinearSegmentedColormap, to_hex
+from matplotlib.colors import LinearSegmentedColormap, to_hex, to_rgb
 import copy
 
 '''
@@ -12,6 +12,19 @@ def bg_greyed_cmap(cmap_str):
     cmap = copy.copy(cm.get_cmap(cmap_str))
     cmap.set_under('lightgrey')
     return cmap
+
+'''
+hex color 2d array, to (M,N,3) RGB array
+'''
+def hex2_to_rgb3(hex2):
+    rgb3 = np.empty([hex2.shape[0],hex2.shape[1],3])
+    for i in range(hex2.shape[0]):
+        for j in range(hex2.shape[1]):
+            hex_ = hex2[i][j]
+            rgb_ = to_rgb(hex_)
+            rgb3[i,j,:] = rgb_ 
+    return rgb3
+
 
 
 

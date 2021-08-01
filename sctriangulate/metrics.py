@@ -404,7 +404,7 @@ def tf_idf10_for_cluster(adata,key,species,criterion,regress_size=False):
         test_pure = test.loc[~test.index.isin(artifact_genes)]
         result10 = test_pure.iloc[9] 
         cluster_to_tfidf10[item] = result10
-        cluster_to_exclusive[item] = test.to_dict()
+        cluster_to_exclusive[item] = test_pure.to_dict()
     exclusive_genes = pd.Series(cluster_to_exclusive,name='genes')
 
     # whether to regress out the clutser size effect or not
