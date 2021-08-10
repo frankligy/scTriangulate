@@ -1302,9 +1302,8 @@ class ScTriangulate(object):
         for i in range(df.shape[0]):
             cluster = df.index[i]
             features = df.iloc[i]['purify'][:n_features]   
-            chunk = pd.DataFrame({'feature':features,'cluster':np.full(n_features,fill_value=cluster)})
+            chunk = pd.DataFrame({'feature':features,'cluster':np.full(len(features),fill_value=cluster)})
             feature_cluster_df = pd.concat([feature_cluster_df,chunk],axis=0) 
-        feature_cluster_df.to_csv('test.txt',sep='\t')
         feature_to_cluster = feature_cluster_df.groupby(by='feature')['cluster'].apply(lambda x:x.values[0]).to_dict()
         cluster_to_feature = feature_cluster_df.groupby(by='cluster')['feature'].apply(lambda x:x.tolist()).to_dict()
 
