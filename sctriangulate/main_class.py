@@ -167,7 +167,7 @@ class ScTriangulate(object):
             logger_sctriangulate.info('choosing console logging')
 
         elif self.verbose == 2:
-            if not os.path.exist(self.dir):
+            if not os.path.exists(self.dir):
                 os.mkdir(self.dir)
             f_handler = logging.FileHandler(os.path.join(self.dir,'scTriangulate.log'))
             f_handler.setLevel(logging.INFO)
