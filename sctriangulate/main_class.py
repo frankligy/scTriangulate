@@ -1208,7 +1208,88 @@ class ScTriangulate(object):
             plt.savefig(os.path.join(self.dir,'sctri_circular_barplot_{}.{}'.format(col,format)),bbox_inches='tight')
             plt.close()
 
-    
+    def modality_contributions(self,mode='marker_genes',key='pruned',tops=20,regex_adt=r'^AB_',regex_atac=r'^chr\d{1,2}'):
+        # based on how many features make into top list to measure its contribution
+        # need to choose the persepctive, default is pruned column
+        # will build a three maps (ADT, ATAC, RNA), each of them {c1:0.3,..} 
+        # only within modality comparison makes sense
+        map_adt, map_atac, map_rna = {},{},{}
+        for cluster in self.adata.obs[key].unique():
+            if mode == 'marker_genes':
+                features = self.uns[mode][key].loc[cluster]['purify']
+                tops_features = features[:tops]
+                importance = np.arange(start=tops,stop=0,step=-1)
+            elif mode == 'exclusive_genes':
+                features = self.uns[mode][key].loc[cluster]  # a dict
+                tops_features = list(features.keys())[:tops]
+                importance = list(features.values())[:tops]
+            for f,i in zip(tops_features,importance):
+                if re.search(pattern=regex_adt,string=f):
+                    try:
+                        map_adt[cluster] += i
+                    except KeyError:
+                        map_adt[cluster] = 0
+                        map_adt[cluster] += i
+                elif re.search(pattern=regex_atac,string=f):
+                    try:
+                        map_atac[cluster] += i
+                    except KeyError:
+                        map_atac[cluster] = 0
+                        map_atac[cluster] += i
+                else:
+                    try:
+                        map_rna[cluster] += i
+                    except KeyError:
+                        map_rna[cluster] = 0
+                        map_rna[cluster] += i
+        self.adata.obs['adt_contribution'] = self.adata.obs[key].map(map_adt).fillna(0).values
+        self.adata.obs['atac_contribution'] = self.adata.obs[key].map(map_atac).fillna(0).values   
+        self.adata.obs['rna_contribution'] = self.adata.obs[key].map(map_rna).fillna(0).values
+
+        
+
+
+    def plot_multi_modal_feature_rank(self,cluster,mode='exclusive_genes',key='pruned',tops=20,
+                                    regex_adt=r'^AB_',regex_atac=r'^chr\d{1,2}',save=True,format='.pdf'):
+        if mode == 'marker_genes':
+            features = self.uns[mode][key].loc[cluster]['purify']
+            tops_features = features[:tops]
+            x = np.arange(tops)
+            labels = tops_features
+            importance = np.arange(start=tops,stop=0,step=-1)
+        elif mode == 'exclusive_genes':
+            features = self.uns[mode][key].loc[cluster]  # a dict
+            tops_features = list(features.keys())[:tops]
+            importance = list(features.values())[:tops]
+            x = np.arange(tops)
+            labels = tops_features
+        colors = []
+        for item in labels:
+            if re.search(pattern=regex_adt,string=item):
+                colors.append('blue')
+            elif re.search(pattern=regex_atac,string=item):
+                colors.append('#3FBF90')
+            else:
+                colors.append('#D56DF2')
+        #print(x,labels,importance,colors)
+        fig,ax = plt.subplots()
+        ax.bar(x=x,height=importance,width=0.5,color=colors,edgecolor='k')
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels)
+        ax.tick_params(axis='x',labelsize=6,labelrotation=90)
+        ax.set_xlabel('top features')
+        ax.set_ylabel('Rank(importance)')
+        ax.set_title('{}_{}_{}_{}_features'.format(mode,key,cluster,tops))
+        import matplotlib.patches as mpatches
+        ax.legend(handles=[mpatches.Patch(color=i) for i in ['blue','#3FBF90','#D56DF2']],labels=['ADT','ATAC','RNA'],
+                    frameon=False,loc='upper left',bbox_to_anchor=(1,1))
+        
+        if save:
+            plt.savefig(os.path.join(self.dir,'sctri_multi_modal_feature_rank_{}_{}_{}_{}.{}'.format(mode,key,cluster,tops,format)),bbox_inches='tight')
+            plt.close()
+
+
+                              
     def plot_multi_modal_feature_fraction(self,cluster,mode='marker_genes',key='pruned',tops=[10,20,30,50],
                                     regex_adt=r'^AB_',regex_atac=r'^chr\d{1,2}',save=True,format='pdf'):
         if mode == 'marker_genes':
