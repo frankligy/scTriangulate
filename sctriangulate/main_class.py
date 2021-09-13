@@ -1010,7 +1010,7 @@ class ScTriangulate(object):
         elif style == 'violin':
             sc.pl.violin(adata_s,genes,groupby=col,rotation=rotation,jitter=jitter)
             if save:
-                genes = '_'.join(genes)
+                genes = '_'.join(genes).replace('/','_')
                 plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}_{}.{}'.format(key,cluster,col,genes,style,format)),bbox_inches='tight')
                 plt.close()
                 
