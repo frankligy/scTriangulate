@@ -89,7 +89,8 @@ class ScTriangulate(object):
 
         # run doublet predict by default in the initialization
         if predict_doublet:
-            self.doublet_predict()
+            if not predict_doublet == 'precomputed':
+                self.doublet_predict()
         else:
             doublet_scores = np.full(shape=self.adata.obs.shape[0],fill_value=0.5)  # add a dummy score
             self.adata.obs['doublet_scores'] = doublet_scores
@@ -240,6 +241,34 @@ class ScTriangulate(object):
             df.to_csv(os.path.join(self.dir,'sctri_metrics_and_shapley_df_{}.txt'.format(barcode)),sep='\t')
         return df
 
+    def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
+                 assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None):
+        self.compute_metrics(parallel=compute_metrics_parallel,scale_sccaf=scale_sccaf)
+        self.serialize(name='after_metrics.p')
+        self.compute_shapley(parallel=compute_shapley_parallel)
+        self.serialize(name='after_shapley.p')
+        self.pruning(method='rank',discard=None)
+        self.serialize(name='after_rank_pruning.p')
+        self.uns['raw_cluster_goodness'].to_csv(os.path.join(self.dir,'raw_cluster_goodness.txt'),sep='\t')
+        self.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
+        self.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=self.reference)
+        for col in ['final_annotation','raw','pruned']:
+            self.plot_umap(col,'category')
+        if assess_pruned:
+            self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf)
+            self.serialize(name='after_pruned_assess.p')
+        if viewer_cluster:
+            self.viewer_cluster_feature_html()
+            self.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys)
+        if viewer_heterogeneity:
+            if viewer_heterogeneity_keys is None:
+                viewer_heterogeneity_keys = [self.reference]
+            for key in viewer_heterogeneity_keys:
+                self.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
+                self.viewer_heterogeneity_html(key=key)
+                self.viewer_heterogeneity_figure(key=key)
+
+            
 
     def add_to_invalid(self,invalid):
         try:
@@ -1501,7 +1530,8 @@ class ScTriangulate(object):
                     self._atomic_viewer_figure(key)
         # dial back the dir and umap
         self.dir = ori_dir 
-        self.adata.obsm['X_umap'] = ori_umap
+        if other_umap is not None:
+            self.adata.obsm['X_umap'] = ori_umap
 
     def viewer_cluster_feature_html(self):
         # create a folder to store all the figures
@@ -1531,7 +1561,8 @@ class ScTriangulate(object):
         self._atomic_viewer_hetero(key)
         # dial back
         self.dir = ori_dir
-        self.adata.obsm['X_umap'] = ori_umap
+        if other_umap is not None:
+            self.adata.obsm['X_umap'] = ori_umap
 
     def viewer_heterogeneity_html(self,key):
         key_cluster_dict = copy.deepcopy(self.cluster)
