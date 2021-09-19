@@ -806,7 +806,7 @@ class ScTriangulate(object):
 
     def plot_heterogeneity(self,key,cluster,style,col='pruned',save=True,format='pdf',genes=None,umap_zoom_out=True,umap_dot_size=None,
                            subset=None,marker_gene_dict=None,jitter=True,rotation=60,single_gene=None,dual_gene=None,multi_gene=None,merge=None,
-                           to_sinto=False,to_samtools=False,**kwarg): 
+                           to_sinto=False,to_samtools=False,cmap='YlOrRd',**kwarg): 
         '''
         Core plotting function in scTriangulate.
 
@@ -861,7 +861,7 @@ class ScTriangulate(object):
             # ax2
             tmp_col = [1 if item == str(cluster) else 0 for item in self.adata.obs[key]]
             self.adata.obs['tmp_plot'] = tmp_col
-            sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5,ax=axes[1])
+            sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap(cmap),vmin=1e-5,ax=axes[1])
             if save:
                 plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,'umap',format)),bbox_inches='tight')
                 plt.close()
@@ -897,7 +897,7 @@ class ScTriangulate(object):
                 umap_y_lim = (umap_whole[:,1].min(),umap_whole[:,1].max())
                 ax.set_xlim(umap_x_lim)
                 ax.set_ylim(umap_y_lim)
-            sc.pl.umap(adata_s,color=[single_gene],size=s,ax=ax,cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5)
+            sc.pl.umap(adata_s,color=[single_gene],size=s,ax=ax,cmap=bg_greyed_cmap(cmap),vmin=1e-5)
             if save:
                 plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}_{}.{}'.format(key,cluster,col,style,single_gene,format)),bbox_inches='tight')
                 plt.close()
@@ -953,7 +953,7 @@ class ScTriangulate(object):
                     else:
                         tmp_col.append(0)
             self.adata.obs['tmp_plot'] = tmp_col
-            sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5,ax=axes[1])
+            sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap(cmap),vmin=1e-5,ax=axes[1])
             if save:
                 plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,'umap',format)),bbox_inches='tight')
                 plt.close()
@@ -993,7 +993,7 @@ class ScTriangulate(object):
                     else:
                         tmp_col.append(0)
             self.adata.obs['tmp_plot'] = tmp_col
-            sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap('YlOrRd'),vmin=1e-5,ax=axes[1])
+            sc.pl.umap(self.adata,color='tmp_plot',cmap=bg_greyed_cmap(cmap),vmin=1e-5,ax=axes[1])
             if save:
                 plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),bbox_inches='tight')
                 plt.close()
