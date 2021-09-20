@@ -1278,7 +1278,7 @@ class ScTriangulate(object):
         
 
 
-    def plot_multi_modal_feature_rank(self,cluster,mode='exclusive_genes',key='pruned',tops=20,
+    def plot_multi_modal_feature_rank(self,cluster,mode='marker_genes',key='pruned',tops=20,
                                     regex_adt=r'^AB_',regex_atac=r'^chr\d{1,2}',save=True,format='.pdf'):
         if mode == 'marker_genes':
             features = self.uns[mode][key].loc[cluster]['purify']
