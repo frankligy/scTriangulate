@@ -241,6 +241,32 @@ class ScTriangulate(object):
             df.to_csv(os.path.join(self.dir,'sctri_metrics_and_shapley_df_{}.txt'.format(barcode)),sep='\t')
         return df
 
+    @staticmethod
+    def salvage_run(step_to_start,last_step_file,compute_metrics_parallel=True,scale_sccaf=True,compute_shapley_parallel=True,win_fraction_cutoff=0.25,
+                    reassign_abs_thresh=10,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
+                    viewer_heterogeneity_keys=None):
+        # before running this function, make sure previously generated file/folder are renamed, otherwise, they will be overwritten.
+        if step_to_start == 'assess_pruned':
+            sctri = ScTriangulate.deserialize(last_step_file)
+            sctri.uns['raw_cluster_goodness'].to_csv(os.path.join(sctri.dir,'raw_cluster_goodness.txt'),sep='\t')
+            sctri.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
+            sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=sctri.reference)
+            sctri.plot_umap('pruned','category')
+            if assess_pruned:
+                sctri.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf)
+                sctri.serialize(name='after_pruned_assess.p')
+            if viewer_cluster:
+                sctri.viewer_cluster_feature_html()
+                sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys)
+            if viewer_heterogeneity:
+                if viewer_heterogeneity_keys is None:
+                    viewer_heterogeneity_keys = [sctri.reference]
+                for key in viewer_heterogeneity_keys:
+                    sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
+                    sctri.viewer_heterogeneity_html(key=key)
+                    sctri.viewer_heterogeneity_figure(key=key)
+            
+
     def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
                  assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None):
         self.compute_metrics(parallel=compute_metrics_parallel,scale_sccaf=scale_sccaf)

@@ -167,7 +167,7 @@ def make_sure_adata_writable(adata,delete=False):
     return adata
 
 
-def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,save=True,pca_n_comps=None,n_top_genes=3000):
+def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=True,save=True,pca_n_comps=None,n_top_genes=3000):
     adata.var_names_make_unique()
     # normal analysis
     if modality == 'rna':
@@ -220,13 +220,13 @@ def scanpy_recipe(adata,is_log,resolutions=[0.5,1,2],modality='rna',umap=True,sa
 
     elif modality == 'atac':
         if not is_log:
-            sc.pp.calculate_qc_metrics(adata,qc_vars=['mt'],percent_top=None,inplace=True,log1p=False)
+            sc.pp.calculate_qc_metrics(adata,percent_top=None,inplace=True,log1p=False)
             sc.pp.normalize_total(adata,target_sum=1e4)
             sc.pp.log1p(adata)
             sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=n_top_genes)
             adata.raw = adata
             adata = adata[:,adata.var['highly_variable']]
-            #sc.pp.scale(adata,max_value=10)
+            #sc.pp.scale(adata,max_value=10)   # because in episcanpy toturial, it seems to be ignored
             sc.tl.pca(adata,n_comps=pca_n_comps)
             sc.pp.neighbors(adata)
             for resolution in resolutions:
