@@ -15,6 +15,7 @@ from scipy.io import mmread,mmwrite
 from scipy.sparse import csr_matrix,issparse
 import matplotlib as mpl
 
+
 # for publication ready figure
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42

@@ -1297,9 +1297,11 @@ class ScTriangulate(object):
                     except KeyError:
                         map_rna[cluster] = 0
                         map_rna[cluster] += i
-        self.adata.obs['adt_contribution'] = self.adata.obs[key].map(map_adt).fillna(0).values
-        self.adata.obs['atac_contribution'] = self.adata.obs[key].map(map_atac).fillna(0).values   
-        self.adata.obs['rna_contribution'] = self.adata.obs[key].map(map_rna).fillna(0).values
+        self.adata.obs[key] = self.adata.obs[key].astype('O')
+        self.adata.obs['adt_contribution'] = self.adata.obs[key].map(map_adt).fillna(0).astype('int64').values
+        self.adata.obs['atac_contribution'] = self.adata.obs[key].map(map_atac).fillna(0).astype('int64').values   
+        self.adata.obs['rna_contribution'] = self.adata.obs[key].map(map_rna).fillna(0).astype('int64').values
+        self.adata.obs[key] = self.adata.obs[key].astype('category')
 
         
 
