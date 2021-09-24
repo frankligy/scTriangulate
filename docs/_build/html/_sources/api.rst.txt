@@ -9,5 +9,7 @@ ScTriangulate Object
     :exclude-members: plot_heterogeneity
 
 Plot heterogeneity
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.main_class.ScTriangulate.plot_heterogeneity
+
+

@@ -19,9 +19,9 @@ where you inevitably have multiple different sets of cell annotations:
 
 4. Clustering labels from matched ``multi-modalities`` (RNA, ADT, ATAC, etc)
 
-.. image:: ./_static/image1.png
-   :height: 200px
-   :width: 600px
+.. image:: ./_static/schema_chop.png
+   :height: 180px
+   :width: 800px
    :align: center
    :target: target
 
@@ -33,9 +33,11 @@ Contents
 ===============
 
 .. toctree::
+   :maxdepth: 2
 
    install
    tutorial
+   examples
    api
    contact
 

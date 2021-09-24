@@ -41,7 +41,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="API" href="api.html" />
+    <link rel="next" title="Examples" href="examples.html" />
     <link rel="prev" title="Installation" href="install.html" /> 
 </head>
 
@@ -89,7 +89,17 @@
             
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#sctriangulate-object">ScTriangulate Object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#quick-tutorial">Quick tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#visualization">Visualization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#plot-heterogeneity">plot_heterogeneity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-plotting-funcctions">Other plotting funcctions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
 </ul>
@@ -161,10 +171,172 @@
             
   <div class="section" id="tutorials">
 <h1>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this headline">¶</a></h1>
-<ol class="arabic simple">
-<li><p>Quick tutorial</p></li>
-<li><p>Visualization</p></li>
+<div class="section" id="sctriangulate-object">
+<h2>ScTriangulate Object<a class="headerlink" href="#sctriangulate-object" title="Permalink to this headline">¶</a></h2>
+<p>We created a new compound data structure called ScTriangulate Object, abbreviated as <code class="docutils literal notranslate"><span class="pre">sctri</span></code>. <code class="docutils literal notranslate"><span class="pre">sctri</span></code> is designed as an expanded version of popular
+<code class="docutils literal notranslate"><span class="pre">adata</span></code> data structure, with the additional “cluster goodness” information added on top of that. In short, <code class="docutils literal notranslate"><span class="pre">sctri</span></code> stored your data and how good your
+cluster labels/annotations are, measured by an array of biologically meaningful metrics.</p>
+<a class="reference external image-reference" href="target"><img alt="_images/sctri_chop.png" class="align-center" src="_images/sctri_chop.png" style="width: 600px; height: 400px;" /></a>
+<p>Let’s digest them one by one:</p>
+<p><code class="docutils literal notranslate"><span class="pre">sctri.dir</span></code>: python string, please specify the path to the folder where all the outputs will fall into.</p>
+<p><code class="docutils literal notranslate"><span class="pre">sctri.adata</span></code>: AnnData Object, stored the expression values and cell/feature metadata.</p>
+<p><code class="docutils literal notranslate"><span class="pre">sctri.query</span></code>: python list, each item in the list corresponds to a column name in <code class="docutils literal notranslate"><span class="pre">sctri.adata.obs</span></code>. Recalling the schema of scTriangualte, please tell
+the program what sets of annotations you want to consider. For instance, I want to compare following four annotations:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;leiden_resolution1&#39;</span><span class="p">,</span><span class="s1">&#39;leiden_resolution2&#39;</span><span class="p">,</span><span class="s1">&#39;azimuth_mapping_reference1&#39;</span><span class="p">,</span><span class="s1">&#39;adt_annotations&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">sctri.score</span></code>: Nested python dictionary (for internal use, users do not need to specify), storing the goodness (measured by each metric) of each cluster in each annotation. The metric corresponds to
+<code class="docutils literal notranslate"><span class="pre">self.metrics</span></code> (see below), the annontation corresponds to <code class="docutils literal notranslate"><span class="pre">self.query</span></code>. If you want to access:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">score</span><span class="p">[</span><span class="s1">&#39;annotation1&#39;</span><span class="p">][</span><span class="s1">&#39;cluster_to_reassign&#39;</span><span class="p">][</span><span class="s1">&#39;cluster1&#39;</span><span class="p">]</span>
+<span class="c1"># result will be 0.45</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/sctri_score_chop.png" class="align-center" src="_images/sctri_score_chop.png" style="width: 600px; height: 300px;" /></a>
+<p><code class="docutils literal notranslate"><span class="pre">sctri.cluster</span></code>: Nested python dictionary (for internal use, users do not need to specify), storing the hierarchy of each annotation and cluster name. Likewise,
+if you want to access the information:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">cluster</span><span class="p">[</span><span class="s1">&#39;annotation1&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="c1"># result will be &#39;cluster1&#39;</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/sctri_cluster_chop.png" class="align-center" src="_images/sctri_cluster_chop.png" style="width: 600px; height: 300px;" /></a>
+<p><code class="docutils literal notranslate"><span class="pre">sctri.invalid</span></code>: Python list, this contains the cluster names (i.e. <a class="reference external" href="mailto:annotation1&#37;&#52;&#48;cluster3">annotation1<span>&#64;</span>cluster3</a>) that the program labelled as “not stable”. By default, scTriangulate
+filters the <code class="docutils literal notranslate"><span class="pre">raw</span></code> cluster by <code class="docutils literal notranslate"><span class="pre">win_fraction</span></code>, meaning how many fraction of cells in the original cluster are retained after the “game”. Those invalid cluster will
+be excluded from final <code class="docutils literal notranslate"><span class="pre">pruned</span></code> result, and cells within those invalid clusters will be reassigned to the nearest neighbors. Users can also append cluster name
+to the list, by:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">invalid</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;annotation1@cluster3&#39;</span><span class="p">)</span>
+<span class="c1"># then cells within this cluster will be reassigned in the pruning step.</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">sctri.metrics</span></code>: Python list, this contains the metrics we want to use to assess how good a cluster is. By default, the value of this list is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;reassign&#39;</span><span class="p">,</span><span class="s1">&#39;tfidf10&#39;</span><span class="p">,</span><span class="s1">&#39;SCCAF&#39;</span><span class="p">,</span><span class="s1">&#39;doublet&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>which means each cluster will be scanned using these four scores, each score correponds to an underlying function that the program has already implemented, you
+can add additional metrics by:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">add_new_metrics</span><span class="p">({</span><span class="s1">&#39;my_metric&#39;</span><span class="p">:</span><span class="n">callable</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>And now the cluster will also be scanned using user defined metric function.</p>
+<p><code class="docutils literal notranslate"><span class="pre">sctri.species</span></code>: Python string, now only support either “human” or “mouse”. It only affects how the program retrieve the “artifact” genes names in a small
+internal database (txt file), including ribosomal genes, mitochondrial genes, etc.</p>
+<p><code class="docutils literal notranslate"><span class="pre">sctri.criterion</span></code>: Python int, it specify how the program labels “artifact genes”, we assume cellcycle gene, ribosome gene, mitochrondrial gene, antisense,
+and predict_gene may not be what the users want, but it varies by the need. So the user can choose from these 6 modes. Genes being labelled as “artifact” will
+no longer be considered in the marker genes and downstream assessment:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">criterion1</span><span class="p">:</span> <span class="nb">all</span> <span class="n">will</span> <span class="n">be</span> <span class="n">artifact</span><span class="o">.</span>
+<span class="n">criterion2</span><span class="p">:</span> <span class="nb">all</span> <span class="n">will</span> <span class="n">be</span> <span class="n">artifact</span> <span class="k">except</span> <span class="n">cellcycle</span> <span class="p">(</span><span class="n">default</span><span class="p">)</span><span class="o">.</span>
+<span class="n">criterion3</span><span class="p">:</span> <span class="nb">all</span> <span class="n">will</span> <span class="n">be</span> <span class="n">artifact</span> <span class="k">except</span> <span class="n">cellcycle</span><span class="p">,</span> <span class="n">ribosome</span><span class="o">.</span>
+<span class="n">criterion4</span><span class="p">:</span> <span class="nb">all</span> <span class="n">will</span> <span class="n">be</span> <span class="n">artifact</span> <span class="k">except</span> <span class="n">cellcycle</span><span class="p">,</span> <span class="n">ribosome</span><span class="p">,</span> <span class="n">mitochondrial</span><span class="o">.</span>
+<span class="n">criterion5</span><span class="p">:</span> <span class="nb">all</span> <span class="n">will</span> <span class="n">be</span> <span class="n">artifact</span> <span class="k">except</span> <span class="n">cellcycle</span><span class="p">,</span> <span class="n">ribosome</span><span class="p">,</span> <span class="n">mitochondrial</span><span class="p">,</span> <span class="n">antisense</span><span class="o">.</span>
+<span class="n">criterion6</span><span class="p">:</span> <span class="nb">all</span> <span class="n">will</span> <span class="n">be</span> <span class="n">artifact</span> <span class="k">except</span> <span class="n">cellcycle</span><span class="p">,</span> <span class="n">ribosome</span><span class="p">,</span> <span class="n">mitochondrial</span><span class="p">,</span> <span class="n">antisense</span><span class="p">,</span> <span class="n">predict_gene</span><span class="o">.</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">self.verbose</span></code>: Python int. 1 means output the log to the stdout, 2 means write to a log file. Default is 1.</p>
+<p><code class="docutils literal notranslate"><span class="pre">self.uns</span></code>: Python dictionary, which inspired by scanpy. Here we by default store some very important information including markers genes. To access:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">uns</span><span class="p">[</span><span class="s1">&#39;marker_genes&#39;</span><span class="p">][</span><span class="s1">&#39;anntation1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:[</span><span class="s1">&#39;cluster1&#39;</span><span class="p">,</span><span class="s1">&#39;cluster2&#39;</span><span class="p">]]</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/sctri_uns_chop.png" class="align-center" src="_images/sctri_uns_chop.png" style="width: 600px; height: 250px;" /></a>
+</div>
+<div class="section" id="quick-tutorial">
+<h2>Quick tutorial<a class="headerlink" href="#quick-tutorial" title="Permalink to this headline">¶</a></h2>
+<p>A skim through of Sctriangulate Object will be helpful for understanding the following.</p>
+<p>A Quick Quick tutorial:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># instantiate ScTriangulate object</span>
+<span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;./output&#39;</span><span class="p">,</span><span class="n">adata</span><span class="o">=</span><span class="n">adata</span><span class="p">,</span><span class="n">query</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;annotation1&#39;</span><span class="p">,</span><span class="s1">&#39;annotation2&#39;</span><span class="p">,</span><span class="s1">&#39;annotation3&#39;</span><span class="p">])</span>
+<span class="c1"># following command will generate all you need in the dir you specified</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">lazy_run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>But what does <code class="docutils literal notranslate"><span class="pre">lazy_run()</span></code> do under the hood?</p>
+<p>scTriangulte works in a very straightforward way:</p>
+<ol class="arabic">
+<li><p>take the annotation columns users specify.</p></li>
+<li><p>calculate the goodness of each cluster in each annotation based on the metrics users specify, performed by:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
 </ol>
+<p>Now, for each single cell, we asssign it to the “best” cluster:</p>
+<ol class="arabic" start="3">
+<li><p>we compare the relative contribution of each conflicting cluster, represented by shapley value, performed by:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">compute_shapley</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+<li><p>assign this single cell to the cluster whose shapley value is the max</p></li>
+</ol>
+<p>So far, we have <code class="docutils literal notranslate"><span class="pre">raw</span></code> clusters, which just come out of this “gaming situation”, We assess the obtained raw cluster again based on same set of
+biological meaningful metrics, since they will be some of raw clusters that are not stable, we filter them out:</p>
+<ol class="arabic" start="5">
+<li><p>gauge the stabiligy of raw clusters, performed by:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">pruning</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;rank&#39;</span><span class="p">,</span><span class="n">discard</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>6. filter unstable <code class="docutils literal notranslate"><span class="pre">raw</span></code> cluster out, and reassign the cells in these unstable clusters to the nearest neighbors. In this step, a tunable parameter is
+<code class="docutils literal notranslate"><span class="pre">win_fraction</span></code>, which measures the stability of raw clusters, by default is 0.25. Meaning 25% of cells in this cluster won the game:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">add_to_invalid_by_win_fraction</span><span class="p">(</span><span class="n">percent</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">pruning</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;reassign&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we have the final <code class="docutils literal notranslate"><span class="pre">pruned</span></code> results, you can visualize the umap by:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_umap</span><span class="p">(</span><span class="s1">&#39;pruned&#39;</span><span class="p">,</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>  <span class="c1"># go to the sctri.dir to find the saved high-resolution umap</span>
+</pre></div>
+</div>
+<p>We highly recommend the users to use scTriangulate viewer features, it will generate a html webpage which allows user to toggle between different clusters,
+inspect the heterogeneity, marker genes, doublet prediction and enrichment for potential artifact genes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># html webpage</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">viewer_cluster_feature_html</span><span class="p">()</span>   <span class="c1"># viewer for diagnotic information of each cluster in each annotation</span>
+<span class="n">scti</span><span class="o">.</span><span class="n">viewer_heterogeneity_html</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;annotation1&#39;</span><span class="p">)</span>  <span class="c1"># discover further heterogeneity within clusters in one annotation</span>
+<span class="c1"># static figure generation</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">viewer_cluster_feature_figure</span><span class="p">()</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">viewer_heterogeneity_figure</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;annotation1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/viewer.png" class="align-center" src="_images/viewer.png" style="width: 800px; height: 500px;" /></a>
+</div>
+<div class="section" id="visualization">
+<h2>Visualization<a class="headerlink" href="#visualization" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="plot-heterogeneity">
+<h3>plot_heterogeneity<a class="headerlink" href="#plot-heterogeneity" title="Permalink to this headline">¶</a></h3>
+<p>This is the main feature of scTriangulate visualization functionality, built on top of scanpy. since scTriangualte mix-and-match cluster boundaries from
+diverse annotations, it empowers the users to discover further and hidden heterogeneity. Now, question is how the user can visualize the heterogeneity?</p>
+<a class="reference external image-reference" href="target"><img alt="_images/plot_heterogeneity_chop.png" class="align-center" src="_images/plot_heterogeneity_chop.png" style="width: 600px; height: 200px;" /></a>
+<p>Now as you can see, <strong>annoatation&#64;c1</strong> has been suggested to be divided by two sub populations, now we want to know:</p>
+<ol class="arabic simple">
+<li><p>how these two sub populations are lait out on umap?</p></li>
+<li><p>what are the differentially expressed features between these two sub populations?</p></li>
+<li><p>How many cells are in each sub populations?</p></li>
+</ol>
+<p>Let’s show some of the functionalities:</p>
+<p><strong>1. UMAP</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;umap&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/ph_umap.png" class="align-center" src="_images/ph_umap.png" style="width: 500px; height: 300px;" /></a>
+<p><strong>2. Heatmap</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;heatmap&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/ph_heatmap.png" class="align-center" src="_images/ph_heatmap.png" style="width: 500px; height: 400px;" /></a>
+<p><strong>3. dual_gene_plot</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;dual_gene&#39;</span><span class="p">,</span><span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;TRDC&#39;</span><span class="p">,</span><span class="s1">&#39;SLC4A10&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/ph_dual_gene.png" class="align-center" src="_images/ph_dual_gene.png" style="width: 500px; height: 350px;" /></a>
+</div>
+<div class="section" id="other-plotting-funcctions">
+<h3>Other plotting funcctions<a class="headerlink" href="#other-plotting-funcctions" title="Permalink to this headline">¶</a></h3>
+<p><strong>1.plot_confusion</strong></p>
+<p>It allows you to visualize the stability of each clustes in one annotation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_confusion</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;confusion_reassign&#39;</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/pc.png" class="align-center" src="_images/pc.png" style="width: 500px; height: 400px;" /></a>
+</div>
+</div>
 </div>
 
 
@@ -173,7 +345,7 @@
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="api.html" class="btn btn-neutral float-right" title="API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="examples.html" class="btn btn-neutral float-right" title="Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
         <a href="install.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
