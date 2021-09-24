@@ -48,16 +48,16 @@ mpl.rcParams['font.family'] = 'Arial'
 class ScTriangulate(object):
 
     '''
-    ScTriangulate object.
+    How to create/instantiate ScTriangulate object.
+
+    :param dir: Output folder path on the disk
+    :param adata: input adata file
+    :param query: a python list contains the annotation names to query
 
     Example::
 
         adata = sc.read('pbmc3k_azimuth_umap.h5ad')
         sctri = ScTriangulate(dir='./output',adata=adata,query=['leiden1','leiden2','leiden3'])
-
-    :param dir: Output folder path on the disk
-    :param adata: input adata file
-    :param query: a python list contains the annotation names to query
 
     '''
 
@@ -191,7 +191,22 @@ class ScTriangulate(object):
         self.adata.var.to_csv(os.path.join(self.dir,name),sep='\t')
 
     def gene_to_df(self,mode,key,raw=False,col='purify',n=100):
-        '''mode is marker_genes or exclusive_genes'''
+        '''
+        Output {mode} genes for all clusters in one annotation (key), mode can be either 'marker_genes' or 'exclusive_genes'.
+
+        :param mode: python string, either 'marker_genes' or 'exclusive_genes'
+        :param key: python string, annotation name
+        :param raw: False will generate non-raw (human readable) format. Default: False
+        :param col: Only when mode=='marker_genes', whether output 'whole' column or 'purify' column. Default: purify
+        :param n: Only when mode=='exclusive_genes', how many top exclusively expressed genes will be printed for each cluster.
+
+        Examples::
+
+            sctri.gene_to_df(mode='marker_genes',key='annotation1')
+            sctri.gene_to_df(mode='exclusive_genes',key='annotation1')
+        
+        
+        '''
         if not raw: # reformat the output to human readable
             df = self.uns['{}'.format(mode)][key]
             if mode == 'marker_genes':
@@ -221,10 +236,38 @@ class ScTriangulate(object):
             self.uns['{}'.format(mode)][key].to_csv(os.path.join(self.dir,'sctri_gene_to_df_{}_{}.txt'.format(mode,key)),sep='\t')
 
     def confusion_to_df(self,mode,key):
-        '''mode is confusion_reassign or confusion_sccaf'''
+        '''
+        Print out the confusion matrix with cluster labels (dataframe).
+
+        :param mode: either 'confusion_reassign' or 'confusion_sccaf'
+        :param mode: python string, for example, 'annotation1'
+
+        Examples::
+
+            sctri.confusion_to_df(mode='confusion_reassign',key='annotation1')
+        
+        '''
         self.uns['{}'.format(mode)][key].to_csv(os.path.join(self.dir,'sctri_confusion_to_df_{}_{}.txt'.format(mode,key)),sep='\t')
 
-    def get_metrics_and_shapley(self,barcode,save=False):
+    def get_metrics_and_shapley(self,barcode,save=True):
+        '''
+        For one single cell, given barcode/or other unique index, generate the all conflicting cluster from each annotation,
+        along with the metrics associated with each cluster, including shapley value.
+
+        :param barcode: string, the barcode for the cell you want to query.
+        :param save: save the returned dataframe to directory or not. Default: True
+        :return: DataFrame
+
+        Examples::
+
+            sctri.confusion_to_df(barcode='AAACCCACATCCAATG-1',save=True)
+
+        .. image:: ./_static/get_metrics_and_shapley.png
+            :height: 100px
+            :width: 700px
+            :align: center
+            :target: target
+        '''
         obs = self.adata.obs
         query = self.query
         total_metrics = self.total_metrics
@@ -245,6 +288,20 @@ class ScTriangulate(object):
     def salvage_run(step_to_start,last_step_file,compute_metrics_parallel=True,scale_sccaf=True,compute_shapley_parallel=True,win_fraction_cutoff=0.25,
                     reassign_abs_thresh=10,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
                     viewer_heterogeneity_keys=None):
+        '''
+        This is a static method, which allows to user to resume running scTriangulate from certain point, instead of running from very 
+        beginning if the intermediate files are present and intact.
+
+        :param step_to_start: string, now support 'assess_pruned'.
+        :param last_step_file: string, the path to the intermediate from which we start the salvage run.
+        
+        Other parameters are the same as ``lazy_run`` function.
+
+        Examples::
+
+            ScTriangulate.salvage_run(step_to_start='assess_pruned',last_step_file='output/after_rank_pruning.p')
+
+        '''
         # before running this function, make sure previously generated file/folder are renamed, otherwise, they will be overwritten.
         if step_to_start == 'assess_pruned':
             sctri = ScTriangulate.deserialize(last_step_file)
@@ -269,6 +326,27 @@ class ScTriangulate(object):
 
     def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
                  assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None):
+        '''
+        This is the highest level wrapper function for running every step in one goal.
+
+        :param compute_metrics_parallel: boolean, whether to parallelize ``compute_metrics`` step. Default: True
+        :param scale_sccaf: boolean, whether to first scale the expression matrix before running sccaf score. Default: True
+        :param compute_shapley_parallel: boolean, whether to parallelize ``compute_parallel`` step. Default: True
+        :param win_fraction_cutoff: float, between 0-1, the cutoff for function ``add_invalid_by_win_fraction``. Default: 0.25
+        :param reassign_abs_thresh: int, the cutoff for minimum number of cells a valid cluster should haves. Default: 10
+        :param assess_pruned: boolean, whether to run same cluster assessment metrics on final pruned cluster labels. Default: True
+        :param viewer_cluster: boolean, whether to build viewer html page for all clusters' diagnostic information. Default: True
+        :param viewer_cluster_keys: list, clusters from what annotations we want to view on the viewer, only clusters within this annotation whose diagnostic
+                                    plot will be generated under the dir name *figure4viewer*. Default: None, means all annotations in the sctri.query will be 
+                                    used.
+        :param viewer_heterogeneity: boolean, whether to build the viewer to show the heterogeneity based on one reference annotation. Default: True
+        :param viewer_heterogeneity_keys: list, the annotations we want to serve as the reference. Default: None, means the first annotation in sctri.query
+                                          will be used as the reference.
+        
+        Examples::
+
+            sctri.lazy_run(viewer_heterogeneity_keys=['annotation1','annotation2'])
+        '''
         self.compute_metrics(parallel=compute_metrics_parallel,scale_sccaf=scale_sccaf)
         self.serialize(name='after_metrics.p')
         self.compute_shapley(parallel=compute_shapley_parallel)
@@ -297,6 +375,17 @@ class ScTriangulate(object):
             
 
     def add_to_invalid(self,invalid):
+        '''
+        add individual raw cluster names to the sctri.invalid attribute list.
+
+        :param invalid: list or string, contains the raw cluster names to add
+
+        Examples::
+
+            sctri.add_to_invalid(invalid=['annotation1@c3','annotation2@4'])
+            sctri.add_to_invalid(invalid='annotation1@3')
+
+        '''
         try:
             self.invalid.extend(invalid)
         except AttributeError:
@@ -307,20 +396,55 @@ class ScTriangulate(object):
             self.invalid = tmp
 
     def add_to_invalid_by_win_fraction(self,percent=0.25):
+        '''
+        add individual raw cluster names to the sctri.invalid attribute list by win_fraction
+
+        :param percent: float, from 0-1, the fraction of cells within a cluster that were kept after the game. Default: 0.25
+
+        Examples::
+
+            sctri.add_to_invalid_by_win_fraction(percent=0.25)
+        '''
         df = self.uns['raw_cluster_goodness']
         invalid = df.loc[df['win_fraction']<percent,:].index.tolist()
         self.add_to_invalid(invalid)
 
     def clear_invalid(self):
+        '''
+        reset/clear the sctri.invalid to an empty list
+
+        Examples::
+
+            sctri.clear_invalid()
+        '''
         del self.invalid
         self.invaild = []
 
     def serialize(self,name='sctri_pickle.p'):
+        '''
+        serialize the sctri object through pickle protocol to the disk
+
+        :param name: string, the name of the pickle file on the disk. Default: sctri_pickle.p
+
+        Examples::
+
+            sctri.serialize()
+        '''
+
         with open(os.path.join(self.dir,name),'wb') as f:
             pickle.dump(self,f)
 
     @staticmethod
     def deserialize(name):
+        '''
+        This is static method, to deserialize a pickle file on the disk back to the ram as a sctri object
+
+        :param name: string, the name of the pickle file on the disk. 
+
+        Examples::
+
+            ScTriangulate.deserialize(name='after_rank_pruning.p')
+        '''
         with open(name,'rb') as f:
             sctri = pickle.load(f)
         sctri._set_logging()
@@ -328,6 +452,16 @@ class ScTriangulate(object):
         return sctri
 
     def add_new_metrics(self,add_metrics):
+        '''
+        Users can add new callable or pre-implemented function to the sctri.metrics attribute.
+
+        :param add_metrics: dictionary like {'metric_name': callable}, the callable can be a string of a scTriangulate pre-implemented function, for example,
+                            'tfidf5','tfidf1'. Or a callable.
+        
+        Examples::
+
+            sctri.add_new_metrics(add_metrics={'tfidf1':tfidf1})  # make sure first from sctriangualte.metrics import tfidf1
+        '''
         for metric,func in add_metrics.items():
             self.add_metrics[metric] = func
         self.total_metrics.extend(list(self.add_metrics.keys()))
