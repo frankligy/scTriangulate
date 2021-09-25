@@ -8,7 +8,7 @@ ScTriangulate Class
     :members: 
     :exclude-members: confusion_to_df, plot_heterogeneity, gene_to_df, get_metrics_and_shapley, 
                       salvage_run, lazy_run, add_to_invalid, add_to_invalid_by_win_fraction, clear_invalid,
-                      serialize, deserialize, add_new_metrics
+                      serialize, deserialize, add_new_metrics, plot_winners_statistics, plot_clusterability
 
 
 (static) salvage_run()
@@ -55,7 +55,13 @@ add_new_metrics()
 ~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.main_class.ScTriangulate.add_new_metrics
 
+plot_winners_statistics()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.main_class.ScTriangulate.plot_winners_statistics
 
+plot_clusterability()
+~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.main_class.ScTriangulate.plot_clusterability
 
 
 

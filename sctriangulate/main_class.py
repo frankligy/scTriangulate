@@ -466,7 +466,29 @@ class ScTriangulate(object):
             self.add_metrics[metric] = func
         self.total_metrics.extend(list(self.add_metrics.keys()))
 
-    def plot_winners_statistics(self,col,plot=True,save=True):
+    def plot_winners_statistics(self,col,fontsize=3,plot=True,save=True):
+        '''
+        For triangulated clusters, either 'raw' or 'pruned', visualize what fraction of cells won the game.
+        A horizontal barplot will be generated and a dataframe with winners statistics will be returned.
+
+        :param col: string, either 'raw' or 'pruned'
+        :param fontsize: int, the fontsize for the y-label. Default: 3
+        :param plot: boolean, whether to plot or not. Default: True
+        :param save: boolean, whether to save the plot to the sctri.dir or not. Default: True
+
+        :return: DataFarme 
+
+        Examples::
+
+            sctri.plot_winners_statistics(col='raw',fontsize=4)
+
+        .. image:: ./_static/plot_winners_statistics.png
+            :height: 300px
+            :width: 400px
+            :align: center
+            :target: target
+
+        '''
         new_size_dict = {}  # {gs@ERP4: 100}
         for key,value in self.size_dict.items():
             for sub_key,sub_value in value.items():
@@ -476,7 +498,7 @@ class ScTriangulate(object):
         obs = self.adata.obs
         winners = obs[col]
         winners_vc = winners.value_counts()
-        winners_size = winners_vc.index.to_series().map(new_size_dict)
+        winners_size = winners_vc.index.to_series().map(new_size_dict).astype('int64')
         winners_prop = winners_vc / winners_size
         winners_stats = pd.concat([winners_vc,winners_size,winners_prop],axis=1)
         winners_stats.columns = ['counts','size','proportion']
@@ -486,15 +508,39 @@ class ScTriangulate(object):
             fig,ax = plt.subplots()
             ax.barh(y=np.arange(len(a)),width=[item for item in a.values],color='#FF9A91')
             ax.set_yticks(np.arange(len(a)))
-            ax.set_yticklabels([item for item in a.index],fontsize=3)
+            ax.set_yticklabels([item for item in a.index],fontsize=fontsize)
             ax.set_title('Winners statistics')
-            ax.set_xlabel('proportion of clusters that win')
+            ax.set_xlabel('proportion of cells in each cluster that win')
             if save:
                 plt.savefig(os.path.join(self.dir,'winners_statistics.pdf'),bbox_inches='tight')
                 plt.close()
         return winners_stats
 
-    def plot_clusterability(self,key,col,plot=True,save=True):
+    def plot_clusterability(self,key,col,fontsize=3,plot=True,save=True):
+        '''
+        We define clusterability as the number of sub-clusters the program finds out. If a cluster has being suggested to be divided into
+        three smaller clusters, then the clueterability of this cluster will be 3.
+
+        :param key: string. The clusters from which annotation that you want to assess clusterability.
+        :param col: string. Either 'raw' cluster or 'pruned' cluster.
+        :param fontsize: int. The fontsize of x-ticklabels. Default: 3
+        :param plot: boolean. Whether to plot the scatterplot or not. Default : True.
+        :param save: boolean. Whether to save the plot or not. Default: True
+
+        :return: python dictionary. {cluster1:#sub-clusters}
+
+        Examples::
+
+            sctri.plot_clusterability(key='sctri_rna_leiden_1',col='raw',fontsize=8)
+
+        .. image:: ./_static/plot_clusterability.png
+            :height: 300px
+            :width: 400px
+            :align: center
+            :target: target
+        
+
+        '''
         bucket = {}   # {ERP4:5}
         obs = self.adata.obs
         for ref,grouped_df in obs.groupby(by=key):
@@ -505,14 +551,14 @@ class ScTriangulate(object):
             fig,ax = plt.subplots()
             ax.scatter(x=np.arange(len(bucket)),y=list(bucket.values()),c=pick_n_colors(len(bucket)),s=100)
             ax.set_xticks(np.arange(len(bucket)))
-            ax.set_xticklabels(list(bucket.keys()),fontsize=3,rotation=90)
-            ax.set_title('{} clusterablity'.format(self.reference))
-            ax.set_ylabel('clusterability: # sub-clusters')
+            ax.set_xticklabels(list(bucket.keys()),fontsize=fontsize,rotation=90)
+            ax.set_title('{} clusterability'.format(self.reference))
+            ax.set_ylabel('clusterabiility: # sub-clusters')
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             ax.grid(color='grey',alpha=0.2)
             for i in range(len(bucket)):
-                ax.text(x=i,y=list(bucket.values())[i]+1,s=list(bucket.keys())[i],ha='center',va='bottom')
+                ax.text(x=i,y=list(bucket.values())[i]+0.3,s=list(bucket.keys())[i],ha='center',va='bottom')
 
             if save:
                 plt.savefig(os.path.join(self.dir,'{}_clusterability.pdf'.format(self.reference)),bbox_inches='tight')

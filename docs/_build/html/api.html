@@ -104,6 +104,8 @@
 <li class="toctree-l3"><a class="reference internal" href="#clear-invalid">clear_invalid()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#serialize">serialize()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#add-new-metrics">add_new_metrics()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-winners-statistics">plot_winners_statistics()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-clusterability">plot_clusterability()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-heterogeneity">plot_heterogeneity()</a></li>
 </ul>
 </li>
@@ -436,6 +438,63 @@ will be used as the reference.</p></li>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">add_new_metrics</span><span class="p">(</span><span class="n">add_metrics</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tfidf1&#39;</span><span class="p">:</span><span class="n">tfidf1</span><span class="p">})</span>  <span class="c1"># make sure first from sctriangualte.metrics import tfidf1</span>
 </pre></div>
 </div>
+</dd></dl>
+
+</div>
+<div class="section" id="plot-winners-statistics">
+<h3>plot_winners_statistics()<a class="headerlink" href="#plot-winners-statistics" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.plot_winners_statistics">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">plot_winners_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.plot_winners_statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>For triangulated clusters, either ‘raw’ or ‘pruned’, visualize what fraction of cells won the game.
+A horizontal barplot will be generated and a dataframe with winners statistics will be returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col</strong> – string, either ‘raw’ or ‘pruned’</p></li>
+<li><p><strong>fontsize</strong> – int, the fontsize for the y-label. Default: 3</p></li>
+<li><p><strong>plot</strong> – boolean, whether to plot or not. Default: True</p></li>
+<li><p><strong>save</strong> – boolean, whether to save the plot to the sctri.dir or not. Default: True</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DataFarme</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_winners_statistics</span><span class="p">(</span><span class="n">col</span><span class="o">=</span><span class="s1">&#39;raw&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/plot_winners_statistics.png" class="align-center" src="_images/plot_winners_statistics.png" style="width: 400px; height: 300px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="plot-clusterability">
+<h3>plot_clusterability()<a class="headerlink" href="#plot-clusterability" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.plot_clusterability">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">plot_clusterability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.plot_clusterability" title="Permalink to this definition">¶</a></dt>
+<dd><p>We define clusterability as the number of sub-clusters the program finds out. If a cluster has being suggested to be divided into
+three smaller clusters, then the clueterability of this cluster will be 3.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – string. The clusters from which annotation that you want to assess clusterability.</p></li>
+<li><p><strong>col</strong> – string. Either ‘raw’ cluster or ‘pruned’ cluster.</p></li>
+<li><p><strong>fontsize</strong> – int. The fontsize of x-ticklabels. Default: 3</p></li>
+<li><p><strong>plot</strong> – boolean. Whether to plot the scatterplot or not. Default : True.</p></li>
+<li><p><strong>save</strong> – boolean. Whether to save the plot or not. Default: True</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>python dictionary. {cluster1:#sub-clusters}</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_clusterability</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">col</span><span class="o">=</span><span class="s1">&#39;raw&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/plot_clusterability.png" class="align-center" src="_images/plot_clusterability.png" style="width: 400px; height: 300px;" /></a>
 </dd></dl>
 
 </div>
