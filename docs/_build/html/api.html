@@ -92,23 +92,43 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorials</a></li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#sctriangulate-class">ScTriangulate Class</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#sctriangulate-class-methods">ScTriangulate Class Methods</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#static-salvage-run">(static) salvage_run()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#statis-deserialize">(statis) deserialize()</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#confusion-to-df">confusion_to_df()</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#gene-to-df">gene_to_df()</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#get-metrics-and-shapley">get_metrics_and_shapley()</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#lazy-run">lazy_run()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-new-metrics">add_new_metrics()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#add-to-invalid">add_to_invalid()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#add-to-invalid-by-win-fraction">add_to_invalid_by_win_fraction()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#clear-invalid">clear_invalid()</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#serialize">serialize()</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#add-new-metrics">add_new_metrics()</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#plot-winners-statistics">plot_winners_statistics()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compute-metrics">compute_metrics()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compute-shapley">compute_shapley()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#confusion-to-df">confusion_to_df()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#display-hierarchy">display_hierarchy()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#doublet-predict">doublet_predict()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gene-to-df">gene_to_df()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-metrics-and-shapley">get_metrics_and_shapley()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#lazy-run">lazy_run()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#modality-contributions">modality_contributions()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#penalize-artifact">penalize_artifact()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-clusterability">plot_clusterability()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-cluster-feature">plot_cluster_feature()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-confusion">plot_confusion()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-heterogeneity">plot_heterogeneity()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-long-heatmap">plot_long_heatmap()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-multi-modal-feature-rank">plot_multi_modal_feature_rank()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-umap">plot_umap()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-winners-statistics">plot_winners_statistics()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pruning">pruning()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#regress-out-size-effect">regress_out_size_effect()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-single-key-assessment">run_single_key_assessment()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#serialize">serialize()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#viewer-cluster-feature-figure">viewer_cluster_feature_figure()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#viewer-cluster-feature-html">viewer_cluster_feature_html()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#viewer-heterogeneity-figure">viewer_heterogeneity_figure()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#viewer-heterogeneity-html">viewer_heterogeneity_html()</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing-module">Preprocessing Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#colors-module">Colors Module</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
@@ -181,8 +201,8 @@
             
   <div class="section" id="api">
 <h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="sctriangulate-class">
-<h2>ScTriangulate Class<a class="headerlink" href="#sctriangulate-class" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="sctriangulate-class-methods">
+<h2>ScTriangulate Class Methods<a class="headerlink" href="#sctriangulate-class-methods" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.</span></span><span class="sig-name descname"><span class="pre">ScTriangulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">dir</span></em>, <em class="sig-param"><span class="pre">adata</span></em>, <em class="sig-param"><span class="pre">query</span></em>, <em class="sig-param"><span class="pre">species='human'</span></em>, <em class="sig-param"><span class="pre">criterion=2</span></em>, <em class="sig-param"><span class="pre">verbose=1</span></em>, <em class="sig-param"><span class="pre">reference=None</span></em>, <em class="sig-param"><span class="pre">add_metrics={'tfidf5':</span> <span class="pre">&lt;function</span> <span class="pre">tf_idf5_for_cluster&gt;}</span></em>, <em class="sig-param"><span class="pre">predict_doublet=True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate" title="Permalink to this definition">¶</a></dt>
@@ -201,12 +221,6 @@
 <span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;./output&#39;</span><span class="p">,</span><span class="n">adata</span><span class="o">=</span><span class="n">adata</span><span class="p">,</span><span class="n">query</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;leiden1&#39;</span><span class="p">,</span><span class="s1">&#39;leiden2&#39;</span><span class="p">,</span><span class="s1">&#39;leiden3&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
-<dl class="py method">
-<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.penalize_artifact">
-<span class="sig-name descname"><span class="pre">penalize_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stamps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.penalize_artifact" title="Permalink to this definition">¶</a></dt>
-<dd><p>void mode is to set stamp position to 0, stamp is like {leiden1:5}</p>
-</dd></dl>
-
 </dd></dl>
 
 <div class="section" id="static-salvage-run">
@@ -250,6 +264,124 @@ beginning if the intermediate files are present and intact.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="add-new-metrics">
+<h3>add_new_metrics()<a class="headerlink" href="#add-new-metrics" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.add_new_metrics">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">add_new_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_metrics</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.add_new_metrics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Users can add new callable or pre-implemented function to the sctri.metrics attribute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>add_metrics</strong> – dictionary like {‘metric_name’: callable}, the callable can be a string of a scTriangulate pre-implemented function, for example,
+‘tfidf5’,’tfidf1’. Or a callable.</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">add_new_metrics</span><span class="p">(</span><span class="n">add_metrics</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tfidf1&#39;</span><span class="p">:</span><span class="n">tfidf1</span><span class="p">})</span>  <span class="c1"># make sure first from sctriangualte.metrics import tfidf1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="add-to-invalid">
+<h3>add_to_invalid()<a class="headerlink" href="#add-to-invalid" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.add_to_invalid">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">add_to_invalid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invalid</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.add_to_invalid" title="Permalink to this definition">¶</a></dt>
+<dd><p>add individual raw cluster names to the sctri.invalid attribute list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>invalid</strong> – list or string, contains the raw cluster names to add</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">add_to_invalid</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;annotation1@c3&#39;</span><span class="p">,</span><span class="s1">&#39;annotation2@4&#39;</span><span class="p">])</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">add_to_invalid</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;annotation1@3&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="add-to-invalid-by-win-fraction">
+<h3>add_to_invalid_by_win_fraction()<a class="headerlink" href="#add-to-invalid-by-win-fraction" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.add_to_invalid_by_win_fraction">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">add_to_invalid_by_win_fraction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.add_to_invalid_by_win_fraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>add individual raw cluster names to the sctri.invalid attribute list by win_fraction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>percent</strong> – float, from 0-1, the fraction of cells within a cluster that were kept after the game. Default: 0.25</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">add_to_invalid_by_win_fraction</span><span class="p">(</span><span class="n">percent</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="clear-invalid">
+<h3>clear_invalid()<a class="headerlink" href="#clear-invalid" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.clear_invalid">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">clear_invalid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.clear_invalid" title="Permalink to this definition">¶</a></dt>
+<dd><p>reset/clear the sctri.invalid to an empty list</p>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">clear_invalid</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="compute-metrics">
+<h3>compute_metrics()<a class="headerlink" href="#compute-metrics" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.compute_metrics">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">compute_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_sccaf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.compute_metrics" title="Permalink to this definition">¶</a></dt>
+<dd><p>main function for computing the metrics (defined by self.metrics) of each clusters in each annotation.
+After the run, q (# query) * m (# metrics) columns will be added to the adata.obs, the column like will be like
+<a class="reference external" href="mailto:{metric_name}&#37;&#52;&#48;{query_annotation_name">{metric_name}<span>&#64;</span>{query_annotation_name</a>}, i.e. <a class="reference external" href="mailto:reassign&#37;&#52;&#48;sctri_rna_leiden_1">reassign<span>&#64;</span>sctri_rna_leiden_1</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parallel</strong> – boolean, whether to run in parallel. Since computing metrics for each query annotation is idependent,
+the program will automatically employ q (# query) cores under the hood. If you want to fully leverage
+this feature, please make sure you specify at least q (# query) cores when running the program. It is highly
+recommend to run this in parallel. However, when the dataset is super large and have &gt; 10 query annotation, 
+we may encounter RAM overhead, in this case, sequential mode will be needed. Default: True</p></li>
+<li><p><strong>scale_sccaf</strong> – boolean, when running SCCAF score, since it is a logistic regression problem at its core, this parameter 
+controls whether scale the expression data or not. It is recommended to scale the data for any machine learning
+algorithm, however, the liblinaer solver has been demonstrated to be robust to the scale/unscale options. When
+the dataset &gt; 50,000 cells or features &gt; 1000000 (ATAC peaks), it is advised to not scale it for faster running time.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">scale_sccaf</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="compute-shapley">
+<h3>compute_shapley()<a class="headerlink" href="#compute-shapley" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.compute_shapley">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">compute_shapley</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.compute_shapley" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main core function, after obtaining the metrics for each cluster. For each single cell, let’s calculate the shapley
+value for each annotation and assign the cluster to the one with highest shapley value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>parallel</strong> – boolean. Whether to run it in parallel. (scatter and gather). Default: True</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">compute_shapley</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
 <div class="section" id="confusion-to-df">
 <h3>confusion_to_df()<a class="headerlink" href="#confusion-to-df" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
@@ -266,6 +398,42 @@ beginning if the intermediate files are present and intact.</p>
 </dl>
 <p>Examples:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">confusion_to_df</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;confusion_reassign&#39;</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;annotation1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="display-hierarchy">
+<h3>display_hierarchy()<a class="headerlink" href="#display-hierarchy" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.display_hierarchy">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">display_hierarchy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref_col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.display_hierarchy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display the hierarchy of suggestive sub-clusterings, see the example results down the page.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ref_col</strong> – string, the annotation/column name in adata.obs which we want to inspect how it can be sub-divided</p></li>
+<li><p><strong>query_col</strong> – string, either ‘raw’ or ‘pruned’</p></li>
+<li><p><strong>save</strong> – boolean, whether to save it to a file or stdout. Default: True</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">display_hierarchy</span><span class="p">(</span><span class="n">ref_col</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">query_col</span><span class="o">=</span><span class="s1">&#39;raw&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/display_hierarchy.png" class="align-center" src="_images/display_hierarchy.png" style="width: 300px; height: 400px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="doublet-predict">
+<h3>doublet_predict()<a class="headerlink" href="#doublet-predict" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.doublet_predict">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">doublet_predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.doublet_predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function of running scrublet, will add a column on adata.obs called ‘doublet_scores’</p>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">doublet_predict</span><span class="p">()</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -354,118 +522,66 @@ will be used as the reference.</p></li>
 </dd></dl>
 
 </div>
-<div class="section" id="add-to-invalid">
-<h3>add_to_invalid()<a class="headerlink" href="#add-to-invalid" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="modality-contributions">
+<h3>modality_contributions()<a class="headerlink" href="#modality-contributions" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
-<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.add_to_invalid">
-<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">add_to_invalid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invalid</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.add_to_invalid" title="Permalink to this definition">¶</a></dt>
-<dd><p>add individual raw cluster names to the sctri.invalid attribute list.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>invalid</strong> – list or string, contains the raw cluster names to add</p>
-</dd>
-</dl>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">add_to_invalid</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;annotation1@c3&#39;</span><span class="p">,</span><span class="s1">&#39;annotation2@4&#39;</span><span class="p">])</span>
-<span class="n">sctri</span><span class="o">.</span><span class="n">add_to_invalid</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;annotation1@3&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-</div>
-<div class="section" id="add-to-invalid-by-win-fraction">
-<h3>add_to_invalid_by_win_fraction()<a class="headerlink" href="#add-to-invalid-by-win-fraction" title="Permalink to this headline">¶</a></h3>
-<dl class="py function">
-<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.add_to_invalid_by_win_fraction">
-<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">add_to_invalid_by_win_fraction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.add_to_invalid_by_win_fraction" title="Permalink to this definition">¶</a></dt>
-<dd><p>add individual raw cluster names to the sctri.invalid attribute list by win_fraction</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>percent</strong> – float, from 0-1, the fraction of cells within a cluster that were kept after the game. Default: 0.25</p>
-</dd>
-</dl>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">add_to_invalid_by_win_fraction</span><span class="p">(</span><span class="n">percent</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-</div>
-<div class="section" id="clear-invalid">
-<h3>clear_invalid()<a class="headerlink" href="#clear-invalid" title="Permalink to this headline">¶</a></h3>
-<dl class="py function">
-<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.clear_invalid">
-<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">clear_invalid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.clear_invalid" title="Permalink to this definition">¶</a></dt>
-<dd><p>reset/clear the sctri.invalid to an empty list</p>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">clear_invalid</span><span class="p">()</span>
-</pre></div>
-</div>
-</dd></dl>
-
-</div>
-<div class="section" id="serialize">
-<h3>serialize()<a class="headerlink" href="#serialize" title="Permalink to this headline">¶</a></h3>
-<dl class="py function">
-<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.serialize">
-<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">serialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sctri_pickle.p'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.serialize" title="Permalink to this definition">¶</a></dt>
-<dd><p>serialize the sctri object through pickle protocol to the disk</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>name</strong> – string, the name of the pickle file on the disk. Default: sctri_pickle.p</p>
-</dd>
-</dl>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
-</pre></div>
-</div>
-</dd></dl>
-
-</div>
-<div class="section" id="add-new-metrics">
-<h3>add_new_metrics()<a class="headerlink" href="#add-new-metrics" title="Permalink to this headline">¶</a></h3>
-<dl class="py function">
-<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.add_new_metrics">
-<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">add_new_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_metrics</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.add_new_metrics" title="Permalink to this definition">¶</a></dt>
-<dd><p>Users can add new callable or pre-implemented function to the sctri.metrics attribute.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>add_metrics</strong> – dictionary like {‘metric_name’: callable}, the callable can be a string of a scTriangulate pre-implemented function, for example,
-‘tfidf5’,’tfidf1’. Or a callable.</p>
-</dd>
-</dl>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">add_new_metrics</span><span class="p">(</span><span class="n">add_metrics</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tfidf1&#39;</span><span class="p">:</span><span class="n">tfidf1</span><span class="p">})</span>  <span class="c1"># make sure first from sctriangualte.metrics import tfidf1</span>
-</pre></div>
-</div>
-</dd></dl>
-
-</div>
-<div class="section" id="plot-winners-statistics">
-<h3>plot_winners_statistics()<a class="headerlink" href="#plot-winners-statistics" title="Permalink to this headline">¶</a></h3>
-<dl class="py function">
-<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.plot_winners_statistics">
-<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">plot_winners_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.plot_winners_statistics" title="Permalink to this definition">¶</a></dt>
-<dd><p>For triangulated clusters, either ‘raw’ or ‘pruned’, visualize what fraction of cells won the game.
-A horizontal barplot will be generated and a dataframe with winners statistics will be returned.</p>
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.modality_contributions">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">modality_contributions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'marker_genes'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pruned'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tops</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex_adt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'^AB_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex_atac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'^chr\\d{1,2}'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.modality_contributions" title="Permalink to this definition">¶</a></dt>
+<dd><p>calculate teh modality contributions for multi modal analysis, the modality contributions of each modality of each cluster means
+the number of features from this modality that made into the top {tops} feature list. Three columns will be added to obs, they are</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>adt_contribution</strong></p></li>
+<li><p><strong>atac_contribution</strong></p></li>
+<li><p><strong>rna_contribution</strong></p></li>
+</ul>
+</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>col</strong> – string, either ‘raw’ or ‘pruned’</p></li>
-<li><p><strong>fontsize</strong> – int, the fontsize for the y-label. Default: 3</p></li>
-<li><p><strong>plot</strong> – boolean, whether to plot or not. Default: True</p></li>
-<li><p><strong>save</strong> – boolean, whether to save the plot to the sctri.dir or not. Default: True</p></li>
+<li><p><strong>mode</strong> – string, either ‘marker_genes’ or ‘exclusive_genes’.</p></li>
+<li><p><strong>key</strong> – string, any valid categorical column in self.adata.obs</p></li>
+<li><p><strong>tops</strong> – int, the top n features to consider for each cluster.</p></li>
+<li><p><strong>regex_adt</strong> – raw string, the pattern by which the ADT feature will be defined.</p></li>
+<li><p><strong>regex_atac</strong> – raw string ,the pattern by which the atac feature will be defined.</p></li>
 </ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>DataFarme</p>
 </dd>
 </dl>
 <p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_winners_statistics</span><span class="p">(</span><span class="n">col</span><span class="o">=</span><span class="s1">&#39;raw&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">modality_contributions</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;marker_genes&#39;</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;pruned&#39;</span><span class="p">,</span><span class="n">tops</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 </pre></div>
 </div>
-<a class="reference external image-reference" href="target"><img alt="_images/plot_winners_statistics.png" class="align-center" src="_images/plot_winners_statistics.png" style="width: 400px; height: 300px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="penalize-artifact">
+<h3>penalize_artifact()<a class="headerlink" href="#penalize-artifact" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.penalize_artifact">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">penalize_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stamps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.penalize_artifact" title="Permalink to this definition">¶</a></dt>
+<dd><p>An optional step after running <code class="docutils literal notranslate"><span class="pre">compute_metrics</span></code> step and before the <code class="docutils literal notranslate"><span class="pre">compute_shapley</span></code> step.
+Basically, we penalize clusters with certain properties by set all their metrics to zero, which forbid them to
+win in the following “game” step. These undesirable properties can be versatial, for example, cellcylce gene 
+enrichment. We current support two mode:</p>
+<ol class="arabic simple">
+<li><p>mode1: <code class="docutils literal notranslate"><span class="pre">void</span></code>, users specifiy which cluster they want to penalize via <code class="docutils literal notranslate"><span class="pre">stamps</span></code> parameter.</p></li>
+<li><p>mode2: <code class="docutils literal notranslate"><span class="pre">cellcycle</span></code>, program automatically label clusters whose gsea_hit &gt; 5 and gsea_score &gt; 0.8 as invalid cellcyle
+enriched clusters. And those clusters will be penalized.</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> – string, either ‘void’ or ‘cellcycle’.</p></li>
+<li><p><strong>stamps</strong> – list, contains cluster names that the users want to penalize.</p></li>
+<li><p><strong>parallel</strong> – boolean, whether to run this in parallel (scatter and gather). Default: True.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">penalize_artifact</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;void&#39;</span><span class="p">,</span><span class="n">stamps</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_rna_leiden_1@c3&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_2@c5&#39;</span><span class="p">])</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">penalize_artifact</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;cellcyle&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </div>
@@ -498,12 +614,119 @@ three smaller clusters, then the clueterability of this cluster will be 3.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="plot-cluster-feature">
+<h3>plot_cluster_feature()<a class="headerlink" href="#plot-cluster-feature" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.plot_cluster_feature">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">plot_cluster_feature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enrichment_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'enrichr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pdf'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.plot_cluster_feature" title="Permalink to this definition">¶</a></dt>
+<dd><p>plot the feature of each single clusters, including:</p>
+<ol class="arabic simple">
+<li><p>enrichment of artifact genes</p></li>
+<li><p>marker genes umap</p></li>
+<li><p>exclusive genes umap</p></li>
+<li><p>location of clutser umap</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – string. Name of the annation.</p></li>
+<li><p><strong>cluster</strong> – string. Name of the cluster in the annotation.</p></li>
+<li><p><strong>feature</strong> – string, valid value: ‘enrichment’,’marker_genes’, ‘exclusive_genes’, ‘location’</p></li>
+<li><p><strong>enrichmen_type</strong> – string, either ‘enrichr’ or ‘gsea’.</p></li>
+<li><p><strong>save</strong> – boolean, whether to save the figure.</p></li>
+<li><p><strong>format</strong> – string, which format for the saved figure.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_cluster_feature</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;3&#39;</span><span class="p">,</span><span class="n">feature</span><span class="o">=</span><span class="s1">&#39;enrichment&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/enrichment.png" class="align-center" src="_images/enrichment.png" style="width: 400px; height: 300px;" /></a>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_cluster_feature</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;3&#39;</span><span class="p">,</span><span class="n">feature</span><span class="o">=</span><span class="s1">&#39;marker_genes&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/marker_genes.png" class="align-center" src="_images/marker_genes.png" style="width: 800px; height: 250px;" /></a>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_cluster_feature</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;3&#39;</span><span class="p">,</span><span class="n">feature</span><span class="o">=</span><span class="s1">&#39;location&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/location.png" class="align-center" src="_images/location.png" style="width: 400px; height: 300px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="plot-confusion">
+<h3>plot_confusion()<a class="headerlink" href="#plot-confusion" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.plot_confusion">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">plot_confusion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">self</span></em>, <em class="sig-param"><span class="pre">name</span></em>, <em class="sig-param"><span class="pre">key</span></em>, <em class="sig-param"><span class="pre">save=True</span></em>, <em class="sig-param"><span class="pre">format='pdf'</span></em>, <em class="sig-param"><span class="pre">cmap=&lt;matplotlib.colors.LinearSegmentedColormap</span> <span class="pre">object&gt;</span></em>, <em class="sig-param"><span class="pre">**kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.plot_confusion" title="Permalink to this definition">¶</a></dt>
+<dd><p>plot the confusion as a heatmap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – string, either ‘confusion_reassign’ or ‘confusion_sccaf’.</p></li>
+<li><p><strong>key</strong> – string, a annotation name which we want to assess the confusion matrix of the clusters.</p></li>
+<li><p><strong>save</strong> – boolean, whether to save the figure. Default: True.</p></li>
+<li><p><strong>format</strong> – boolean, file format to save. Default: ‘.pdf’.</p></li>
+<li><p><strong>cmap</strong> – colormap object, Default: scphere_cmap, which defined in colors module.</p></li>
+<li><p><strong>kwargs</strong> – additional keyword arguments to sns.heatmap().</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_confusion</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;confusion_reassign&#39;</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/pc.png" class="align-center" src="_images/pc.png" style="width: 400px; height: 300px;" /></a>
+</dd></dl>
+
+</div>
 <div class="section" id="plot-heterogeneity">
 <h3>plot_heterogeneity()<a class="headerlink" href="#plot-heterogeneity" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.plot_heterogeneity">
 <span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">plot_heterogeneity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">style</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pruned'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pdf'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">genes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">umap_zoom_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">umap_dot_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_gene_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">single_gene</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dual_gene</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_gene</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_sinto</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_samtools</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'YlOrRd'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwarg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.plot_heterogeneity" title="Permalink to this definition">¶</a></dt>
 <dd><p>Core plotting function in scTriangulate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – string, the name of the annotation.</p></li>
+<li><p><strong>cluster</strong> – string, the name of the cluster.</p></li>
+<li><p><strong>stype</strong> – <p>string, valid values are as below:</p>
+<ul>
+<li><p><strong>umap</strong>: plot the umap of this cluster (including its location and its suggestive heterogeneity)</p></li>
+<li><p><strong>heatmap</strong>: plot the heatmap of the differentially expressed features across all sub-populations within this cluster.</p></li>
+<li><p><strong>build</strong>: plot both the umap and heatmap, benefit is the column and raw colorbar of the heatmap is consistent with the umap color</p></li>
+<li><p><strong>heatmap_custom_gene</strong>, plot the heatmap, but with user-defined gene dictionary.</p></li>
+<li><p><strong>heatmap+umap</strong>, it is the umap + heatmap_custom_gene, and the colorbars are matching</p></li>
+<li><p><strong>violin</strong>: plot the violin plot of the specified genes across sub populations.</p></li>
+<li><p><strong>single_gene</strong>: plot the gradient of single genes across the cluster.</p></li>
+<li><p><strong>dual_gene</strong>: plot the dual-gene plot of two genes across the cluster, usually these two genes should correspond to the marker genes in two of the sub-populations.</p></li>
+<li><p><strong>multi_gene</strong>: plot the multi-gene plot of multiple genes across the cluster.</p></li>
+<li><p><strong>cellxgene</strong>: output the h5ad object which are readily transferrable to cellxgene. It also support atac pseudobuld analysis with <code class="docutils literal notranslate"><span class="pre">to_sinto</span></code> or <code class="docutils literal notranslate"><span class="pre">to_samtools</span></code> arguments.</p></li>
+<li><p><strong>sankey</strong>: plot the sankey plot showing fraction/percentage of cells that flow into each sub population</p></li>
+</ul>
+</p></li>
+<li><p><strong>col</strong> – string, either ‘raw’ or ‘pruned’.</p></li>
+<li><p><strong>save</strong> – boolean, whether to save or not.</p></li>
+<li><p><strong>foramt</strong> – string, which format to save.</p></li>
+<li><p><strong>genes</strong> – list, for violin plot.</p></li>
+<li><p><strong>umap_zoom_out</strong> – boolean, for the umap, whether to zoom out meaning the scale is the same of the whole umap. Zoom in means an amplified version of this cluster.</p></li>
+<li><p><strong>umap_dot_size</strong> – int/float, for the umap.</p></li>
+<li><p><strong>subset</strong> – list, the sub populations we want to keep for plotting.</p></li>
+<li><p><strong>marker_gene_dict</strong> – dict. The custom genes we want the heatmap to display.</p></li>
+<li><p><strong>jitter</strong> – float, for the violin plot.</p></li>
+<li><p><strong>rotation</strong> – int/float, for the violin plot. rotation of the text. Default: 60</p></li>
+<li><p><strong>single_gene</strong> – string, the gene name for single gene plot</p></li>
+<li><p><strong>dual_gene</strong> – list, the dual genes for dual gene plot.</p></li>
+<li><p><strong>multi_genes</strong> – list, the multiple genes for multi gene plot.</p></li>
+<li><p><strong>merge</strong> – nested list, the sub-populations that we want to merge. [(‘sub-c1’,’sub-c2’),(‘sub-c3’,’sub-c4’)]</p></li>
+<li><p><strong>to_sinto</strong> – boolean, for cellxgene mode, output the txt files for running sinto to generate pseudobulk bam files.</p></li>
+<li><p><strong>to_samtools</strong> – boolean,for cellxgene mode, output the txt files for running samtools to generate the pseudobulk bam files.</p></li>
+</ul>
+</dd>
+</dl>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="s1">&#39;leiden1&#39;</span><span class="p">,</span><span class="s1">&#39;0&#39;</span><span class="p">,</span><span class="s1">&#39;umap&#39;</span><span class="p">,</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;leiden1@0&#39;</span><span class="p">,</span><span class="s1">&#39;leiden3@10&#39;</span><span class="p">])</span>
 <span class="n">sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="s1">&#39;leiden1&#39;</span><span class="p">,</span><span class="s1">&#39;0&#39;</span><span class="p">,</span><span class="s1">&#39;heatmap&#39;</span><span class="p">,</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;leiden1@0&#39;</span><span class="p">,</span><span class="s1">&#39;leiden3@10&#39;</span><span class="p">])</span>
@@ -514,17 +737,303 @@ three smaller clusters, then the clueterability of this cluster will be 3.</p>
 <span class="n">sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="s1">&#39;leiden1&#39;</span><span class="p">,</span><span class="s1">&#39;0&#39;</span><span class="p">,</span><span class="s1">&#39;dual_gene&#39;</span><span class="p">,</span><span class="n">dual_gene</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;MAPK14&#39;</span><span class="p">,</span><span class="s1">&#39;CD52&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>key</strong> – annotation key</p></li>
-<li><p><strong>cluster</strong> – cluster name in each annotation</p></li>
-</ul>
-</dd>
-</dl>
 </dd></dl>
 
 </div>
+<div class="section" id="plot-long-heatmap">
+<h3>plot_long_heatmap()<a class="headerlink" href="#plot-long-heatmap" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.plot_long_heatmap">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">plot_long_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clusters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pruned'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'marker_genes'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pdf'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(6,</span> <span class="pre">4.8)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_fontsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster_fontsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.plot_long_heatmap" title="Permalink to this definition">¶</a></dt>
+<dd><p>the default scanpy heatmap is not able to support the display of arbitrary number of marker genes for each clusters, the max feature is 50.
+this heatmap allows you to specify as many marker genes for each cluster as possible, and the gene name will all the displayed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clusters</strong> – list, what clusters we want to consider under a certain annotation.</p></li>
+<li><p><strong>key</strong> – string, annotation name.</p></li>
+<li><p><strong>n_features</strong> – int, the number of features to display.</p></li>
+<li><p><strong>mode</strong> – string, either ‘marker_genes’ or ‘exclusive_genes’.</p></li>
+<li><p><strong>cmap</strong> – string, matplotlib cmap string.</p></li>
+<li><p><strong>save</strong> – boolean, whether to save or not.</p></li>
+<li><p><strong>format</strong> – string, which format to save.</p></li>
+<li><p><strong>figsize</strong> – tuple, the width and the height of the plot.</p></li>
+<li><p><strong>feature_fontsize</strong> – int/float. the fontsize for the feature.</p></li>
+<li><p><strong>cluster_fontsize</strong> – int/float, the fontsize for the cluster.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_long_umap</span><span class="p">(</span><span class="n">n_features</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">20</span><span class="p">))</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/long_heatmap.png" class="align-center" src="_images/long_heatmap.png" style="width: 550px; height: 550px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="plot-multi-modal-feature-rank">
+<h3>plot_multi_modal_feature_rank()<a class="headerlink" href="#plot-multi-modal-feature-rank" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.plot_multi_modal_feature_rank">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">plot_multi_modal_feature_rank</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'marker_genes'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pruned'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tops</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex_adt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'^AB_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex_atac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'^chr\\d{1,2}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.pdf'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.plot_multi_modal_feature_rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>plot the top features in each clusters, the features are colored by the modality and ranked by the importance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cluster</strong> – string, the name of the cluster.</p></li>
+<li><p><strong>mode</strong> – string, either ‘marker_genes’ or ‘exclusive_genes’</p></li>
+<li><p><strong>tops</strong> – int, top n features to plot.</p></li>
+<li><p><strong>regex_adt</strong> – raw string, the pattern by which the ADT feature will be defined.</p></li>
+<li><p><strong>regex_atac</strong> – raw string ,the pattern by which the atac feature will be defined.</p></li>
+<li><p><strong>save</strong> – boolean, whether to save the figures.</p></li>
+<li><p><strong>format</strong> – string, the format the figure will be saved.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_multi_modal_feature_rank</span><span class="p">(</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_2@10&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/plot_multi_modal_feature_rank.png" class="align-center" src="_images/plot_multi_modal_feature_rank.png" style="width: 500px; height: 550px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="plot-umap">
+<h3>plot_umap()<a class="headerlink" href="#plot-umap" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.plot_umap">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">plot_umap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pdf'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">umap_dot_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">umap_cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'YlOrRd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frameon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.plot_umap" title="Permalink to this definition">¶</a></dt>
+<dd><p>plotting the umap with either category cluster label or continous metrics are important. Different from the scanpy 
+vanilla plot function, this function automatically generate two umap, one with legend on side and another with legend on data, which
+usually will be very helpful imagine you have &gt; 40 clusters. Secondly, we automatically make all the background dot as light grey, instead of
+dark color.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col</strong> – string, which column in self.adata.obs that we want to plot umap from.</p></li>
+<li><p><strong>kind</strong> – string, either ‘category’ or ‘continuous’</p></li>
+<li><p><strong>save</strong> – boolean, whether to save it to disk or not. Default: True</p></li>
+<li><p><strong>format</strong> – string. Which format to save. Default: ‘.pdf’</p></li>
+<li><p><strong>umap_dot_size</strong> – int/float. the size of dot in scatter plot, if None, using scanpy formula, 120000/n_cells</p></li>
+<li><p><strong>umap_cmap</strong> – string, the matplotlib colormap to use. Default: ‘YlOrRd’</p></li>
+<li><p><strong>frameon</strong> – boolean, whether to have the frame on the umap. Default: False</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_umap</span><span class="p">(</span><span class="n">col</span><span class="o">=</span><span class="s1">&#39;pruned&#39;</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">plot_umap</span><span class="p">(</span><span class="n">col</span><span class="o">=</span><span class="s1">&#39;confidence&#39;</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;continous&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/umap_category.png" class="align-center" src="_images/umap_category.png" style="width: 400px; height: 700px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/umap_continuous.png" class="align-center" src="_images/umap_continuous.png" style="width: 400px; height: 300px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="plot-winners-statistics">
+<h3>plot_winners_statistics()<a class="headerlink" href="#plot-winners-statistics" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.plot_winners_statistics">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">plot_winners_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.plot_winners_statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>For triangulated clusters, either ‘raw’ or ‘pruned’, visualize what fraction of cells won the game.
+A horizontal barplot will be generated and a dataframe with winners statistics will be returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col</strong> – string, either ‘raw’ or ‘pruned’</p></li>
+<li><p><strong>fontsize</strong> – int, the fontsize for the y-label. Default: 3</p></li>
+<li><p><strong>plot</strong> – boolean, whether to plot or not. Default: True</p></li>
+<li><p><strong>save</strong> – boolean, whether to save the plot to the sctri.dir or not. Default: True</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DataFarme</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_winners_statistics</span><span class="p">(</span><span class="n">col</span><span class="o">=</span><span class="s1">&#39;raw&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/plot_winners_statistics.png" class="align-center" src="_images/plot_winners_statistics.png" style="width: 400px; height: 300px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="pruning">
+<h3>pruning()<a class="headerlink" href="#pruning" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.pruning">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">pruning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'reassign'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_sccaf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.pruning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main function. After running <code class="docutils literal notranslate"><span class="pre">compute_shapley</span></code>, we get <strong>raw</strong> cluster results. Althought the raw cluster is informative,
+there maybe some weired clusters that accidentally win out which doesn’t attribute to its biological stability. For example,
+a cluster that only has 3 cells, or very unstable cluster. To ensure the best results, we apply a post-hoc assessment onto the
+raw cluster result, by applying the same set of metrics function to assess the robustness/stability of the raw clusters itself.
+And we will based on that to perform some pruning to get rid of unstable clusters. Finally, the cells within these clusters will be 
+reassigned to thier nearest neighbors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>method</strong> – string, valid value: ‘reassign’, ‘rank’. <code class="docutils literal notranslate"><span class="pre">rank</span></code> will compute the metrics on all the raw clusters, together with the 
+<code class="docutils literal notranslate"><span class="pre">discard</span></code> parameter which automatically discard clusters ranked at the bottom to remove unstable clusters. <code class="docutils literal notranslate"><span class="pre">reassign</span></code>
+will just remove clusters that either has less than <code class="docutils literal notranslate"><span class="pre">abs_thresh</span></code> cells or are in the self.invalid attribute list.</p></li>
+<li><p><strong>discard</strong> – int. Least {discard} stable clusters to remove. Default: None, means just rank without removing.</p></li>
+<li><p><strong>scale_sccaf</strong> – boolean. whether to scale the expression data. See <code class="docutils literal notranslate"><span class="pre">compute_metrics</span></code> for full explanation. Default: True</p></li>
+<li><p><strong>abs_thresh</strong> – int. clusters have less than {abs_thresh} cells will be discarded in <code class="docutils literal notranslate"><span class="pre">reassign</span></code> mode.</p></li>
+<li><p><strong>remove1</strong> – boolean. When reassign the cells in the dicarded clutsers, whether to also reassign the cells who are the only one in each 
+<code class="docutils literal notranslate"><span class="pre">reference</span></code> cluster. Default: True</p></li>
+<li><p><strong>reference</strong> – string. which annotation will serve as the reference.</p></li>
+<li><p><strong>parallel</strong> – boolean, whether to perform this step in parallel. (scatter and gather).</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">pruning</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;pruning&#39;</span><span class="p">,</span><span class="n">discard</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>  <span class="c1"># just assess and rank the raw clusters</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">pruning</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;reassign&#39;</span><span class="p">,</span><span class="n">abs_thresh</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">remove1</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">reference</span><span class="o">=</span><span class="s1">&#39;annotation1&#39;</span><span class="p">)</span>  <span class="c1"># remove invalid clusters and reassign the cells within</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="regress-out-size-effect">
+<h3>regress_out_size_effect()<a class="headerlink" href="#regress-out-size-effect" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.regress_out_size_effect">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">regress_out_size_effect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regressor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'background_zscore'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.regress_out_size_effect" title="Permalink to this definition">¶</a></dt>
+<dd><p>An optional step to regress out potential confounding effect of cluster_size on the metrics. Run after <code class="docutils literal notranslate"><span class="pre">compute_metrics</span></code> step
+but before <code class="docutils literal notranslate"><span class="pre">compute_shapley</span></code> step. All the metrics in selfadata.obs and self.score will be modified in place.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>regressor</strong> – string. which regressor to choose, valid values: ‘background_zscore’, ‘background_mean’, ‘GLM’, ‘Huber’, ‘RANSAC’, ‘TheilSen’</p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">regress_out_size</span><span class="p">(</span><span class="n">regressor</span><span class="o">=</span><span class="s1">&#39;Huber&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="run-single-key-assessment">
+<h3>run_single_key_assessment()<a class="headerlink" href="#run-single-key-assessment" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.run_single_key_assessment">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">run_single_key_assessment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_sccaf</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.run_single_key_assessment" title="Permalink to this definition">¶</a></dt>
+<dd><p>this is a very handy function, given a set of annotation, this function allows you to assess the biogical robustness
+based on the metrics we define. The obtained score and cluster information will be automatically saved to self.cluster
+and self.score, and can be further rendered by the scTriangulate viewer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>key</strong> – string, the annotation/column name to assess the robustness.</p>
+</dd>
+<dt class="field-even">Scale_sccaf</dt>
+<dd class="field-even"><p>boolean, whether to scale the expression data before running SCCAF score. See <code class="docutils literal notranslate"><span class="pre">compute_metrics</span></code> function
+for full information.</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">run_single_key_assessment</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;azimuth&#39;</span><span class="p">,</span><span class="n">scale_sccaf</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="serialize">
+<h3>serialize()<a class="headerlink" href="#serialize" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.serialize">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">serialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sctri_pickle.p'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>serialize the sctri object through pickle protocol to the disk</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – string, the name of the pickle file on the disk. Default: sctri_pickle.p</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="viewer-cluster-feature-figure">
+<h3>viewer_cluster_feature_figure()<a class="headerlink" href="#viewer-cluster-feature-figure" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.viewer_cluster_feature_figure">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">viewer_cluster_feature_figure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_umap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.viewer_cluster_feature_figure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate all the figures for setting up the viewer cluster page.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parallel</strong> – boolean, whether to run it in parallel, only work in some linux system, so recommend to not set to True.</p></li>
+<li><p><strong>select_keys</strong> – list, what annotations’ cluster we want to inspect.</p></li>
+<li><p><strong>other_umap</strong> – ndarray,replace the umap with another set.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">viewer_cluster_feature_figure</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">select_keys</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;annotation1&#39;</span><span class="p">,</span><span class="s1">&#39;annotation2&#39;</span><span class="p">],</span><span class="n">other_umap</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="viewer-cluster-feature-html">
+<h3>viewer_cluster_feature_html()<a class="headerlink" href="#viewer-cluster-feature-html" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.viewer_cluster_feature_html">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">viewer_cluster_feature_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.viewer_cluster_feature_html" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setting up the viewer cluster page.</p>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">viewer_cluster_feature_html</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="viewer-heterogeneity-figure">
+<h3>viewer_heterogeneity_figure()<a class="headerlink" href="#viewer-heterogeneity-figure" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.viewer_heterogeneity_figure">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">viewer_heterogeneity_figure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_umap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.viewer_heterogeneity_figure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generating the figures for the viewer heterogeneity page</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – string, which annotation to inspect the heterogeneity.</p></li>
+<li><p><strong>other_umap</strong> – ndarray, replace with other umap embedding.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">viewer_heterogeneity_figure</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;annotation1&#39;</span><span class="p">,</span><span class="n">other_umap</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="viewer-heterogeneity-html">
+<h3>viewer_heterogeneity_html()<a class="headerlink" href="#viewer-heterogeneity-html" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.viewer_heterogeneity_html">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">viewer_heterogeneity_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.viewer_heterogeneity_html" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setting up viewer heterogeneity page</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>key</strong> – string, which annotation to inspect.</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">viewer_heterogeneity_html</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;annotation1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="preprocessing-module">
+<h2>Preprocessing Module<a class="headerlink" href="#preprocessing-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="colors-module">
+<h2>Colors Module<a class="headerlink" href="#colors-module" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
