@@ -150,7 +150,87 @@ viewer_heterogeneity_html()
 Preprocessing Module
 ----------------------
 
+GeneConvert Class
+~~~~~~~~~~~~~~~~~~~~
+.. autoclass:: sctriangulate.preprocessing.GeneConvert
+    :members: 
 
+Normalization Class
+~~~~~~~~~~~~~~~~~~~~~~~
+.. autoclass:: sctriangulate.preprocessing.Normalization
+    :members: 
+
+small_txt_to_adata()
+~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.small_txt_to_adata
+
+large_txt_to_mtx()
+~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.large_txt_to_mtx
+
+mtx_to_adata()
+~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.mtx_to_adata
+
+mtx_to_large_txt()
+~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.mtx_to_large_txt
+
+add_azimuth()
+~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.add_azimuth
+
+add_annotations()
+~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.add_annotations
+
+add_umap()
+~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.add_umap
+
+doublet_predict()
+~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.doublet_predict
+
+make_sure_adata_writable()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.make_sure_adata_writable
+
+scanpy_recipe()
+~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.scanpy_recipe
+
+concat_rna_and_other()
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.concat_rna_and_other
+
+umap_dual_view_save()
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.umap_dual_view_save
+
+make_sure_mat_dense()
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.make_sure_mat_dense
+
+make_sure_mat_sparse()
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.make_sure_mat_sparse
+
+gene_activity_count_matrix_old_10x()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.gene_activity_count_matrix_old_10x
+
+gene_activity_count_matrix_new_10x()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.gene_activity_count_matrix_new_10x
+
+find_genes()
+~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.find_genes
+
+reformat_peak()
+~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.reformat_peak
 
 
 Colors Module

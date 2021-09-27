@@ -23,6 +23,20 @@ mpl.rcParams['font.family'] = 'Arial'
 
 
 def small_txt_to_adata(int_file,gene_is_index=True):
+    '''
+    given a small dense expression (<2GB) txt file, load them into memory as adata, and also make sure the X is sparse matrix.
+
+    :param int_file: string, path to the input txt file, delimited by tab
+    :param gene_is_index: boolean, whether the gene/features are the index.
+
+    :return: AnnData
+
+    Exmaples::
+
+        from sctriangulate.preprocessing import small_txt_to_adata
+        adata= = small_txt_to_adata('./input.txt',gene_is_index=True)
+
+    '''
     df = pd.read_csv(int_file,sep='\t',index_col=0)
     if gene_is_index:
         adata = ad.AnnData(X=csr_matrix(df.values.T),var=pd.DataFrame(index=df.index.values),obs=pd.DataFrame(index=df.columns.values))
@@ -34,7 +48,20 @@ def small_txt_to_adata(int_file,gene_is_index=True):
 
 
 def large_txt_to_mtx(int_file,out_folder,gene_is_index=True,type_convert_to='int16'):  # whether the txt if gene * cell
-    '''since expression matrix is too large, I need to do iteration'''
+    '''
+    Given a large txt dense expression file, convert them to mtx file on cluster to facilitate future I/O
+
+    :param int_file: string, path to the intput txt file, delimited by tab
+    :param out_folder: string, path to the output folder where the mtx file will be stored
+    :param gene_is_index: boolean, whether the gene/features is the index in the int_file.
+    :param type_convert_to: string, since it is a large dataframe, need to read in chunk, to accelarate it and reduce the memory footprint,
+                            we convert it to either 'int16' if original data is count, or 'float32' if original data is normalized data.
+    
+    Examples::
+
+        from sctriangulate.preprocessing import large_txt_to_mtx
+        large_txt_to_mtx(int_file='input.txt',out_folder='./data',gene_is_index=False,type_convert_to='float32')
+    ''' 
     reader = pd.read_csv(int_file,sep='\t',index_col=0,chunksize=1000)
     store = []
     for chunk in reader:
@@ -56,6 +83,21 @@ def large_txt_to_mtx(int_file,out_folder,gene_is_index=True,type_convert_to='int
 
 
 def mtx_to_adata(int_folder,gene_is_index=True,feature='genes'):  # whether the mtx file is gene * cell
+    '''
+    convert mtx file to adata in RAM, make sure the X is sparse.
+
+    :param int_folder: string, folder where the mtx files are stored.
+    :param gene_is_index: boolean, whether the gene is index.
+    :param features: string, the name of the feature tsv file, if rna, it will be genes.tsv.
+
+    :return: AnnData
+
+    Examples::
+
+        from sctriangulate.preprocessing import mtx_to_adata
+        mtx_to_adata(int_folder='./data',gene_is_index=False,feature='genes')
+
+    '''
     gene = pd.read_csv(os.path.join(int_folder,'{}.tsv'.format(feature)),sep='\t',index_col=0,header=None).index
     cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None).index
     value = mmread(os.path.join(int_folder,'matrix.mtx')).toarray()
@@ -71,6 +113,19 @@ def mtx_to_adata(int_folder,gene_is_index=True,feature='genes'):  # whether the 
 
 
 def mtx_to_large_txt(int_folder,out_file,gene_is_index=False):
+    '''
+    convert mtx back to large dense txt expression dataframe.
+
+    :param int_folder: string, path to the input mtx folder.
+    :param out_file: string, path to the output txt file.
+    :param gene_is_index: boolean, whether the gene is the index.
+
+    Examples::
+
+        from sctriangulate.preprocessing import mtx_to_large_txt
+        mtx_to_large_txt(int_folder='./data',out_file='input.txt',gene_is_index=False)
+
+    '''
     gene = pd.read_csv(os.path.join(int_folder,'genes.tsv'),sep='\t',index_col=0,header=None).index
     cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None).index
     value = mmread(os.path.join(int_folder,'matrix.mtx')).toarray()
@@ -80,7 +135,20 @@ def mtx_to_large_txt(int_folder,out_file,gene_is_index=False):
         data = pd.DataFrame(data=value.T,index=cell,columns=gene)
     data.to_csv(out_file,sep='\t',chunksize=1000)
 
-def adding_azimuth(adata,result,name='predicted.celltype.l2'):
+def add_azimuth(adata,result,name='predicted.celltype.l2'):
+    '''
+    a convenient function if you have azimuth predicted labels in hand, and want to add the label to the adata.
+
+    :param adata: AnnData
+    :param result: string, the path to the 'azimuth_predict.tsv' file
+    :param name: string, the column name where the user want to transfer to the adata.
+
+    Examples::
+
+        from sctriangulate.preprocessing import add_azimuth
+        add_azimuth(adata,result='./azimuth_predict.tsv',name='predicted.celltype.l2')
+
+    '''
     azimuth = pd.read_csv(result,sep='\t',index_col=0)
     azimuth_map = azimuth[name].to_dict()
     azimuth_prediction = azimuth['{}.score'.format(name)].to_dict()
@@ -90,6 +158,21 @@ def adding_azimuth(adata,result,name='predicted.celltype.l2'):
     adata.obs['mapping_score'] = adata.obs_names.map(azimuth_mapping).values
 
 def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None):
+    '''
+    Adding annotations from external sources to the adata
+
+    :param adata: Anndata
+    :param inputs: string, path to the txt file where the barcode to cluster label information is stored.
+    :param cols_input: list, what columns the users want to transfer to the adata.
+    :param index_col: int, for the input, which column will serve as the index column
+    :param cols_output: list, corresponding to the cols_input, how these columns will be named in the adata.obs columns
+
+    Examples::
+
+        from sctriangulate.preprocessing import add_annotations
+        add_annotations(adata,input='./annotation.txt',cols_input=['col1,'col2'],index_col=0,cols_output=['annotation1','annontation2'])
+
+    '''
     # means a single file such that one column is barcodes, annotations are within other columns
     annotations = pd.read_csv(inputs,sep='\t',index_col=index_col).loc[:,cols_input]
     mappings = []
@@ -105,9 +188,32 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None):
 
 
 def add_umap(adata,inputs,mode,cols=None,index_col=0):
+    '''
+    if umap embedding is pre-computed, add it back to adata object.
+
+    :param adata: Anndata
+    :param inputs: string, path to the the txt file where the umap embedding was stored.
+    :param mode: string, valid value 'pandas_disk', 'pandas_memory', 'numpy'
+    :param cols: list, what columns contain umap embeddings.s
+    :param index_col: int, which column will serve as the index column.
+
+    Examples::
+
+        from sctriangulate.preprocessing import add_umap
+        add_umap(adata,inputs='umap.txt',mode='pandas_disk',cols=['umap1','umap2],index_col=0)
+
+    '''
     # make sure cols are [umap_x, umap_y]
-    if mode == 'pandas':
+    if mode == 'pandas_disk':
         df = pd.read_csv(inputs,sep='\t',index_col=index_col)
+        umap_x = df[cols[0]].to_dict()
+        umap_y = df[cols[1]].to_dict()
+        adata.obs['umap_x'] = adata.obs_names.map(umap_x).values
+        adata.obs['umap_y'] = adata.obs_names.map(umap_y).values
+        adata.obsm['X_umap'] = adata.obs.loc[:,['umap_x','umap_y']].values
+        adata.obs.drop(columns=['umap_x','umap_y'],inplace=True)
+    elif mode == 'pandas_memory':
+        df = inputs
         umap_x = df[cols[0]].to_dict()
         umap_y = df[cols[1]].to_dict()
         adata.obs['umap_x'] = adata.obs_names.map(umap_x).values
@@ -118,6 +224,19 @@ def add_umap(adata,inputs,mode,cols=None,index_col=0):
         adata.obsm['X_umap'] = inputs
 
 def doublet_predict(adata):  # gave RNA count or log matrix
+    '''
+    wrapper function for running srublet, a new column named 'doublet_scores' will be added to the adata
+
+    :param adata: Anndata
+
+    :return: AnnData
+
+    Examples::
+
+        from sctriangulate.preprocessing import doublet_predict
+        new_adata = doublet_predict(old_adata)
+
+    '''
     from scipy.sparse import issparse
     import scrublet as scr
     if issparse(adata.X):
@@ -129,6 +248,22 @@ def doublet_predict(adata):  # gave RNA count or log matrix
     return adata.obs['doublet_scores'].to_dict()
 
 def make_sure_adata_writable(adata,delete=False):
+    '''
+    maks sure the adata is able to write to disk, since h5 file is stricted typed, so on mixed dtype is allowd.
+    this function basically is to detect the column of obs/var that are of mixed types, and delete them.
+
+    :param adata: Anndata
+    :param delete: boolean, False will just print out what columns are mixed type, True will automatically delete those columns
+
+    :return: Anndata
+
+    Examples::
+
+        from sctriangulate.preprocessing import make_sure_adata_writable
+        make_sure_adata_writable(adata,delete=True)
+
+
+    '''
     # check index, can not have name
     var_names = adata.var_names
     obs_names = adata.obs_names
@@ -169,6 +304,31 @@ def make_sure_adata_writable(adata,delete=False):
 
 
 def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=True,save=True,pca_n_comps=None,n_top_genes=3000):
+    '''
+    Main preprocessing function. Run Scanpy normal pipeline to achieve Leiden clustering with various resolutions across multiple modalities.
+
+    :param adata: Anndata
+    :param is_log: boolean, whether the adata.X is count or normalized data.
+    :param resolutions: list, what leiden resolutions the users want to obtain.
+    :param modality: string, valid values: 'rna','adt','atac'
+    :param umap: boolean, whether to compute umap embedding.
+    :param save: boolean, whether to save the obtained adata object with cluster label information in it.
+    :param pca_n_comps: int, how many PCs to keep when running PCA. Suggestion: RNA (30-50), ADT (15), ATAC (100)
+    :param n_top_genes: int, how many features to keep when selecting highly_variable_genes. Suggestion: RNA (3000), ADT (ignored), ATAC (50000-100000)
+
+    :return: Anndata
+
+    Examples::
+
+        from sctriangulate.preprocessing import scanpy_recipe
+        # rna
+        adata = scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',pca_n_comps=50,n_top_genes=3000)
+        # adt
+        adata = scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='adt',pca_n_comps=15)
+        # atac
+        adata = scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='atac',pca_n_comps=100,n_top_genes=100000)
+
+    '''
     adata.var_names_make_unique()
     # normal analysis
     if modality == 'rna':
@@ -294,6 +454,23 @@ def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=Tru
 
 
 def concat_rna_and_other(adata_rna,adata_other,umap,name,prefix):
+    '''
+    concatenate rna adata and another modality's adata object
+
+    :param adata_rna: AnnData
+    :param adata_other: Anndata
+    :param umap: string, whose umap to use, either 'rna' or 'other'
+    :param name: string, the name of other modality, for example, 'adt' or 'atac'
+    :param prefix: string, the prefix added in front of features from other modality, by scTriangulate convertion, adt will be 'AB_', atac will be ''.
+
+    :return adata_combine: Anndata
+
+    Examples::
+
+        from sctriangulate.preprocessing import concat_rna_and_other
+        concat_rna_and_other(adata_rna,adata_adt,umap='rna',name='adt',prefix='AB_') 
+
+    '''
     adata_rna = adata_rna.copy()
     adata_other = adata_other.copy()
     # remove layers, [!obsm], varm, obsp, varp, raw
@@ -320,6 +497,18 @@ def concat_rna_and_other(adata_rna,adata_other,umap,name,prefix):
 
 
 def umap_dual_view_save(adata,cols):
+    '''
+    generate a pdf file with two umap up and down, one is with legend on side, another is with legend on data.
+    More importantly, this allows you to generate multiple columns iteratively.
+
+    :param adata: Anndata
+    :param cols: list, all columns from which we want to draw umap.
+
+    Examples::
+
+        from sctriangulate.preprocessing import umap_dual_view_save
+        umap_dual_view_save(adata,cols=['annotation1','annotation2','total_counts'])
+    '''
     for col in cols:
         fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
         sc.pl.umap(adata,color=col,frameon=False,ax=ax[0])
@@ -335,13 +524,25 @@ def just_log_norm(adata):
 
 
 
-
-
-
 class GeneConvert(object):
+    '''
+    A collection of gene symbol conversion functions.
+
+    Now support:
+
+    1. ensemblgene id to gene symbol.
+
+
+    '''
 
     @staticmethod
     def ensemblgene_to_symbol(query,species):
+        '''
+        Examples::
+
+            from sctriangulate.preprocessing import GeneConvert
+            converted_list = GeneConvert.ensemblgene_to_symbol(['ENSG00000010404','ENSG00000010505'],species='human')
+        '''
         # assume query is a list, will also return a list
         import mygene
         mg = mygene.MyGeneInfo()
@@ -431,6 +632,17 @@ def multi_gene_plot(adata,genes,s=8,save=True,format='pdf',dir='.',umap_lim=None
 
 
 def make_sure_mat_dense(mat):
+    '''
+    make sure a matrix is dense
+
+    :param mat: ndarary
+
+    :return mat: ndarray (dense)
+
+    Examples::
+
+        mat = make_sure_mat_dense(mat)
+    '''
     if not issparse(mat):
         pass
     else:
@@ -438,6 +650,17 @@ def make_sure_mat_dense(mat):
     return mat
 
 def make_sure_mat_sparse(mat):  # will be csr if the input mat is a dense array
+    '''
+    make sure a matrix is sparse
+
+    :param mat: ndarary
+
+    :return mat: ndarray (sparse)
+
+    Examples::
+
+        mat = make_sure_mat_dense(mat)
+    '''
     if not issparse(mat):
         mat = csr_matrix(mat)
     else:
@@ -445,10 +668,28 @@ def make_sure_mat_sparse(mat):  # will be csr if the input mat is a dense array
     return mat
 
 class Normalization(object):
-    '''matrix should be cell x feature, expecting a ndarray'''
+    '''
+    a series of Normalization functions
+
+    Now support:
+
+    1. CLR normalization
+    2. total count normalization (CPTT, CPM)
+    3. GMM normalization
+
+
+
+    '''
+    # matrix should be cell x feature, expecting a ndarray
 
     @staticmethod
     def CLR_normalization(mat):
+        '''
+        Examples::
+
+            from sctriangulate.preprocessing import Normalization
+            post_mat = Normalization.CLR_normalization(pre_mat)
+        '''
         from scipy.stats import gmean
         gmeans = gmean(mat+1,axis=1).reshape(-1,1)
         post = np.log(mat/gmeans + 1)
@@ -456,6 +697,12 @@ class Normalization(object):
 
     @staticmethod
     def total_normalization(mat,target=1e4):
+        '''
+        Examples::
+
+            from sctriangulate.preprocessing import Normalization
+            post_mat = Normalization.total_normalization(pre_mat)
+        '''
         total = np.sum(mat,axis=1).reshape(-1,1)
         sf = total/target
         post = np.log(mat/sf + 1)
@@ -463,6 +710,12 @@ class Normalization(object):
 
     @staticmethod
     def GMM_normalization(mat):
+        '''
+        Examples::
+
+            from sctriangulate.preprocessing import Normalization
+            post_mat = Normalization.GMM_normalization(pre_mat)
+        '''
         mat = Normalization.total_normalization(mat)
         from sklearn.mixture import GaussianMixture
         model = GaussianMixture(n_components=2,random_state=0)
@@ -475,6 +728,15 @@ class Normalization(object):
 
 
 def gene_activity_count_matrix_new_10x(fall_in_promoter,fall_in_gene,valid=None):
+    '''
+    Full explanation please refer to ``gene_activity_count_matrix_old_10x``
+
+    Examples::
+
+        from sctriangulate.preprocessing import gene_activity_count_matrix_new_10x
+        gene_activity_count_matrix_new_10x(fall_in_promoter,fall_in_gene,valid=None)       
+    '''
+
     gene_promoter = pd.read_csv(fall_in_promoter,sep='\t',header=None)
     gene_body = pd.read_csv(fall_in_gene,sep='\t',header=None)
     bucket = []
@@ -518,25 +780,40 @@ def gene_activity_count_matrix_new_10x(fall_in_promoter,fall_in_gene,valid=None)
 
 def gene_activity_count_matrix_old_10x(fall_in_promoter,fall_in_gene,valid=None):
     '''
-    how to get these two arguments? (LIGER team approach)
-    - sort the fragment, gene and promoter bed, or use function in this module to sort the reference bed files
-    sort -k1,1 -k2,2n -k3,3n pbmc_granulocyte_sorted_10k_atac_fragments.tsv > atac_fragments.sort.bed
-    sort -k 1,1 -k2,2n -k3,3n hg19_genes.bed > hg19_genes.sort.bed
-    sort -k 1,1 -k2,2n -k3,3n hg19_promoters.bed > hg19_promoters.sort.bed
+    this function is to generate gene activity count matrix, please refer to ``gene_activity_count_matrix_new_10x`` for latest
+    version of 10x fragements.tsv output.
 
-    - bedmap
-    module load bedops
-    bedmap --ec --delim "\t" --echo --echo-map-id hg19_promoters.sort.bed atac_fragments.sort.bed > atac_promoters_bc.bed
-    bedmap --ec --delim "\t" --echo --echo-map-id hg19_genes.sort.bed atac_fragments.sort.bed > atac_genes_bc.bed
+    how to get these two arguments? (LIGER team approach)
+
+
+    1. sort the fragment, gene and promoter bed, or use function in this module to sort the reference bed files::
+
+        sort -k1,1 -k2,2n -k3,3n pbmc_granulocyte_sorted_10k_atac_fragments.tsv > atac_fragments.sort.bed
+        sort -k 1,1 -k2,2n -k3,3n hg19_genes.bed > hg19_genes.sort.bed
+        sort -k 1,1 -k2,2n -k3,3n hg19_promoters.bed > hg19_promoters.sort.bed
+
+    2. bedmap::
+
+        module load bedops
+        bedmap --ec --delim "\t" --echo --echo-map-id hg19_promoters.sort.bed atac_fragments.sort.bed > atac_promoters_bc.bed
+        bedmap --ec --delim "\t" --echo --echo-map-id hg19_genes.sort.bed atac_fragments.sort.bed > atac_genes_bc.bed
 
 
     the following was taken from http://htmlpreview.github.io/?https://github.com/welch-lab/liger/blob/master/vignettes/Integrating_scRNA_and_scATAC_data.html
 
-    –delim. This changes output delimiter from ‘|’ to indicated delimiter between columns, which in our case is “\t”.
-    –ec. Adding this will check all problematic input files.
-    –echo. Adding this will print each line from reference file in output. The reference file in our case is gene or promoter index.
-    –echo-map-id. Adding this will list IDs of all overlapping elements from mapping files, which in our case are cell barcodes from fragment files.
-    
+    * **delim**. This changes output delimiter from ‘|’ to indicated delimiter between columns, which in our case is “\t”.
+
+    * **ec**. Adding this will check all problematic input files.
+
+    * **echo**. Adding this will print each line from reference file in output. The reference file in our case is gene or promoter index.
+
+    * **echo-map-id**. Adding this will list IDs of all overlapping elements from mapping files, which in our case are cell barcodes from fragment files.
+
+    3. Finally::
+
+        from sctriangulate.preprocessing import gene_activity_count_matrix_old_10x
+        gene_activity_count_matrix_old_10x(fall_in_promoter,fall_in_gene,valid=None)
+   
     '''
     gene_promoter = pd.read_csv(fall_in_promoter,sep='\t',header=None)
     gene_body = pd.read_csv(fall_in_gene,sep='\t',header=None)
@@ -670,12 +947,19 @@ def find_genes(adata,
                  annotation='HAVANA',
                  raw=False):
     """
-    merge values of peaks/windows/features overlapping genebodies + 2kb upstream. 
-    It is possible to extend the search for closest gene to a given number of bases downstream as well. 
-    There is commonly 2 set of annotations in a gtf file(HAVANA, ENSEMBL). By default, the function
-    will search annotation from HAVANA but other annotation label/source can be specifed. 
-   
-    It is possible to use other type of features than genes present in a gtf file such as transcripts or CDS.
+    This function is taken from `episcanpy <https://github.com/colomemaria/epiScanpy/blob/master/episcanpy/tools/_find_genes.py>`_.
+    all the credits to the original developer
+
+    merge values of peaks/windows/features overlapping genebodies + 2kb upstream. It is possible to extend the search for closest gene to a given 
+    number of bases downstream as well. There is commonly 2 set of annotations in a gtf file(HAVANA, ENSEMBL). By default, the function will search 
+    annotation from HAVANA but other annotation label/source can be specifed. It is possible to use other type of features than genes present in a 
+    gtf file such as transcripts or CDS.
+
+
+    Examples::
+
+        from sctriangulate.preprocessing import find_genes
+        find_genes(adata,gtf_file='gencode.v38.annotation.gtf)
     
     """
     ### extracting the genes
@@ -737,8 +1021,21 @@ def find_genes(adata,
 
     
 def reformat_peak(adata,canonical_chr_only=True):
-    # an adata atac peak from 10X is like 'chr1:10109-10357'
-    # to use find_gene function, need to be 'chr1_10109_10357'
+    '''
+    To use ``find_genes`` function, please first reformat the peak from 10X format "chr1:10109-10357" to
+    find_gene format "chr1_10109_10357"
+
+    :param adata: AnnData
+    :param canonical_chr_only: boolean, only kept the canonical chromosome
+
+    :return: AnnData
+
+    Examples::
+
+        from sctriangulate.preprocessing import reformat_peak
+        adata = reformat_peak(adata,canonical_chr_only=True)
+
+    '''
     var_names = adata.var_names
     valid = set(['chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chr11','chr12','chr13','chr14','chr15','chr16',
              'chr17','chr18','chr19','chr20','chr21','chr22','chrX','chrY'])

@@ -127,7 +127,29 @@
 <li class="toctree-l3"><a class="reference internal" href="#viewer-heterogeneity-html">viewer_heterogeneity_html()</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#preprocessing-module">Preprocessing Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing-module">Preprocessing Module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#geneconvert-class">GeneConvert Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#normalization-class">Normalization Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#small-txt-to-adata">small_txt_to_adata()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#large-txt-to-mtx">large_txt_to_mtx()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mtx-to-adata">mtx_to_adata()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mtx-to-large-txt">mtx_to_large_txt()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-azimuth">add_azimuth()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-annotations">add_annotations()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-umap">add_umap()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">doublet_predict()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#make-sure-adata-writable">make_sure_adata_writable()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#scanpy-recipe">scanpy_recipe()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#concat-rna-and-other">concat_rna_and_other()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#umap-dual-view-save">umap_dual_view_save()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#make-sure-mat-dense">make_sure_mat_dense()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#make-sure-mat-sparse">make_sure_mat_sparse()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gene-activity-count-matrix-old-10x">gene_activity_count_matrix_old_10x()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gene-activity-count-matrix-new-10x">gene_activity_count_matrix_new_10x()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#find-genes">find_genes()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reformat-peak">reformat_peak()</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#colors-module">Colors Module</a></li>
 </ul>
 </li>
@@ -1031,6 +1053,524 @@ for full information.</p>
 </div>
 <div class="section" id="preprocessing-module">
 <h2>Preprocessing Module<a class="headerlink" href="#preprocessing-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="geneconvert-class">
+<h3>GeneConvert Class<a class="headerlink" href="#geneconvert-class" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.GeneConvert">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">GeneConvert</span></span><a class="headerlink" href="#sctriangulate.preprocessing.GeneConvert" title="Permalink to this definition">¶</a></dt>
+<dd><p>A collection of gene symbol conversion functions.</p>
+<p>Now support:</p>
+<ol class="arabic simple">
+<li><p>ensemblgene id to gene symbol.</p></li>
+</ol>
+<dl class="py method">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.GeneConvert.ensemblgene_to_symbol">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">ensemblgene_to_symbol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">species</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.GeneConvert.ensemblgene_to_symbol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">GeneConvert</span>
+<span class="n">converted_list</span> <span class="o">=</span> <span class="n">GeneConvert</span><span class="o">.</span><span class="n">ensemblgene_to_symbol</span><span class="p">([</span><span class="s1">&#39;ENSG00000010404&#39;</span><span class="p">,</span><span class="s1">&#39;ENSG00000010505&#39;</span><span class="p">],</span><span class="n">species</span><span class="o">=</span><span class="s1">&#39;human&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="normalization-class">
+<h3>Normalization Class<a class="headerlink" href="#normalization-class" title="Permalink to this headline">¶</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.Normalization">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">Normalization</span></span><a class="headerlink" href="#sctriangulate.preprocessing.Normalization" title="Permalink to this definition">¶</a></dt>
+<dd><p>a series of Normalization functions</p>
+<p>Now support:</p>
+<ol class="arabic simple">
+<li><p>CLR normalization</p></li>
+<li><p>total count normalization (CPTT, CPM)</p></li>
+<li><p>GMM normalization</p></li>
+</ol>
+<dl class="py method">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.Normalization.CLR_normalization">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">CLR_normalization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.Normalization.CLR_normalization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">Normalization</span>
+<span class="n">post_mat</span> <span class="o">=</span> <span class="n">Normalization</span><span class="o">.</span><span class="n">CLR_normalization</span><span class="p">(</span><span class="n">pre_mat</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.Normalization.GMM_normalization">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">GMM_normalization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.Normalization.GMM_normalization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">Normalization</span>
+<span class="n">post_mat</span> <span class="o">=</span> <span class="n">Normalization</span><span class="o">.</span><span class="n">GMM_normalization</span><span class="p">(</span><span class="n">pre_mat</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.Normalization.total_normalization">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">total_normalization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.Normalization.total_normalization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">Normalization</span>
+<span class="n">post_mat</span> <span class="o">=</span> <span class="n">Normalization</span><span class="o">.</span><span class="n">total_normalization</span><span class="p">(</span><span class="n">pre_mat</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="small-txt-to-adata">
+<h3>small_txt_to_adata()<a class="headerlink" href="#small-txt-to-adata" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.small_txt_to_adata">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">small_txt_to_adata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">int_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gene_is_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.small_txt_to_adata" title="Permalink to this definition">¶</a></dt>
+<dd><p>given a small dense expression (&lt;2GB) txt file, load them into memory as adata, and also make sure the X is sparse matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>int_file</strong> – string, path to the input txt file, delimited by tab</p></li>
+<li><p><strong>gene_is_index</strong> – boolean, whether the gene/features are the index.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>AnnData</p>
+</dd>
+</dl>
+<p>Exmaples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">small_txt_to_adata</span>
+<span class="n">adata</span><span class="o">=</span> <span class="o">=</span> <span class="n">small_txt_to_adata</span><span class="p">(</span><span class="s1">&#39;./input.txt&#39;</span><span class="p">,</span><span class="n">gene_is_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="large-txt-to-mtx">
+<h3>large_txt_to_mtx()<a class="headerlink" href="#large-txt-to-mtx" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.large_txt_to_mtx">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">large_txt_to_mtx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">int_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gene_is_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_convert_to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'int16'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.large_txt_to_mtx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a large txt dense expression file, convert them to mtx file on cluster to facilitate future I/O</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>int_file</strong> – string, path to the intput txt file, delimited by tab</p></li>
+<li><p><strong>out_folder</strong> – string, path to the output folder where the mtx file will be stored</p></li>
+<li><p><strong>gene_is_index</strong> – boolean, whether the gene/features is the index in the int_file.</p></li>
+<li><p><strong>type_convert_to</strong> – string, since it is a large dataframe, need to read in chunk, to accelarate it and reduce the memory footprint,
+we convert it to either ‘int16’ if original data is count, or ‘float32’ if original data is normalized data.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">large_txt_to_mtx</span>
+<span class="n">large_txt_to_mtx</span><span class="p">(</span><span class="n">int_file</span><span class="o">=</span><span class="s1">&#39;input.txt&#39;</span><span class="p">,</span><span class="n">out_folder</span><span class="o">=</span><span class="s1">&#39;./data&#39;</span><span class="p">,</span><span class="n">gene_is_index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">type_convert_to</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="mtx-to-adata">
+<h3>mtx_to_adata()<a class="headerlink" href="#mtx-to-adata" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.mtx_to_adata">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">mtx_to_adata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">int_folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gene_is_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'genes'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.mtx_to_adata" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert mtx file to adata in RAM, make sure the X is sparse.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>int_folder</strong> – string, folder where the mtx files are stored.</p></li>
+<li><p><strong>gene_is_index</strong> – boolean, whether the gene is index.</p></li>
+<li><p><strong>features</strong> – string, the name of the feature tsv file, if rna, it will be genes.tsv.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>AnnData</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">mtx_to_adata</span>
+<span class="n">mtx_to_adata</span><span class="p">(</span><span class="n">int_folder</span><span class="o">=</span><span class="s1">&#39;./data&#39;</span><span class="p">,</span><span class="n">gene_is_index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">feature</span><span class="o">=</span><span class="s1">&#39;genes&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="mtx-to-large-txt">
+<h3>mtx_to_large_txt()<a class="headerlink" href="#mtx-to-large-txt" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.mtx_to_large_txt">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">mtx_to_large_txt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">int_folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gene_is_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.mtx_to_large_txt" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert mtx back to large dense txt expression dataframe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>int_folder</strong> – string, path to the input mtx folder.</p></li>
+<li><p><strong>out_file</strong> – string, path to the output txt file.</p></li>
+<li><p><strong>gene_is_index</strong> – boolean, whether the gene is the index.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">mtx_to_large_txt</span>
+<span class="n">mtx_to_large_txt</span><span class="p">(</span><span class="n">int_folder</span><span class="o">=</span><span class="s1">&#39;./data&#39;</span><span class="p">,</span><span class="n">out_file</span><span class="o">=</span><span class="s1">&#39;input.txt&#39;</span><span class="p">,</span><span class="n">gene_is_index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="add-azimuth">
+<h3>add_azimuth()<a class="headerlink" href="#add-azimuth" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.add_azimuth">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">add_azimuth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'predicted.celltype.l2'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.add_azimuth" title="Permalink to this definition">¶</a></dt>
+<dd><p>a convenient function if you have azimuth predicted labels in hand, and want to add the label to the adata.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>adata</strong> – AnnData</p></li>
+<li><p><strong>result</strong> – string, the path to the ‘azimuth_predict.tsv’ file</p></li>
+<li><p><strong>name</strong> – string, the column name where the user want to transfer to the adata.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">add_azimuth</span>
+<span class="n">add_azimuth</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">result</span><span class="o">=</span><span class="s1">&#39;./azimuth_predict.tsv&#39;</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;predicted.celltype.l2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="add-annotations">
+<h3>add_annotations()<a class="headerlink" href="#add-annotations" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.add_annotations">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">add_annotations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cols_input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cols_output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.add_annotations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adding annotations from external sources to the adata</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>adata</strong> – Anndata</p></li>
+<li><p><strong>inputs</strong> – string, path to the txt file where the barcode to cluster label information is stored.</p></li>
+<li><p><strong>cols_input</strong> – list, what columns the users want to transfer to the adata.</p></li>
+<li><p><strong>index_col</strong> – int, for the input, which column will serve as the index column</p></li>
+<li><p><strong>cols_output</strong> – list, corresponding to the cols_input, how these columns will be named in the adata.obs columns</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">add_annotations</span>
+<span class="n">add_annotations</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="nb">input</span><span class="o">=</span><span class="s1">&#39;./annotation.txt&#39;</span><span class="p">,</span><span class="n">cols_input</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;col1,&#39;</span><span class="n">col2</span><span class="s1">&#39;],index_col=0,cols_output=[&#39;</span><span class="n">annotation1</span><span class="s1">&#39;,&#39;</span><span class="n">annontation2</span><span class="s1">&#39;])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="add-umap">
+<h3>add_umap()<a class="headerlink" href="#add-umap" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.add_umap">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">add_umap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cols</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.add_umap" title="Permalink to this definition">¶</a></dt>
+<dd><p>if umap embedding is pre-computed, add it back to adata object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>adata</strong> – Anndata</p></li>
+<li><p><strong>inputs</strong> – string, path to the the txt file where the umap embedding was stored.</p></li>
+<li><p><strong>mode</strong> – string, valid value ‘pandas_disk’, ‘pandas_memory’, ‘numpy’</p></li>
+<li><p><strong>cols</strong> – list, what columns contain umap embeddings.s</p></li>
+<li><p><strong>index_col</strong> – int, which column will serve as the index column.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">add_umap</span>
+<span class="n">add_umap</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">inputs</span><span class="o">=</span><span class="s1">&#39;umap.txt&#39;</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;pandas_disk&#39;</span><span class="p">,</span><span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;umap1&#39;</span><span class="p">,</span><span class="s1">&#39;umap2],index_col=0)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="id1">
+<h3>doublet_predict()<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.doublet_predict">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">doublet_predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.doublet_predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper function for running srublet, a new column named ‘doublet_scores’ will be added to the adata</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>adata</strong> – Anndata</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>AnnData</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">doublet_predict</span>
+<span class="n">new_adata</span> <span class="o">=</span> <span class="n">doublet_predict</span><span class="p">(</span><span class="n">old_adata</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="make-sure-adata-writable">
+<h3>make_sure_adata_writable()<a class="headerlink" href="#make-sure-adata-writable" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.make_sure_adata_writable">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">make_sure_adata_writable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delete</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.make_sure_adata_writable" title="Permalink to this definition">¶</a></dt>
+<dd><p>maks sure the adata is able to write to disk, since h5 file is stricted typed, so on mixed dtype is allowd.
+this function basically is to detect the column of obs/var that are of mixed types, and delete them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>adata</strong> – Anndata</p></li>
+<li><p><strong>delete</strong> – boolean, False will just print out what columns are mixed type, True will automatically delete those columns</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Anndata</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">make_sure_adata_writable</span>
+<span class="n">make_sure_adata_writable</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">delete</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="scanpy-recipe">
+<h3>scanpy_recipe()<a class="headerlink" href="#scanpy-recipe" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.scanpy_recipe">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">scanpy_recipe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolutions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rna'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">umap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pca_n_comps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_top_genes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.scanpy_recipe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main preprocessing function. Run Scanpy normal pipeline to achieve Leiden clustering with various resolutions across multiple modalities.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>adata</strong> – Anndata</p></li>
+<li><p><strong>is_log</strong> – boolean, whether the adata.X is count or normalized data.</p></li>
+<li><p><strong>resolutions</strong> – list, what leiden resolutions the users want to obtain.</p></li>
+<li><p><strong>modality</strong> – string, valid values: ‘rna’,’adt’,’atac’</p></li>
+<li><p><strong>umap</strong> – boolean, whether to compute umap embedding.</p></li>
+<li><p><strong>save</strong> – boolean, whether to save the obtained adata object with cluster label information in it.</p></li>
+<li><p><strong>pca_n_comps</strong> – int, how many PCs to keep when running PCA. Suggestion: RNA (30-50), ADT (15), ATAC (100)</p></li>
+<li><p><strong>n_top_genes</strong> – int, how many features to keep when selecting highly_variable_genes. Suggestion: RNA (3000), ADT (ignored), ATAC (50000-100000)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Anndata</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">scanpy_recipe</span>
+<span class="c1"># rna</span>
+<span class="n">adata</span> <span class="o">=</span> <span class="n">scanpy_recipe</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">is_log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">resolutions</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span><span class="n">modality</span><span class="o">=</span><span class="s1">&#39;rna&#39;</span><span class="p">,</span><span class="n">pca_n_comps</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span><span class="n">n_top_genes</span><span class="o">=</span><span class="mi">3000</span><span class="p">)</span>
+<span class="c1"># adt</span>
+<span class="n">adata</span> <span class="o">=</span> <span class="n">scanpy_recipe</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">is_log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">resolutions</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span><span class="n">modality</span><span class="o">=</span><span class="s1">&#39;adt&#39;</span><span class="p">,</span><span class="n">pca_n_comps</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="c1"># atac</span>
+<span class="n">adata</span> <span class="o">=</span> <span class="n">scanpy_recipe</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">is_log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">resolutions</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span><span class="n">modality</span><span class="o">=</span><span class="s1">&#39;atac&#39;</span><span class="p">,</span><span class="n">pca_n_comps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">n_top_genes</span><span class="o">=</span><span class="mi">100000</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="concat-rna-and-other">
+<h3>concat_rna_and_other()<a class="headerlink" href="#concat-rna-and-other" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.concat_rna_and_other">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">concat_rna_and_other</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata_rna</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adata_other</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">umap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.concat_rna_and_other" title="Permalink to this definition">¶</a></dt>
+<dd><p>concatenate rna adata and another modality’s adata object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>adata_rna</strong> – AnnData</p></li>
+<li><p><strong>adata_other</strong> – Anndata</p></li>
+<li><p><strong>umap</strong> – string, whose umap to use, either ‘rna’ or ‘other’</p></li>
+<li><p><strong>name</strong> – string, the name of other modality, for example, ‘adt’ or ‘atac’</p></li>
+<li><p><strong>prefix</strong> – string, the prefix added in front of features from other modality, by scTriangulate convertion, adt will be ‘<a href="#id2"><span class="problematic" id="id3">AB_</span></a>’, atac will be ‘’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return adata_combine</dt>
+<dd class="field-even"><p>Anndata</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">concat_rna_and_other</span>
+<span class="n">concat_rna_and_other</span><span class="p">(</span><span class="n">adata_rna</span><span class="p">,</span><span class="n">adata_adt</span><span class="p">,</span><span class="n">umap</span><span class="o">=</span><span class="s1">&#39;rna&#39;</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;adt&#39;</span><span class="p">,</span><span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;AB_&#39;</span><span class="p">)</span> 
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="umap-dual-view-save">
+<h3>umap_dual_view_save()<a class="headerlink" href="#umap-dual-view-save" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.umap_dual_view_save">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">umap_dual_view_save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cols</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.umap_dual_view_save" title="Permalink to this definition">¶</a></dt>
+<dd><p>generate a pdf file with two umap up and down, one is with legend on side, another is with legend on data.
+More importantly, this allows you to generate multiple columns iteratively.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>adata</strong> – Anndata</p></li>
+<li><p><strong>cols</strong> – list, all columns from which we want to draw umap.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">umap_dual_view_save</span>
+<span class="n">umap_dual_view_save</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;annotation1&#39;</span><span class="p">,</span><span class="s1">&#39;annotation2&#39;</span><span class="p">,</span><span class="s1">&#39;total_counts&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="make-sure-mat-dense">
+<h3>make_sure_mat_dense()<a class="headerlink" href="#make-sure-mat-dense" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.make_sure_mat_dense">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">make_sure_mat_dense</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.make_sure_mat_dense" title="Permalink to this definition">¶</a></dt>
+<dd><p>make sure a matrix is dense</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mat</strong> – ndarary</p>
+</dd>
+<dt class="field-even">Return mat</dt>
+<dd class="field-even"><p>ndarray (dense)</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mat</span> <span class="o">=</span> <span class="n">make_sure_mat_dense</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="make-sure-mat-sparse">
+<h3>make_sure_mat_sparse()<a class="headerlink" href="#make-sure-mat-sparse" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.make_sure_mat_sparse">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">make_sure_mat_sparse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.make_sure_mat_sparse" title="Permalink to this definition">¶</a></dt>
+<dd><p>make sure a matrix is sparse</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mat</strong> – ndarary</p>
+</dd>
+<dt class="field-even">Return mat</dt>
+<dd class="field-even"><p>ndarray (sparse)</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mat</span> <span class="o">=</span> <span class="n">make_sure_mat_dense</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="gene-activity-count-matrix-old-10x">
+<h3>gene_activity_count_matrix_old_10x()<a class="headerlink" href="#gene-activity-count-matrix-old-10x" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.gene_activity_count_matrix_old_10x">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">gene_activity_count_matrix_old_10x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fall_in_promoter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fall_in_gene</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.gene_activity_count_matrix_old_10x" title="Permalink to this definition">¶</a></dt>
+<dd><p>this function is to generate gene activity count matrix, please refer to <code class="docutils literal notranslate"><span class="pre">gene_activity_count_matrix_new_10x</span></code> for latest
+version of 10x fragements.tsv output.</p>
+<p>how to get these two arguments? (LIGER team approach)</p>
+<ol class="arabic">
+<li><p>sort the fragment, gene and promoter bed, or use function in this module to sort the reference bed files:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sort</span> <span class="o">-</span><span class="n">k1</span><span class="p">,</span><span class="mi">1</span> <span class="o">-</span><span class="n">k2</span><span class="p">,</span><span class="mi">2</span><span class="n">n</span> <span class="o">-</span><span class="n">k3</span><span class="p">,</span><span class="mi">3</span><span class="n">n</span> <span class="n">pbmc_granulocyte_sorted_10k_atac_fragments</span><span class="o">.</span><span class="n">tsv</span> <span class="o">&gt;</span> <span class="n">atac_fragments</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">bed</span>
+<span class="n">sort</span> <span class="o">-</span><span class="n">k</span> <span class="mi">1</span><span class="p">,</span><span class="mi">1</span> <span class="o">-</span><span class="n">k2</span><span class="p">,</span><span class="mi">2</span><span class="n">n</span> <span class="o">-</span><span class="n">k3</span><span class="p">,</span><span class="mi">3</span><span class="n">n</span> <span class="n">hg19_genes</span><span class="o">.</span><span class="n">bed</span> <span class="o">&gt;</span> <span class="n">hg19_genes</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">bed</span>
+<span class="n">sort</span> <span class="o">-</span><span class="n">k</span> <span class="mi">1</span><span class="p">,</span><span class="mi">1</span> <span class="o">-</span><span class="n">k2</span><span class="p">,</span><span class="mi">2</span><span class="n">n</span> <span class="o">-</span><span class="n">k3</span><span class="p">,</span><span class="mi">3</span><span class="n">n</span> <span class="n">hg19_promoters</span><span class="o">.</span><span class="n">bed</span> <span class="o">&gt;</span> <span class="n">hg19_promoters</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">bed</span>
+</pre></div>
+</div>
+</li>
+<li><p>bedmap:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">module</span> <span class="n">load</span> <span class="n">bedops</span>
+<span class="n">bedmap</span> <span class="o">--</span><span class="n">ec</span> <span class="o">--</span><span class="n">delim</span> <span class="s2">&quot;   &quot;</span> <span class="o">--</span><span class="n">echo</span> <span class="o">--</span><span class="n">echo</span><span class="o">-</span><span class="nb">map</span><span class="o">-</span><span class="nb">id</span> <span class="n">hg19_promoters</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">bed</span> <span class="n">atac_fragments</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">bed</span> <span class="o">&gt;</span> <span class="n">atac_promoters_bc</span><span class="o">.</span><span class="n">bed</span>
+<span class="n">bedmap</span> <span class="o">--</span><span class="n">ec</span> <span class="o">--</span><span class="n">delim</span> <span class="s2">&quot;   &quot;</span> <span class="o">--</span><span class="n">echo</span> <span class="o">--</span><span class="n">echo</span><span class="o">-</span><span class="nb">map</span><span class="o">-</span><span class="nb">id</span> <span class="n">hg19_genes</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">bed</span> <span class="n">atac_fragments</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">bed</span> <span class="o">&gt;</span> <span class="n">atac_genes_bc</span><span class="o">.</span><span class="n">bed</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>the following was taken from <a class="reference external" href="http://htmlpreview.github.io/?https://github.com/welch-lab/liger/blob/master/vignettes/Integrating_scRNA_and_scATAC_data.html">http://htmlpreview.github.io/?https://github.com/welch-lab/liger/blob/master/vignettes/Integrating_scRNA_and_scATAC_data.html</a></p>
+<ul class="simple">
+<li><p><strong>delim</strong>. This changes output delimiter from ‘|’ to indicated delimiter between columns, which in our case is “  ”.</p></li>
+<li><p><strong>ec</strong>. Adding this will check all problematic input files.</p></li>
+<li><p><strong>echo</strong>. Adding this will print each line from reference file in output. The reference file in our case is gene or promoter index.</p></li>
+<li><p><strong>echo-map-id</strong>. Adding this will list IDs of all overlapping elements from mapping files, which in our case are cell barcodes from fragment files.</p></li>
+</ul>
+<ol class="arabic" start="3">
+<li><p>Finally:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">gene_activity_count_matrix_old_10x</span>
+<span class="n">gene_activity_count_matrix_old_10x</span><span class="p">(</span><span class="n">fall_in_promoter</span><span class="p">,</span><span class="n">fall_in_gene</span><span class="p">,</span><span class="n">valid</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</dd></dl>
+
+</div>
+<div class="section" id="gene-activity-count-matrix-new-10x">
+<h3>gene_activity_count_matrix_new_10x()<a class="headerlink" href="#gene-activity-count-matrix-new-10x" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.gene_activity_count_matrix_new_10x">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">gene_activity_count_matrix_new_10x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fall_in_promoter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fall_in_gene</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.gene_activity_count_matrix_new_10x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Full explanation please refer to <code class="docutils literal notranslate"><span class="pre">gene_activity_count_matrix_old_10x</span></code></p>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">gene_activity_count_matrix_new_10x</span>
+<span class="n">gene_activity_count_matrix_new_10x</span><span class="p">(</span><span class="n">fall_in_promoter</span><span class="p">,</span><span class="n">fall_in_gene</span><span class="p">,</span><span class="n">valid</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>       
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="find-genes">
+<h3>find_genes()<a class="headerlink" href="#find-genes" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.find_genes">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">find_genes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gtf_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_added</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gene_annotation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upstream</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downstream</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gene'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'HAVANA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.find_genes" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is taken from <a class="reference external" href="https://github.com/colomemaria/epiScanpy/blob/master/episcanpy/tools/_find_genes.py">episcanpy</a>.
+all the credits to the original developer</p>
+<p>merge values of peaks/windows/features overlapping genebodies + 2kb upstream. It is possible to extend the search for closest gene to a given 
+number of bases downstream as well. There is commonly 2 set of annotations in a gtf file(HAVANA, ENSEMBL). By default, the function will search 
+annotation from HAVANA but other annotation label/source can be specifed. It is possible to use other type of features than genes present in a 
+gtf file such as transcripts or CDS.</p>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">find_genes</span>
+<span class="n">find_genes</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">gtf_file</span><span class="o">=</span><span class="s1">&#39;gencode.v38.annotation.gtf)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="reformat-peak">
+<h3>reformat_peak()<a class="headerlink" href="#reformat-peak" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.preprocessing.reformat_peak">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">reformat_peak</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">canonical_chr_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.reformat_peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>To use <code class="docutils literal notranslate"><span class="pre">find_genes</span></code> function, please first reformat the peak from 10X format “chr1:10109-10357” to
+find_gene format “chr1_10109_10357”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>adata</strong> – AnnData</p></li>
+<li><p><strong>canonical_chr_only</strong> – boolean, only kept the canonical chromosome</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>AnnData</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">reformat_peak</span>
+<span class="n">adata</span> <span class="o">=</span> <span class="n">reformat_peak</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">canonical_chr_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
 </div>
 <div class="section" id="colors-module">
 <h2>Colors Module<a class="headerlink" href="#colors-module" title="Permalink to this headline">¶</a></h2>
