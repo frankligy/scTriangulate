@@ -3,20 +3,70 @@ import pandas as pd
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap, to_hex, to_rgb
 import copy
+import matplotlib.pyplot as plt
+import matplotlib as mpl
 
-'''
-background greyed colormap 
-'''
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'Arial'
+
+# test_discrete_look
+def generate_block(color_list,name):
+    '''
+    illustration purpose, generate linear representation of color list
+    '''
+    n = len(color_list)
+    strip = np.empty(shape=(1,256),dtype='<U7')
+    splitted = np.array_split(np.arange(strip.shape[1]),n)
+    for i,c in enumerate(color_list):
+        strip[:,splitted[i]] = c
+    block = np.repeat(strip,10,axis=0)
+    block_rgb = hex2_to_rgb3(block)
+    fig,ax = plt.subplots()
+    ax.imshow(block_rgb)
+    ax.axis('off')
+    ax.set_title('{}'.format(name))
+    plt.savefig('{}_block.pdf'.format(name),bbox_inches='tight')
+    plt.close()
+
+# test_cmap_look
+def generate_gradient(cmap,name):
+    '''
+    illustration purpose, generate linear representation of cmap
+    '''
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    gradient = np.linspace(0, 1, 256).reshape(1,-1)
+    gradient = np.repeat(gradient,10,axis=0)
+
+    fig,ax = plt.subplots()
+    ax.imshow(gradient,cmap=cmap)
+    ax.axis('off')
+    ax.set_title('{}'.format(name))
+    plt.savefig('{}_gradient.pdf'.format(name),bbox_inches='tight')
+    plt.close()
+
+# background greyed colormap 
 def bg_greyed_cmap(cmap_str):
+    '''
+    set 0 value as lightgrey, which will render better effect on umap
+
+    :param cmap_str: string, any valid matplotlib colormap string
+
+    :return: colormap object
+    '''
     # give a matplotlib cmap str, for instance, 'viridis' or 'YlOrRd'
     cmap = copy.copy(cm.get_cmap(cmap_str))
     cmap.set_under('lightgrey')
     return cmap
 
-'''
-hex color 2d array, to (M,N,3) RGB array
-'''
+
+# hex color 2d array, to (M,N,3) RGB array, used in imshow (plot_long_heatmap)
 def hex2_to_rgb3(hex2):
+    '''
+    convert a hex color 2d array to (M,N,3) RGB array, very useful in ``ax.imshow``
+    '''
     rgb3 = np.empty([hex2.shape[0],hex2.shape[1],3])
     for i in range(hex2.shape[0]):
         for j in range(hex2.shape[1]):
@@ -25,8 +75,79 @@ def hex2_to_rgb3(hex2):
             rgb3[i,j,:] = rgb_ 
     return rgb3
 
+# choose colors
+def retrieve_pretty_colors(name):
+    '''
+    retrieve pretty customized colors (discrete)
+
+    :param name: string, valid value 'icgs2', 'shap'
+
+    :return: list, each item is hex code
+
+    Examples::
+
+        generate_block(color_list = retrieve_pretty_colors('icgs2'),name='icgs2')
+        generate_block(color_list = retrieve_pretty_colors('shap'),name='shap')
+
+    .. image:: ./_static/colors.png
+        :height: 100px
+        :width: 550px
+        :align: center
+        :target: target      
+
+    '''
+    if name == 'icgs2':
+        return _pub_icgs2
+    elif name == 'shap':
+        return _pub_shap
 
 
+def retrieve_pretty_cmap(name):
+    '''
+    retrieve pretty customized colormap
+
+    :param name: string, valid value 'altanalyze', 'shap', 'scphere'
+
+    :return: cmap object
+
+    Examples::
+
+        generate_gradient(cmap=retrieve_pretty_cmap('shap'),name='shap')
+        generate_gradient(cmap=retrieve_pretty_cmap('altanalyze'),name='altanalyze')
+        generate_gradient(cmap=retrieve_pretty_cmap('scphere'),name='scphere')
+
+    .. image:: ./_static/cmap.png
+        :height: 250px
+        :width: 550px
+        :align: center
+        :target: target   
+
+    '''
+    if name == 'altanalyze':
+        return _ywb_cmap
+    elif name == 'shap':
+        return _pwb_cmap
+    elif name == 'scphere':
+        return _scphere_cmap
+
+def pick_n_colors(n):
+    if n <= 10:
+        _colors = [to_hex(color) for color in cm.get_cmap('tab10').colors[:n]]
+    elif n > 10 and n <= 20:
+        _colors = [to_hex(color) for color in cm.get_cmap('tab20').colors[:n]]
+    elif n > 20 and n <= 28:
+        _colors = _zeileis_28[:n]
+    elif n > 28 and n <= 102:
+        _colors = _godsnot_102[:n]
+    elif n > 102:
+        _colors = [colors.to_hex(cm.jet(round(i))) for i in np.linspace(0,255,n)]
+    return _colors
+
+def colors_for_set(setlist):  # a list without redundancy
+    length = len(setlist)
+    _colors = pick_n_colors(n=length)
+    cmap = pd.Series(index=setlist,data=_colors).to_dict()
+    return cmap
 
 # zeileis_28 was taken from scanpy: https://github.com/theislab/scanpy/blob/master/scanpy/plotting/palettes.py
 # and they noted the original source as below:
@@ -34,7 +155,7 @@ def hex2_to_rgb3(hex2):
 # update 1
 # orig reference http://epub.wu.ac.at/1692/1/document.pdf
 
-zeileis_28 = [
+_zeileis_28 = [
     "#023fa5",
     "#7d87b9",
     "#bec1d4",
@@ -69,7 +190,7 @@ zeileis_28 = [
 # godsnot_102 was taken from scanpy: https://github.com/theislab/scanpy/blob/master/scanpy/plotting/palettes.py
 # the author noted the original source as below:
 # from http://godsnotwheregodsnot.blogspot.de/2012/09/color-distribution-methodology.html
-godsnot_102 = [
+_godsnot_102 = [
     # "#000000",  # remove the black, as often, we have black colored annotation
     "#FFFF00",
     "#1CE6FF",
@@ -175,7 +296,7 @@ godsnot_102 = [
     "#324E72",
 ]
 
-pub_icgs2 = [
+_pub_icgs2 = [
     '#F26D6D',  # red
     '#BF9004',  # brown
     '#62BF04',  # blue
@@ -184,30 +305,12 @@ pub_icgs2 = [
     '#F263DA',  # pink
 ]
 
-pub_shap = [
+_pub_shap = [
     '#F2075D',   # red
     '#158BFB',    # blue
 ]
 
 
-def pick_n_colors(n):
-    if n <= 10:
-        _colors = [to_hex(color) for color in cm.get_cmap('tab10').colors[:n]]
-    elif n > 10 and n <= 20:
-        _colors = [to_hex(color) for color in cm.get_cmap('tab20').colors[:n]]
-    elif n > 20 and n <= 28:
-        _colors = zeileis_28[:n]
-    elif n > 28 and n <= 102:
-        _colors = godsnot_102[:n]
-    elif n > 102:
-        _colors = [colors.to_hex(cm.jet(round(i))) for i in np.linspace(0,255,n)]
-    return _colors
-
-def colors_for_set(setlist):  # a list without redundancy
-    length = len(setlist)
-    _colors = pick_n_colors(n=length)
-    cmap = pd.Series(index=setlist,data=_colors).to_dict()
-    return cmap
 
 '''
 below stores the nice cmap I encoutered in my research
@@ -227,7 +330,7 @@ cdict = {
             (1.0,0.0,0.0))
 }
 
-ywb_cmap = LinearSegmentedColormap('yellow_blue',segmentdata=cdict)
+_ywb_cmap = LinearSegmentedColormap('yellow_blue',segmentdata=cdict)
 
 
 
@@ -239,7 +342,7 @@ cdict = {'red':((0.0,0.0,0.0),
                   (1.0,0.0,0.0)),
          'blue':((0.0,1.0,1.0),
                  (1.0,0.0,0.0))}
-pwb_cmap = LinearSegmentedColormap('shap', segmentdata=cdict)
+_pwb_cmap = LinearSegmentedColormap('shap', segmentdata=cdict)
 
 
 # scPhere confusion matrix schema
@@ -252,7 +355,7 @@ cdict = {'red':((0.0,0.43,0.43),   # red chrome is 0.43 around (both left and ri
           'blue':((0.0,0.85,0.85),
                   (0.4,0.96,0.96),
                   (1.0,0.18,0.18))}
-scphere_cmap = LinearSegmentedColormap('scphere', segmentdata=cdict)
+_scphere_cmap = LinearSegmentedColormap('scphere', segmentdata=cdict)
 
 
 

@@ -235,3 +235,15 @@ reformat_peak()
 
 Colors Module
 ----------------------
+
+retrieve_pretty_cmap()
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.retrieve_pretty_cmap
+
+retrieve_pretty_colors()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.retrieve_pretty_colors
+
+bg_greyed_cmap()
+~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.bg_greyed_cmap

@@ -1111,7 +1111,7 @@ class ScTriangulate(object):
                 plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.{}'.format(col,format)),bbox_inches='tight')
                 plt.close()
 
-    def plot_confusion(self,name,key,save=True,format='pdf',cmap=scphere_cmap,**kwargs):
+    def plot_confusion(self,name,key,save=True,format='pdf',cmap=retrieve_pretty_cmap('scphere'),**kwargs):
         '''
         plot the confusion as a heatmap.
 
