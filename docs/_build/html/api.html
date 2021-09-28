@@ -42,7 +42,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Contact" href="contact.html" />
-    <link rel="prev" title="Examples" href="examples.html" /> 
+    <link rel="prev" title="Tutorials" href="principle.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -89,8 +89,8 @@
             
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorials</a></li>
-<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="principle.html">Tutorials</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#sctriangulate-class-methods">ScTriangulate Class Methods</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#static-salvage-run">(static) salvage_run()</a></li>
@@ -153,7 +153,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#colors-module">Colors Module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#retrieve-pretty-cmap">retrieve_pretty_cmap()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#retrieve-pretty-colors">retrieve_pretty_colors()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pick-n-colors">pick_n_colors()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#colors-for-set">colors_for_set()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#bg-greyed-cmap">bg_greyed_cmap()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generate-block">generate_block()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generate-gradient">generate_gradient()</a></li>
 </ul>
 </li>
 </ul>
@@ -1626,6 +1630,61 @@ find_gene format “chr1_10109_10357”</p>
 </dd></dl>
 
 </div>
+<div class="section" id="pick-n-colors">
+<h3>pick_n_colors()<a class="headerlink" href="#pick-n-colors" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.colors.pick_n_colors">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.colors.</span></span><span class="sig-name descname"><span class="pre">pick_n_colors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.colors.pick_n_colors" title="Permalink to this definition">¶</a></dt>
+<dd><p>a very handy and abstract function, pick n colors in hex code that guarantee decent contrast.</p>
+<ol class="arabic simple">
+<li><p>n &lt;=10, use tab10</p></li>
+<li><p>10 &lt; n &lt;= 20, use tab20</p></li>
+<li><p>20 &lt; n &lt;= 28, use zeileis (take from scanpy)</p></li>
+<li><p>28 &lt; n &lt;= 102, use godsnot (take from scanpy)</p></li>
+<li><p>n &gt; 102, use jet cmap (no guarantee for obvious contrast)</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n</strong> – int, how many colors are needed</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list, each item is a hex code.</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">generate_block</span><span class="p">(</span><span class="n">color_list</span> <span class="o">=</span> <span class="n">pick_n_colors</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;tab10&#39;</span><span class="p">)</span>
+<span class="n">generate_block</span><span class="p">(</span><span class="n">color_list</span> <span class="o">=</span> <span class="n">pick_n_colors</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;tab20&#39;</span><span class="p">)</span>
+<span class="n">generate_block</span><span class="p">(</span><span class="n">color_list</span> <span class="o">=</span> <span class="n">pick_n_colors</span><span class="p">(</span><span class="mi">28</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;zeileis&#39;</span><span class="p">)</span>
+<span class="n">generate_block</span><span class="p">(</span><span class="n">color_list</span> <span class="o">=</span> <span class="n">pick_n_colors</span><span class="p">(</span><span class="mi">102</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;godsnot&#39;</span><span class="p">)</span>
+<span class="n">generate_block</span><span class="p">(</span><span class="n">color_list</span> <span class="o">=</span> <span class="n">pick_n_colors</span><span class="p">(</span><span class="mi">120</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/pick_n_colors.png" class="align-center" src="_images/pick_n_colors.png" style="width: 550px; height: 300px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="colors-for-set">
+<h3>colors_for_set()<a class="headerlink" href="#colors-for-set" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.colors.colors_for_set">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.colors.</span></span><span class="sig-name descname"><span class="pre">colors_for_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">setlist</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.colors.colors_for_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>given a set of items, based on how many unique item it has, pick the n color</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>setlist</strong> – list without redundant items.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dictionary, {each item: hex code}</p>
+</dd>
+</dl>
+<p>Exmaples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cmap_dict</span> <span class="o">=</span> <span class="n">colors_for_set</span><span class="p">([</span><span class="s1">&#39;batch1&#39;</span><span class="p">,</span><span class="s1">&#39;batch2])</span>
+<span class="c1"># {&#39;batch1&#39;: &#39;#1f77b4&#39;, &#39;batch2&#39;: &#39;#ff7f0e&#39;}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
 <div class="section" id="bg-greyed-cmap">
 <h3>bg_greyed_cmap()<a class="headerlink" href="#bg-greyed-cmap" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
@@ -1640,6 +1699,38 @@ find_gene format “chr1_10109_10357”</p>
 <dd class="field-even"><p>colormap object</p>
 </dd>
 </dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># normal cmap</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">umap</span><span class="p">(</span><span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;CD4&#39;</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;normal.pdf&#39;</span><span class="p">,</span><span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1"># bg_greyed cmap</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">umap</span><span class="p">(</span><span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;CD4&#39;</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="n">bg_greyed_cmap</span><span class="p">(</span><span class="s1">&#39;viridis&#39;</span><span class="p">),</span><span class="n">vmin</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;bg_greyed.pdf&#39;</span><span class="p">,</span><span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/normal.png" class="align-left" src="_images/normal.png" style="width: 300px; height: 300px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/bg_greyed.png" class="align-right" src="_images/bg_greyed.png" style="width: 300px; height: 300px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="generate-block">
+<h3>generate_block()<a class="headerlink" href="#generate-block" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.colors.generate_block">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.colors.</span></span><span class="sig-name descname"><span class="pre">generate_block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.colors.generate_block" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of color (each item is a hex code), visualize them side by side. See example.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="generate-gradient">
+<h3>generate_gradient()<a class="headerlink" href="#generate-gradient" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.colors.generate_gradient">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.colors.</span></span><span class="sig-name descname"><span class="pre">generate_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.colors.generate_gradient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a continuous cmap, visualize them. See example.</p>
 </dd></dl>
 
 </div>
@@ -1653,7 +1744,7 @@ find_gene format “chr1_10109_10357”</p>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
         <a href="contact.html" class="btn btn-neutral float-right" title="Contact" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="examples.html" class="btn btn-neutral float-left" title="Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="principle.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

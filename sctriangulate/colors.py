@@ -13,7 +13,7 @@ mpl.rcParams['font.family'] = 'Arial'
 # test_discrete_look
 def generate_block(color_list,name):
     '''
-    illustration purpose, generate linear representation of color list
+    Given a list of color (each item is a hex code), visualize them side by side. See example.
     '''
     n = len(color_list)
     strip = np.empty(shape=(1,256),dtype='<U7')
@@ -32,7 +32,7 @@ def generate_block(color_list,name):
 # test_cmap_look
 def generate_gradient(cmap,name):
     '''
-    illustration purpose, generate linear representation of cmap
+    Given a continuous cmap, visualize them. See example.
     '''
     import numpy as np
     import matplotlib.pyplot as plt
@@ -55,6 +55,30 @@ def bg_greyed_cmap(cmap_str):
     :param cmap_str: string, any valid matplotlib colormap string
 
     :return: colormap object
+
+    Examples::
+
+        # normal cmap
+        sc.pl.umap(sctri.adata,color='CD4',cmap='viridis')
+        plt.savefig('normal.pdf',bbox_inches='tight')
+        plt.close()
+
+        # bg_greyed cmap
+        sc.pl.umap(sctri.adata,color='CD4',cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
+        plt.savefig('bg_greyed.pdf',bbox_inches='tight')
+        plt.close()
+
+    .. image:: ./_static/normal.png
+        :height: 300px
+        :width: 300px
+        :align: left
+        :target: target     
+
+    .. image:: ./_static/bg_greyed.png
+        :height: 300px
+        :width: 300px
+        :align: right
+        :target: target    
     '''
     # give a matplotlib cmap str, for instance, 'viridis' or 'YlOrRd'
     cmap = copy.copy(cm.get_cmap(cmap_str))
@@ -131,6 +155,35 @@ def retrieve_pretty_cmap(name):
         return _scphere_cmap
 
 def pick_n_colors(n):
+    '''
+    a very handy and abstract function, pick n colors in hex code that guarantee decent contrast.
+
+    1. n <=10, use tab10
+    2. 10 < n <= 20, use tab20 
+    3. 20 < n <= 28, use zeileis (take from scanpy)
+    4. 28 < n <= 102, use godsnot (take from scanpy)
+    5. n > 102, use jet cmap (no guarantee for obvious contrast)
+
+    :param n: int, how many colors are needed
+
+    :return: list, each item is a hex code.
+
+    Examples::
+
+        generate_block(color_list = pick_n_colors(10),name='tab10')
+        generate_block(color_list = pick_n_colors(20),name='tab20')
+        generate_block(color_list = pick_n_colors(28),name='zeileis')
+        generate_block(color_list = pick_n_colors(102),name='godsnot')
+        generate_block(color_list = pick_n_colors(120),name='jet')
+
+    .. image:: ./_static/pick_n_colors.png
+        :height: 300px
+        :width: 550px
+        :align: center
+        :target: target      
+
+
+    '''
     if n <= 10:
         _colors = [to_hex(color) for color in cm.get_cmap('tab10').colors[:n]]
     elif n > 10 and n <= 20:
@@ -140,10 +193,23 @@ def pick_n_colors(n):
     elif n > 28 and n <= 102:
         _colors = _godsnot_102[:n]
     elif n > 102:
-        _colors = [colors.to_hex(cm.jet(round(i))) for i in np.linspace(0,255,n)]
+        _colors = [to_hex(cm.jet(round(i))) for i in np.linspace(0,255,n)]
     return _colors
 
 def colors_for_set(setlist):  # a list without redundancy
+    '''
+    given a set of items, based on how many unique item it has, pick the n color
+
+    :param setlist: list without redundant items.
+
+    :return: dictionary, {each item: hex code}
+
+    Exmaples::
+
+        cmap_dict = colors_for_set(['batch1','batch2])
+        # {'batch1': '#1f77b4', 'batch2': '#ff7f0e'}
+
+    '''
     length = len(setlist)
     _colors = pick_n_colors(n=length)
     cmap = pd.Series(index=setlist,data=_colors).to_dict()
@@ -154,6 +220,7 @@ def colors_for_set(setlist):  # a list without redundancy
 # https://graphicdesign.stackexchange.com/questions/3682/where-can-i-find-a-large-palette-set-of-contrasting-colors-for-coloring-many-d
 # update 1
 # orig reference http://epub.wu.ac.at/1692/1/document.pdf
+
 
 _zeileis_28 = [
     "#023fa5",

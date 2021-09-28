@@ -244,6 +244,25 @@ retrieve_pretty_colors()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.colors.retrieve_pretty_colors
 
+pick_n_colors()
+~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.pick_n_colors
+
+colors_for_set()
+~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.colors_for_set
+
 bg_greyed_cmap()
 ~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.colors.bg_greyed_cmap
+
+generate_block()
+~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.generate_block
+
+generate_gradient()
+~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.generate_gradient
+
+
+

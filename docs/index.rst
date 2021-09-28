@@ -37,7 +37,7 @@ Contents
 
    install
    tutorial
-   examples
+   principle
    api
    contact
 
