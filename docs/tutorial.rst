@@ -286,17 +286,160 @@ Then by pulling out the marker genes the program detected, we reason that it was
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 Multi-modal workflow
 -----------------------------------
+
+In this example run, we are going to use a CITE-Seq dataset from human total nucleated cells (TNCs). This dataset contains 31 ADTs and in toal 8,491 cells.
+It is normal practice to analyze and cluster each modality's data seperately, and then try to merge them together. However, to reconcile the clustering
+differences are not a trivial tasks and it requires the simoutaneous consideration of both RNA gene expression and surface protein. Thankfully, scTriangulate
+can help to make the decision.
+
+Load data and preprocessing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Load packages::
+
+    import pandas as pd
+    import numpy as np
+    import os,sys
+    import scanpy as sc
+    from sctriangulate import *
+    from sctriangulate.preprocessing import *
+
+Load the data::
+
+    adata = sc.read_10x_h5('28WM_ND19-341__TNC-RNA-ADT.h5',gex_only=False)
+    adata_rna = adata[:,adata.var['feature_types']=='Gene Expression']
+    adata_adt = adata[:,adata.var['feature_types']=='Antibody Capture']  # 8491
+
+    adata_rna.var_names_make_unique()
+    adata_adt.var_names_make_unique()
+
+QC on rna::
+
+    adata_rna.var['mt'] = adata_rna.var_names.str.startswith('MT-')
+    sc.pp.calculate_qc_metrics(adata_rna, qc_vars=['mt'], percent_top=None, log1p=False, inplace=True)
+
+    for key in ['n_genes_by_counts','total_counts','pct_counts_mt']:
+        sc.pl.violin(adata_rna,key,jitter=0.4)
+        plt.savefig('qc_rna_violin_{}.pdf'.format(key),bbox_inches='tight')
+        plt.close()
+
+    sc.pl.scatter(adata_rna,x='n_genes_by_counts',y='total_counts',color='pct_counts_mt')
+    plt.savefig('qc_rna_scatter.pdf',bbox_inches='tight')
+    plt.close()
+
+.. image:: ./_static/tutorial/multi_modal/qc_total_counts.png
+   :height: 250px
+   :width: 320px
+   :align: left
+   :target: target
+
+.. image:: ./_static/tutorial/multi_modal/qc_n_genes_by_counts.png
+   :height: 250px
+   :width: 320px
+   :align: right
+   :target: target
+
+.. image:: ./_static/tutorial/multi_modal/qc_pct_counts_mt.png
+   :height: 250px
+   :width: 320px
+   :align: left
+   :target: target
+
+.. image:: ./_static/tutorial/multi_modal/qc_scatter.png
+   :height: 250px
+   :width: 320px
+   :align: right
+   :target: target
+
+We filtered out the cells whose min_genes < 300, min_counts < 500, mt > 20%, 6,406 cells kept::
+
+    sc.pp.filter_cells(adata_rna, min_genes=300)
+    sc.pp.filter_cells(adata_rna, min_counts=500)
+    adata_rna = adata_rna[adata_rna.obs.pct_counts_mt < 20, :]
+    adata_adt = adata_adt[adata_rna.obs_names,:]   # 6406
+
+Perform unsupervised Leiden clustering on each of the modality, and then combined two adata object::
+
+    adata_rna = scanpy_recipe(adata_rna,False,resolutions=[1,2,3],modality='rna',pca_n_comps=50)
+    adata_adt = scanpy_recipe(adata_adt,False,resolutions=[1,2,3],modality='adt',pca_n_comps=15)
+    adata_combine = concat_rna_and_other(adata_rna,adata_adt,umap='other',name='adt',prefix='AB_')
+
+.. image:: ./_static/tutorial/multi_modal/rna3.png
+   :height: 300px
+   :width: 600px
+   :align: center
+   :target: target
+
+.. image:: ./_static/tutorial/multi_modal/adt3.png
+   :height: 300px
+   :width: 600px
+   :align: center
+   :target: target
+
+Running scTriangulate
+~~~~~~~~~~~~~~~~~~~~~~~~~
+Just use ``lazy_run()`` function, I have broken it down in the single_modality section::
+
+    adata_combine = sc.read('combined_rna_adt.h5ad')
+    sctri = ScTriangulate(dir='output',adata=adata_combine,add_metrics={},predict_doublet='precomputed',
+                          query=['sctri_adt_leiden_1','sctri_adt_leiden_2','sctri_adt_leiden_3','sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
+    sctri.lazy_run()
+
+All the intermediate results would be stored at ./output folder.
+
+Inspect the results
+~~~~~~~~~~~~~~~~~~~~~~~
+
+scTriangulate allows the triangulation amongst diverse resolutions and modalities::
+
+    # get modality contributions
+    sctri = ScTriangulate.deserialize('output/after_pruned_assess.p')
+    sctri.modality_contributions()
+    for col in ['adt_contribution','rna_contribution']:
+        sctri.plot_umap(col,'continuous',umap_cmap='viridis')
+
+    # get resolution distribution
+    col = []
+    for item in sctri.adata.obs['pruned']:
+        if 'leiden_1@' in item:
+            col.append('resolution1')
+        elif 'leiden_2@' in item:
+            col.append('resolution2')
+        elif 'leiden_3@' in item:
+            col.append('resolution3')
+    sctri.adata.obs['resolution_distribution'] = col
+    sctri.plot_umap('resolution_distribution','category')
+
+.. image:: ./_static/tutorial/multi_modal/contributions.png
+   :height: 300px
+   :width: 600px
+   :align: center
+   :target: target
+
+.. image:: ./_static/tutorial/multi_modal/resolutions.png
+   :height: 300px
+   :width: 400px
+   :align: center
+   :target: target
+
+scTriangulate discovers new cell state due to ADT markers::
+
+    sctri = ScTriangulate.deserialize('output/after_pruned_assess.p')
+    add_azimuth(sctri.adata,'azimuth_pred.tsv')
+    sctri.adata.obs['dummy_key'] = np.full(sctri.adata.obs.shape[0],'dummy_cluster')
+    sctri.plot_heterogeneity('dummy_key','dummy_cluster','umap',col='azimuth',subset=['CD8 TEM','CD4 CTL','MAIT','dnT','CD8 Naive'])
+    sctri.plot_heterogeneity('dummy_key','dummy_cluster','umap',col='pruned',subset=['sctri_rna_leiden_3@6','sctri_rna_leiden_2@15','sctri_adt_leiden_3@37','sctri_adt_leiden_3@32','sctri_rna_leiden_1@9'])
+    sctri.plot_heterogeneity('dummy_key','dummy_cluster','single_gene',col='azimuth',subset=['CD8 TEM','CD4 CTL','MAIT','dnT','CD8 Naive'],single_gene='AB_CD56',umap_cmap='viridis')
+
+.. image:: ./_static/tutorial/multi_modal/novel.png
+   :height: 350px
+   :width: 600px
+   :align: center
+   :target: target
+
+
+
+
 

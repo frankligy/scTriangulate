@@ -108,7 +108,12 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#multi-modal-workflow">Multi-modal workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multi-modal-workflow">Multi-modal workflow</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#load-data-and-preprocessing">Load data and preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Running scTriangulate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Inspect the results</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="principle.html">Principle</a></li>
@@ -393,6 +398,110 @@ suggests sub-dividing of CD14 Mono population which has been annotated in Azimut
 </div>
 <div class="section" id="multi-modal-workflow">
 <h2>Multi-modal workflow<a class="headerlink" href="#multi-modal-workflow" title="Permalink to this headline">¶</a></h2>
+<p>In this example run, we are going to use a CITE-Seq dataset from human total nucleated cells (TNCs). This dataset contains 31 ADTs and in toal 8,491 cells.
+It is normal practice to analyze and cluster each modality’s data seperately, and then try to merge them together. However, to reconcile the clustering
+differences are not a trivial tasks and it requires the simoutaneous consideration of both RNA gene expression and surface protein. Thankfully, scTriangulate
+can help to make the decision.</p>
+<div class="section" id="load-data-and-preprocessing">
+<h3>Load data and preprocessing<a class="headerlink" href="#load-data-and-preprocessing" title="Permalink to this headline">¶</a></h3>
+<p>Load packages:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">scanpy</span> <span class="k">as</span> <span class="nn">sc</span>
+<span class="kn">from</span> <span class="nn">sctriangulate</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="o">*</span>
+</pre></div>
+</div>
+<p>Load the data:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read_10x_h5</span><span class="p">(</span><span class="s1">&#39;28WM_ND19-341__TNC-RNA-ADT.h5&#39;</span><span class="p">,</span><span class="n">gex_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">adata_rna</span> <span class="o">=</span> <span class="n">adata</span><span class="p">[:,</span><span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">&#39;feature_types&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Gene Expression&#39;</span><span class="p">]</span>
+<span class="n">adata_adt</span> <span class="o">=</span> <span class="n">adata</span><span class="p">[:,</span><span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">&#39;feature_types&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Antibody Capture&#39;</span><span class="p">]</span>  <span class="c1"># 8491</span>
+
+<span class="n">adata_rna</span><span class="o">.</span><span class="n">var_names_make_unique</span><span class="p">()</span>
+<span class="n">adata_adt</span><span class="o">.</span><span class="n">var_names_make_unique</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>QC on rna:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata_rna</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">&#39;mt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adata_rna</span><span class="o">.</span><span class="n">var_names</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;MT-&#39;</span><span class="p">)</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">calculate_qc_metrics</span><span class="p">(</span><span class="n">adata_rna</span><span class="p">,</span> <span class="n">qc_vars</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mt&#39;</span><span class="p">],</span> <span class="n">percent_top</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log1p</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;n_genes_by_counts&#39;</span><span class="p">,</span><span class="s1">&#39;total_counts&#39;</span><span class="p">,</span><span class="s1">&#39;pct_counts_mt&#39;</span><span class="p">]:</span>
+    <span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">violin</span><span class="p">(</span><span class="n">adata_rna</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">jitter</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;qc_rna_violin_</span><span class="si">{}</span><span class="s1">.pdf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">),</span><span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">adata_rna</span><span class="p">,</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;n_genes_by_counts&#39;</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="s1">&#39;total_counts&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;pct_counts_mt&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;qc_rna_scatter.pdf&#39;</span><span class="p">,</span><span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/qc_total_counts1.png" class="align-left" src="_images/qc_total_counts1.png" style="width: 320px; height: 250px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/qc_n_genes_by_counts1.png" class="align-right" src="_images/qc_n_genes_by_counts1.png" style="width: 320px; height: 250px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/qc_pct_counts_mt1.png" class="align-left" src="_images/qc_pct_counts_mt1.png" style="width: 320px; height: 250px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/qc_scatter1.png" class="align-right" src="_images/qc_scatter1.png" style="width: 320px; height: 250px;" /></a>
+<p>We filtered out the cells whose min_genes &lt; 300, min_counts &lt; 500, mt &gt; 20%, 6,406 cells kept:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_cells</span><span class="p">(</span><span class="n">adata_rna</span><span class="p">,</span> <span class="n">min_genes</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_cells</span><span class="p">(</span><span class="n">adata_rna</span><span class="p">,</span> <span class="n">min_counts</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+<span class="n">adata_rna</span> <span class="o">=</span> <span class="n">adata_rna</span><span class="p">[</span><span class="n">adata_rna</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">pct_counts_mt</span> <span class="o">&lt;</span> <span class="mi">20</span><span class="p">,</span> <span class="p">:]</span>
+<span class="n">adata_adt</span> <span class="o">=</span> <span class="n">adata_adt</span><span class="p">[</span><span class="n">adata_rna</span><span class="o">.</span><span class="n">obs_names</span><span class="p">,:]</span>   <span class="c1"># 6406</span>
+</pre></div>
+</div>
+<p>Perform unsupervised Leiden clustering on each of the modality, and then combined two adata object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata_rna</span> <span class="o">=</span> <span class="n">scanpy_recipe</span><span class="p">(</span><span class="n">adata_rna</span><span class="p">,</span><span class="kc">False</span><span class="p">,</span><span class="n">resolutions</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span><span class="n">modality</span><span class="o">=</span><span class="s1">&#39;rna&#39;</span><span class="p">,</span><span class="n">pca_n_comps</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="n">adata_adt</span> <span class="o">=</span> <span class="n">scanpy_recipe</span><span class="p">(</span><span class="n">adata_adt</span><span class="p">,</span><span class="kc">False</span><span class="p">,</span><span class="n">resolutions</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span><span class="n">modality</span><span class="o">=</span><span class="s1">&#39;adt&#39;</span><span class="p">,</span><span class="n">pca_n_comps</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="n">adata_combine</span> <span class="o">=</span> <span class="n">concat_rna_and_other</span><span class="p">(</span><span class="n">adata_rna</span><span class="p">,</span><span class="n">adata_adt</span><span class="p">,</span><span class="n">umap</span><span class="o">=</span><span class="s1">&#39;other&#39;</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;adt&#39;</span><span class="p">,</span><span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;AB_&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/rna3.png" class="align-center" src="_images/rna3.png" style="width: 600px; height: 300px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/adt3.png" class="align-center" src="_images/adt3.png" style="width: 600px; height: 300px;" /></a>
+</div>
+<div class="section" id="id1">
+<h3>Running scTriangulate<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>Just use <code class="docutils literal notranslate"><span class="pre">lazy_run()</span></code> function, I have broken it down in the single_modality section:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata_combine</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;combined_rna_adt.h5ad&#39;</span><span class="p">)</span>
+<span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;output&#39;</span><span class="p">,</span><span class="n">adata</span><span class="o">=</span><span class="n">adata_combine</span><span class="p">,</span><span class="n">add_metrics</span><span class="o">=</span><span class="p">{},</span><span class="n">predict_doublet</span><span class="o">=</span><span class="s1">&#39;precomputed&#39;</span><span class="p">,</span>
+                      <span class="n">query</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_adt_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_adt_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_adt_leiden_3&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_3&#39;</span><span class="p">])</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">lazy_run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>All the intermediate results would be stored at ./output folder.</p>
+</div>
+<div class="section" id="id2">
+<h3>Inspect the results<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>scTriangulate allows the triangulation amongst diverse resolutions and modalities:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># get modality contributions</span>
+<span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/after_pruned_assess.p&#39;</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">modality_contributions</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;adt_contribution&#39;</span><span class="p">,</span><span class="s1">&#39;rna_contribution&#39;</span><span class="p">]:</span>
+    <span class="n">sctri</span><span class="o">.</span><span class="n">plot_umap</span><span class="p">(</span><span class="n">col</span><span class="p">,</span><span class="s1">&#39;continuous&#39;</span><span class="p">,</span><span class="n">umap_cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">)</span>
+
+<span class="c1"># get resolution distribution</span>
+<span class="n">col</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;pruned&#39;</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="s1">&#39;leiden_1@&#39;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+        <span class="n">col</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;resolution1&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s1">&#39;leiden_2@&#39;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+        <span class="n">col</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;resolution2&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s1">&#39;leiden_3@&#39;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+        <span class="n">col</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;resolution3&#39;</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;resolution_distribution&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">plot_umap</span><span class="p">(</span><span class="s1">&#39;resolution_distribution&#39;</span><span class="p">,</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/contributions.png" class="align-center" src="_images/contributions.png" style="width: 600px; height: 300px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/resolutions.png" class="align-center" src="_images/resolutions.png" style="width: 400px; height: 300px;" /></a>
+<p>scTriangulate discovers new cell state due to ADT markers:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/after_pruned_assess.p&#39;</span><span class="p">)</span>
+<span class="n">add_azimuth</span><span class="p">(</span><span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="p">,</span><span class="s1">&#39;azimuth_pred.tsv&#39;</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;dummy_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;dummy_cluster&#39;</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="s1">&#39;dummy_key&#39;</span><span class="p">,</span><span class="s1">&#39;dummy_cluster&#39;</span><span class="p">,</span><span class="s1">&#39;umap&#39;</span><span class="p">,</span><span class="n">col</span><span class="o">=</span><span class="s1">&#39;azimuth&#39;</span><span class="p">,</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;CD8 TEM&#39;</span><span class="p">,</span><span class="s1">&#39;CD4 CTL&#39;</span><span class="p">,</span><span class="s1">&#39;MAIT&#39;</span><span class="p">,</span><span class="s1">&#39;dnT&#39;</span><span class="p">,</span><span class="s1">&#39;CD8 Naive&#39;</span><span class="p">])</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="s1">&#39;dummy_key&#39;</span><span class="p">,</span><span class="s1">&#39;dummy_cluster&#39;</span><span class="p">,</span><span class="s1">&#39;umap&#39;</span><span class="p">,</span><span class="n">col</span><span class="o">=</span><span class="s1">&#39;pruned&#39;</span><span class="p">,</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_rna_leiden_3@6&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_2@15&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_adt_leiden_3@37&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_adt_leiden_3@32&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_1@9&#39;</span><span class="p">])</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="s1">&#39;dummy_key&#39;</span><span class="p">,</span><span class="s1">&#39;dummy_cluster&#39;</span><span class="p">,</span><span class="s1">&#39;single_gene&#39;</span><span class="p">,</span><span class="n">col</span><span class="o">=</span><span class="s1">&#39;azimuth&#39;</span><span class="p">,</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;CD8 TEM&#39;</span><span class="p">,</span><span class="s1">&#39;CD4 CTL&#39;</span><span class="p">,</span><span class="s1">&#39;MAIT&#39;</span><span class="p">,</span><span class="s1">&#39;dnT&#39;</span><span class="p">,</span><span class="s1">&#39;CD8 Naive&#39;</span><span class="p">],</span><span class="n">single_gene</span><span class="o">=</span><span class="s1">&#39;AB_CD56&#39;</span><span class="p">,</span><span class="n">umap_cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/novel.png" class="align-center" src="_images/novel.png" style="width: 600px; height: 350px;" /></a>
+</div>
 </div>
 </div>
 
