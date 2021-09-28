@@ -92,7 +92,6 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Principle</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#sctriangulate-object">ScTriangulate Object</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#quick-tutorial">Quick tutorial</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#visualization">Visualization</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#plot-heterogeneity">plot_heterogeneity</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#other-plotting-funcctions">Other plotting funcctions</a></li>
@@ -236,66 +235,6 @@ no longer be considered in the marker genes and downstream assessment:</p>
 </pre></div>
 </div>
 <a class="reference external image-reference" href="target"><img alt="_images/sctri_uns_chop.png" class="align-center" src="_images/sctri_uns_chop.png" style="width: 600px; height: 250px;" /></a>
-</div>
-<div class="section" id="quick-tutorial">
-<h2>Quick tutorial<a class="headerlink" href="#quick-tutorial" title="Permalink to this headline">¶</a></h2>
-<p>A skim through of Sctriangulate Object will be helpful for understanding the following.</p>
-<p>A Quick Quick tutorial:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># instantiate ScTriangulate object</span>
-<span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;./output&#39;</span><span class="p">,</span><span class="n">adata</span><span class="o">=</span><span class="n">adata</span><span class="p">,</span><span class="n">query</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;annotation1&#39;</span><span class="p">,</span><span class="s1">&#39;annotation2&#39;</span><span class="p">,</span><span class="s1">&#39;annotation3&#39;</span><span class="p">])</span>
-<span class="c1"># following command will generate all you need in the dir you specified</span>
-<span class="n">sctri</span><span class="o">.</span><span class="n">lazy_run</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>But what does <code class="docutils literal notranslate"><span class="pre">lazy_run()</span></code> do under the hood?</p>
-<p>scTriangulte works in a very straightforward way:</p>
-<ol class="arabic">
-<li><p>take the annotation columns users specify.</p></li>
-<li><p>calculate the goodness of each cluster in each annotation based on the metrics users specify, performed by:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">()</span>
-</pre></div>
-</div>
-</li>
-</ol>
-<p>Now, for each single cell, we asssign it to the “best” cluster:</p>
-<ol class="arabic" start="3">
-<li><p>we compare the relative contribution of each conflicting cluster, represented by shapley value, performed by:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">compute_shapley</span><span class="p">()</span>
-</pre></div>
-</div>
-</li>
-<li><p>assign this single cell to the cluster whose shapley value is the max</p></li>
-</ol>
-<p>So far, we have <code class="docutils literal notranslate"><span class="pre">raw</span></code> clusters, which just come out of this “gaming situation”, We assess the obtained raw cluster again based on same set of
-biological meaningful metrics, since they will be some of raw clusters that are not stable, we filter them out:</p>
-<ol class="arabic" start="5">
-<li><p>gauge the stabiligy of raw clusters, performed by:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">pruning</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;rank&#39;</span><span class="p">,</span><span class="n">discard</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
-</ol>
-<p>6. filter unstable <code class="docutils literal notranslate"><span class="pre">raw</span></code> cluster out, and reassign the cells in these unstable clusters to the nearest neighbors. In this step, a tunable parameter is
-<code class="docutils literal notranslate"><span class="pre">win_fraction</span></code>, which measures the stability of raw clusters, by default is 0.25. Meaning 25% of cells in this cluster won the game:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">add_to_invalid_by_win_fraction</span><span class="p">(</span><span class="n">percent</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
-<span class="n">sctri</span><span class="o">.</span><span class="n">pruning</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;reassign&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Now we have the final <code class="docutils literal notranslate"><span class="pre">pruned</span></code> results, you can visualize the umap by:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_umap</span><span class="p">(</span><span class="s1">&#39;pruned&#39;</span><span class="p">,</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>  <span class="c1"># go to the sctri.dir to find the saved high-resolution umap</span>
-</pre></div>
-</div>
-<p>We highly recommend the users to use scTriangulate viewer features, it will generate a html webpage which allows user to toggle between different clusters,
-inspect the heterogeneity, marker genes, doublet prediction and enrichment for potential artifact genes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># html webpage</span>
-<span class="n">sctri</span><span class="o">.</span><span class="n">viewer_cluster_feature_html</span><span class="p">()</span>   <span class="c1"># viewer for diagnotic information of each cluster in each annotation</span>
-<span class="n">scti</span><span class="o">.</span><span class="n">viewer_heterogeneity_html</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;annotation1&#39;</span><span class="p">)</span>  <span class="c1"># discover further heterogeneity within clusters in one annotation</span>
-<span class="c1"># static figure generation</span>
-<span class="n">sctri</span><span class="o">.</span><span class="n">viewer_cluster_feature_figure</span><span class="p">()</span>
-<span class="n">sctri</span><span class="o">.</span><span class="n">viewer_heterogeneity_figure</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;annotation1&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference external image-reference" href="target"><img alt="_images/viewer.png" class="align-center" src="_images/viewer.png" style="width: 800px; height: 500px;" /></a>
 </div>
 <div class="section" id="visualization">
 <h2>Visualization<a class="headerlink" href="#visualization" title="Permalink to this headline">¶</a></h2>

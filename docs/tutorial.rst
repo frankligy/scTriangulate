@@ -14,7 +14,11 @@ Hi, Welcome to scTriangulate tutorials, here are some suggestive steps to quickl
 3. step3: follow the two workflow example (`single modality <https:github.com>`_, `multi-modal <https:github.com>`_) (30 mins)
 4. step4: [Optional] Check the `principle <https:github.com>`_ part to understand the philosophy of developing the tool.
 
-
+.. image:: ./_static/schema_2.png
+   :height: 500px
+   :width: 600px
+   :align: center
+   :target: target
 
 Single Modality (scRNA) workflow
 -----------------------------------
@@ -186,13 +190,29 @@ annotations (cluster viewer). Also, it enables the inspection of further heterog
 single annotation (hetergeneity viewer). The logics of following codes are simple, we first build html, then we generate the figures that the html page would 
 need to render it::
 
-    sctri = ScTriangulate.deserialize('break_point_after_prune.p')
+    sctri = ScTriangulate.deserialize('output/break_point_after_prune.p')
     sctri.viewer_cluster_feature_html()
     sctri.viewer_cluster_feature_figure(parallel=False,select_keys=['sctri_rna_leiden_1','pruned'])
     sctri.viewer_heterogeneity_html(key='sctri_rna_leiden_1')
     sctri.viewer_heterogeneity_figure(key='sctri_rna_leiden_1')
 
+.. image:: ./_static/tutorial/single_modality/cluster_viewer_1.png
+   :height: 300px
+   :width: 600px
+   :align: center
+   :target: target
 
+.. image:: ./_static/tutorial/single_modality/cluster_viewer_2.png
+   :height: 300px
+   :width: 600px
+   :align: center
+   :target: target
+
+.. image:: ./_static/tutorial/single_modality/heterogeneity_viewer.png
+   :height: 350px
+   :width: 600px
+   :align: center
+   :target: target
 
 Inspect the results
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -235,7 +255,34 @@ Discover hidden heterogeneity
 +++++++++++++++++++++++++++++++++
 
 scTrangulate, by design, could greedily discover any hidden heterogeneity via levaraging the cluster boundaries from each annotation. Here the scTriangulate 
-suggests sub-dividing of CD14 Mono population which has been annotated in Azimuth reference.
+suggests sub-dividing of CD14 Mono population which has been annotated in Azimuth reference::
+
+    sctri = ScTriangulate.deserialize('output/break_point_after_prune.p')
+    add_azimuth(sctri.adata,'azimuth_pred.tsv')
+    sctri.plot_heterogeneity('azimuth','CD14 Mono','umap')
+
+.. image:: ./_static/tutorial/single_modality/mono_umap.png
+   :height: 300px
+   :width: 500px
+   :align: center
+   :target: target
+
+Then by pulling out the marker genes the program detected, we reason that it was caused by at least three distinctive sub-groups:
+
+1. **classifical CD14+ Monocyte**: CLEC5A, CLEC4D, S100A9
+2. **intermediate CD14+ Monocyte**: FCGR3A, CLEC10A, HLA-DRA
+3. **inflammatory CD14+ Monocyte**: MX1, MX2, IF144::
+
+    for gene in ['CD14','FCGR3A','CLEC10A','CLEC5A','CLEC4D','MX1','MX2','IFI44','S100A9','HLA-DRA']:
+        sctri.plot_heterogeneity('azimuth','CD14 Mono','single_gene',single_gene=gene,cmap='viridis')
+
+
+.. image:: ./_static/tutorial/single_modality/mono_markers.png
+   :height: 300px
+   :width: 600px
+   :align: center
+   :target: target
+
 
 
 

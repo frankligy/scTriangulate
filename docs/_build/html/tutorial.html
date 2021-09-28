@@ -200,6 +200,7 @@
 <li><p>step3: follow the two workflow example (<a class="reference external" href="https:github.com">single modality</a>, <a class="reference external" href="https:github.com">multi-modal</a>) (30 mins)</p></li>
 <li><p>step4: [Optional] Check the <a class="reference external" href="https:github.com">principle</a> part to understand the philosophy of developing the tool.</p></li>
 </ol>
+<a class="reference external image-reference" href="target"><img alt="_images/schema_2.png" class="align-center" src="_images/schema_2.png" style="width: 600px; height: 500px;" /></a>
 </div>
 <div class="section" id="single-modality-scrna-workflow">
 <h2>Single Modality (scRNA) workflow<a class="headerlink" href="#single-modality-scrna-workflow" title="Permalink to this headline">¶</a></h2>
@@ -334,13 +335,16 @@ unstable invalid clusters will be reassigned to its nearest neightbor’s cluste
 annotations (cluster viewer). Also, it enables the inspection of further heterogeneity that might not have been captured by a
 single annotation (hetergeneity viewer). The logics of following codes are simple, we first build html, then we generate the figures that the html page would
 need to render it:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;break_point_after_prune.p&#39;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/break_point_after_prune.p&#39;</span><span class="p">)</span>
 <span class="n">sctri</span><span class="o">.</span><span class="n">viewer_cluster_feature_html</span><span class="p">()</span>
 <span class="n">sctri</span><span class="o">.</span><span class="n">viewer_cluster_feature_figure</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">select_keys</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;pruned&#39;</span><span class="p">])</span>
 <span class="n">sctri</span><span class="o">.</span><span class="n">viewer_heterogeneity_html</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">)</span>
 <span class="n">sctri</span><span class="o">.</span><span class="n">viewer_heterogeneity_figure</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
+<a class="reference external image-reference" href="target"><img alt="_images/cluster_viewer_1.png" class="align-center" src="_images/cluster_viewer_1.png" style="width: 600px; height: 300px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/cluster_viewer_2.png" class="align-center" src="_images/cluster_viewer_2.png" style="width: 600px; height: 300px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/heterogeneity_viewer.png" class="align-center" src="_images/heterogeneity_viewer.png" style="width: 600px; height: 350px;" /></a>
 </div>
 </div>
 <div class="section" id="inspect-the-results">
@@ -365,7 +369,25 @@ agreement with Azimuth.</p>
 <div class="section" id="discover-hidden-heterogeneity">
 <h4>Discover hidden heterogeneity<a class="headerlink" href="#discover-hidden-heterogeneity" title="Permalink to this headline">¶</a></h4>
 <p>scTrangulate, by design, could greedily discover any hidden heterogeneity via levaraging the cluster boundaries from each annotation. Here the scTriangulate
-suggests sub-dividing of CD14 Mono population which has been annotated in Azimuth reference.</p>
+suggests sub-dividing of CD14 Mono population which has been annotated in Azimuth reference:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/break_point_after_prune.p&#39;</span><span class="p">)</span>
+<span class="n">add_azimuth</span><span class="p">(</span><span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="p">,</span><span class="s1">&#39;azimuth_pred.tsv&#39;</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="s1">&#39;azimuth&#39;</span><span class="p">,</span><span class="s1">&#39;CD14 Mono&#39;</span><span class="p">,</span><span class="s1">&#39;umap&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/mono_umap.png" class="align-center" src="_images/mono_umap.png" style="width: 500px; height: 300px;" /></a>
+<p>Then by pulling out the marker genes the program detected, we reason that it was caused by at least three distinctive sub-groups:</p>
+<ol class="arabic">
+<li><p><strong>classifical CD14+ Monocyte</strong>: CLEC5A, CLEC4D, S100A9</p></li>
+<li><p><strong>intermediate CD14+ Monocyte</strong>: FCGR3A, CLEC10A, HLA-DRA</p></li>
+<li><p><strong>inflammatory CD14+ Monocyte</strong>: MX1, MX2, IF144:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">gene</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;CD14&#39;</span><span class="p">,</span><span class="s1">&#39;FCGR3A&#39;</span><span class="p">,</span><span class="s1">&#39;CLEC10A&#39;</span><span class="p">,</span><span class="s1">&#39;CLEC5A&#39;</span><span class="p">,</span><span class="s1">&#39;CLEC4D&#39;</span><span class="p">,</span><span class="s1">&#39;MX1&#39;</span><span class="p">,</span><span class="s1">&#39;MX2&#39;</span><span class="p">,</span><span class="s1">&#39;IFI44&#39;</span><span class="p">,</span><span class="s1">&#39;S100A9&#39;</span><span class="p">,</span><span class="s1">&#39;HLA-DRA&#39;</span><span class="p">]:</span>
+    <span class="n">sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="s1">&#39;azimuth&#39;</span><span class="p">,</span><span class="s1">&#39;CD14 Mono&#39;</span><span class="p">,</span><span class="s1">&#39;single_gene&#39;</span><span class="p">,</span><span class="n">single_gene</span><span class="o">=</span><span class="n">gene</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<a class="reference external image-reference" href="target"><img alt="_images/mono_markers.png" class="align-center" src="_images/mono_markers.png" style="width: 600px; height: 300px;" /></a>
 </div>
 </div>
 </div>
