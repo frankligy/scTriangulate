@@ -91,7 +91,23 @@
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#get-started">Get started</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#single-modality-scrna-workflow">Single Modality (scRNA) workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#single-modality-scrna-workflow">Single Modality (scRNA) workflow</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#download-and-preprocessing">Download and preprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-sctriangulate">Running scTriangulate</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#lazy-run">lazy_run</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step1-compute-metrics">Step1: compute_metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step2-compute-shapley">Step2: compute_shapley</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step3-prune-result">Step3: prune_result</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step4-building-the-viewer">Step4: building the viewer</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#inspect-the-results">Inspect the results</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#comparison-with-azimuth-mapping">Comparison with Azimuth mapping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#discover-hidden-heterogeneity">Discover hidden heterogeneity</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#multi-modal-workflow">Multi-modal workflow</a></li>
 </ul>
 </li>
@@ -169,9 +185,189 @@
 <h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="get-started">
 <h2>Get started<a class="headerlink" href="#get-started" title="Permalink to this headline">¶</a></h2>
+<p>Hi, Welcome to scTriangulate tutorials, here are some suggestive steps to quickly get a hang of this tool:</p>
+<ol class="arabic simple">
+<li><p>Step1: Check the <a class="reference external" href="https:github.com">what the tool does</a>. (1 min)</p></li>
+<li><dl class="simple">
+<dt>step2: Understand there are three modules in scTriangulate package: (2 mins)</dt><dd><ul class="simple">
+<li><p><a class="reference external" href="https:github.com">ScTriangulate Class</a> (core functionalities)</p></li>
+<li><p><a class="reference external" href="https:github.com">preprocessing module</a> (flexible file/gene format conversion plus normalization options)</p></li>
+<li><p><a class="reference external" href="https:github.com">colors module</a> (Allow publication-quality figure generation)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>step3: follow the two workflow example (<a class="reference external" href="https:github.com">single modality</a>, <a class="reference external" href="https:github.com">multi-modal</a>) (30 mins)</p></li>
+<li><p>step4: [Optional] Check the <a class="reference external" href="https:github.com">principle</a> part to understand the philosophy of developing the tool.</p></li>
+</ol>
 </div>
 <div class="section" id="single-modality-scrna-workflow">
 <h2>Single Modality (scRNA) workflow<a class="headerlink" href="#single-modality-scrna-workflow" title="Permalink to this headline">¶</a></h2>
+<p>In this example, we are going to analyze pbmc10k scRNA dataset downloaded from
+<a class="reference external" href="https://support.10xgenomics.com/single-cell-gene-expression/datasets/3.0.0/pbmc_10k_v3">10x official website</a> (chemistry v3.1). This dataset
+has also been used as the demo query data in <a class="reference external" href="https://azimuth.hubmapconsortium.org/references/#Human%20-%20PBMC">Azimuth</a>. It contains 11,769 single
+cells before filtering.</p>
+<p>Here we first conduct basic single cell analysis to obtain Leiden clustering results, however, at various resolutions (r=1,2,3). Smaller resolutions lead to
+broader clusters, and larger resolution value will result in more granular clustering. We leverage scTriangulate to take the three resolutions as the query
+annotations, and automatically mix-and-match cluster boundary from different resolutions, which at the end, yield scTriangulate reconciled cluster solutions.</p>
+<div class="section" id="download-and-preprocessing">
+<h3>Download and preprocessing<a class="headerlink" href="#download-and-preprocessing" title="Permalink to this headline">¶</a></h3>
+<p>First load the packages:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">scanpy</span> <span class="k">as</span> <span class="nn">sc</span>
+<span class="kn">from</span> <span class="nn">sctriangulate</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="o">*</span>
+</pre></div>
+</div>
+<p>The h5 file can be downloaded from <a class="reference external" href="https://drive.google.com/file/d/1_s-a621ADH5Y3cHW32WusFyoOo5cKs_b/view?usp=sharing">here</a>. We used scanpy and scTriangulate
+preprocessing module to conduct basic QC filtering and single cell pipeline:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read_10x_h5</span><span class="p">(</span><span class="s1">&#39;./pbmc_10k_v3_filtered_feature_bc_matrix.h5&#39;</span><span class="p">)</span>
+<span class="n">adata</span><span class="o">.</span><span class="n">var_names_make_unique</span><span class="p">()</span>
+<span class="n">adata</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">&#39;mt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">var_names</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;MT-&#39;</span><span class="p">)</span>  <span class="c1"># annotate the group of mitochondrial genes as &#39;mt&#39;</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">calculate_qc_metrics</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">qc_vars</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mt&#39;</span><span class="p">],</span> <span class="n">percent_top</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log1p</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Visualize the important QC metrics and make the decision on the proper cutoffs:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;n_genes_by_counts&#39;</span><span class="p">,</span><span class="s1">&#39;total_counts&#39;</span><span class="p">,</span><span class="s1">&#39;pct_counts_mt&#39;</span><span class="p">]:</span>
+    <span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">violin</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">jitter</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;qc_violin_</span><span class="si">{}</span><span class="s1">.pdf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">),</span><span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="n">sc</span><span class="o">.</span><span class="n">pl</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;n_genes_by_counts&#39;</span><span class="p">,</span><span class="n">y</span><span class="o">=</span><span class="s1">&#39;total_counts&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;pct_counts_mt&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;qc_scatter.pdf&#39;</span><span class="p">,</span><span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/qc_total_counts.png" class="align-left" src="_images/qc_total_counts.png" style="width: 320px; height: 250px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/qc_n_genes_by_counts.png" class="align-right" src="_images/qc_n_genes_by_counts.png" style="width: 320px; height: 250px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/qc_pct_counts_mt.png" class="align-left" src="_images/qc_pct_counts_mt.png" style="width: 320px; height: 250px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/qc_scatter.png" class="align-right" src="_images/qc_scatter.png" style="width: 320px; height: 250px;" /></a>
+<p>We filtered out the cells whose min_genes = 300, min_counts = 500, mt &gt; 20%, 11,022 cells left:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_cells</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">min_genes</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_cells</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">min_counts</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+<span class="n">adata</span> <span class="o">=</span> <span class="n">adata</span><span class="p">[</span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">pct_counts_mt</span> <span class="o">&lt;</span> <span class="mi">20</span><span class="p">,</span> <span class="p">:]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>  <span class="c1"># 11022 × 33538</span>
+</pre></div>
+</div>
+<p>Then we will use scTriangulate wrapper functions to obtain the Leiden clutser results at different resolutions (r=1,2,3), specifically,
+we chose number of PCs as 50, and 3000 highly variable genes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span> <span class="o">=</span> <span class="n">scanpy_recipe</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">is_log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">resolutions</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span><span class="n">pca_n_comps</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span><span class="n">n_top_genes</span><span class="o">=</span><span class="mi">3000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>After running this command, we will have three columns in <code class="docutils literal notranslate"><span class="pre">adata.obs</span></code>, namely, <code class="docutils literal notranslate"><span class="pre">sctri_rna_leiden_1</span></code>, <code class="docutils literal notranslate"><span class="pre">sctri_rna_leiden_2</span></code>, <code class="docutils literal notranslate"><span class="pre">sctri_rna_leiden_3</span></code>.
+Also a h5ad file named <code class="docutils literal notranslate"><span class="pre">adata_after_scanpy_recipe_rna_1_2_3_umap_True.h5ad</span></code> will be automatically saved to current directory so there’s no need to re-run this
+step again, Now let’s visualize them:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">umap_dual_view_save</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_3&#39;</span><span class="p">])</span>
+<span class="c1"># three umaps will be saved to your current directory.</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/three_resolutions.png" class="align-center" src="_images/three_resolutions.png" style="width: 900px; height: 300px;" /></a>
+<p>As we can see, different resolutions lead to various number of clusters, and it is clear that certain regions got sub-divided in higher resolutions. However,
+we don’t know whether this sub-populations are valid off the top of our heads. <strong>Here comes scTriangulate, which will scan each clusters at each resolutions,
+and mix-and-match different solutions to achieve an optimal one.</strong></p>
+</div>
+<div class="section" id="running-sctriangulate">
+<h3>Running scTriangulate<a class="headerlink" href="#running-sctriangulate" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="lazy-run">
+<h4>lazy_run<a class="headerlink" href="#lazy-run" title="Permalink to this headline">¶</a></h4>
+<p>Running scTriangulate can be as simple as two steps, we first instantiate the <code class="docutils literal notranslate"><span class="pre">ScTriangulate</span></code> object, then call <code class="docutils literal notranslate"><span class="pre">lazy_run</span></code> class function which will
+handle every thing for us:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;adata_after_scanpy_recipe_rna_1_2_3_umap_True.h5ad&#39;</span><span class="p">)</span>
+<span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;./output&#39;</span><span class="p">,</span><span class="n">adata</span><span class="o">=</span><span class="n">adata</span><span class="p">,</span><span class="n">query</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_3&#39;</span><span class="p">])</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">lazy_run</span><span class="p">()</span>  <span class="c1"># done!!!</span>
+</pre></div>
+</div>
+<p>However for the purpose of instructing users how to understand this tool, we are going to run it step by step. We first instantiate <code class="docutils literal notranslate"><span class="pre">ScTriangulate</span></code> object
+by specify:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dir</span></code>, where all the intermediate and final results/plots will go into?</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adata</span></code>, the adata that we want to start with.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">query</span></code>, a list contains all the annotations that we want to triangulate.</p></li>
+</ol>
+<p>The <code class="docutils literal notranslate"><span class="pre">dir</span></code> doesn’t need to be an existing folder, the program will automatically create one if not present.</p>
+</div>
+<div class="section" id="step1-compute-metrics">
+<h4>Step1: compute_metrics<a class="headerlink" href="#step1-compute-metrics" title="Permalink to this headline">¶</a></h4>
+<p>The first step of running scTriangulate is to calculate the biologically meaningful metrics for each cluster in each resolution, by default, scTriangulate will
+use <code class="docutils literal notranslate"><span class="pre">reassign</span> <span class="pre">score</span></code>, <code class="docutils literal notranslate"><span class="pre">TFIDF10</span> <span class="pre">score</span></code>, <code class="docutils literal notranslate"><span class="pre">TFIDF5</span> <span class="pre">score</span></code> and <code class="docutils literal notranslate"><span class="pre">SCCAF</span> <span class="pre">score</span></code> to measure the robustness and stability of each cluster, the metrics can be modified
+through <code class="docutils literal notranslate"><span class="pre">sctri.metrics</span></code> attribute list:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;adata_after_scanpy_recipe_rna_1_2_3_umap_True.h5ad&#39;</span><span class="p">)</span>
+<span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;./output&#39;</span><span class="p">,</span><span class="n">adata</span><span class="o">=</span><span class="n">adata</span><span class="p">,</span><span class="n">query</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_3&#39;</span><span class="p">])</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">scale_sccaf</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="s1">&#39;break_point_after_metrics.p&#39;</span><span class="p">)</span>   <span class="c1"># save it for next step</span>
+</pre></div>
+</div>
+<p>After this step, 3 * 4 = 12 columns will be added to the <code class="docutils literal notranslate"><span class="pre">sctri.adata.obs</span></code> dataframe, 3 means 3 resolutions, 4 means 4 metrics, those columns store the metrics
+we just calculated, click <a class="reference external" href="https://docs.google.com/spreadsheets/d/1tuaX09ZaYCWAPa4Nq9HQZDspW2lWaU4-/edit#gid=116886659">this</a> to have a look at the resultant data frame.</p>
+</div>
+<div class="section" id="step2-compute-shapley">
+<h4>Step2: compute_shapley<a class="headerlink" href="#step2-compute-shapley" title="Permalink to this headline">¶</a></h4>
+<p>The second step is to utilize the calculated metrics, and assess which annotation/cluster is the best for <strong>each single cell</strong>. So the program iterate each row,
+which is a single cell, retrive all the metrics associated with each cluster, and calculate shapley value of each cluster (in this case, each single cell has
+three conflicting clusters). Then the program will assign the cell to the “best” clusters amongst all solutions. We refer the resultant cluster assignment as
+<code class="docutils literal notranslate"><span class="pre">raw</span></code> cluster result:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/break_point_after_metrics.p&#39;</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">compute_shapley</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="s1">&#39;break_point_after_shapley.p&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>After this step, 3 + 1 + 1 + 1 columns will be added to the <code class="docutils literal notranslate"><span class="pre">sctri.adata.obs</span></code>, they are 3 columns corresponding to the shapley value for each annotation, plus
+one column named ‘final_annotation’ storing which annotation is the winner for each cell, and column ‘raw’ contains raw clusters which are basically annotation
+name and cluster name but concatenated by <cite>&#64;</cite> symbol. Last added column is ‘prefix’, which is just a concatenation of original cluster and current raw cluster. <a class="reference external" href="https://docs.google.com/spreadsheets/d/19HgWRNdOjn087f_7OTrEf_84IU-fgCGE/edit#gid=431987812">Click
+to have a look at the data frame</a>.</p>
+</div>
+<div class="section" id="step3-prune-result">
+<h4>Step3: prune_result<a class="headerlink" href="#step3-prune-result" title="Permalink to this headline">¶</a></h4>
+<p>This step is to prune the raw result, we first evaluate the robustness of the raw clusters using same set of stability metrics and add the relatively unstable
+clusters to <code class="docutils literal notranslate"><span class="pre">invalid</span></code> category. (win_fraction &lt; 0.25 by default, meaning if a cluster originally has 100 cells, but has only &lt;25 cells left). The cells in these
+unstable invalid clusters will be reassigned to its nearest neightbor’s cluster label. After this step, we have <code class="docutils literal notranslate"><span class="pre">pruned</span></code> reusult:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/break_point_after_shapley.p&#39;</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">prune_result</span><span class="p">()</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="s1">&#39;break_point_after_prune.p&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="step4-building-the-viewer">
+<h4>Step4: building the viewer<a class="headerlink" href="#step4-building-the-viewer" title="Permalink to this headline">¶</a></h4>
+<p>We provide an automatically generated webpage, called scTriangulate viewer, to allow users to dynamically navigate the robustness of each cluster from each
+annotations (cluster viewer). Also, it enables the inspection of further heterogeneity that might not have been captured by a
+single annotation (hetergeneity viewer). The logics of following codes are simple, we first build html, then we generate the figures that the html page would
+need to render it:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;break_point_after_prune.p&#39;</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">viewer_cluster_feature_html</span><span class="p">()</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">viewer_cluster_feature_figure</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">select_keys</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;pruned&#39;</span><span class="p">])</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">viewer_heterogeneity_html</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">)</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">viewer_heterogeneity_figure</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="inspect-the-results">
+<h3>Inspect the results<a class="headerlink" href="#inspect-the-results" title="Permalink to this headline">¶</a></h3>
+<p>Now we start to look at the scTriangulate results,</p>
+<div class="section" id="comparison-with-azimuth-mapping">
+<h4>Comparison with Azimuth mapping<a class="headerlink" href="#comparison-with-azimuth-mapping" title="Permalink to this headline">¶</a></h4>
+<p>Azimuth leverages &gt; 200 ADTs to delineate the major populations in PBMC, which can serve as a silver standard. First we obtain the Azimuth mapping results
+using the h5ad object after we performed qc:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/break_point_after_prune.p&#39;</span><span class="p">)</span>
+<span class="n">add_azimuth</span><span class="p">(</span><span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="p">,</span><span class="s1">&#39;azimuth_pred.tsv&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;azimuth&#39;</span><span class="p">,</span><span class="s1">&#39;pruned&#39;</span><span class="p">,</span><span class="s1">&#39;final_annotation&#39;</span><span class="p">]:</span>
+    <span class="n">sctri</span><span class="o">.</span><span class="n">plot_umap</span><span class="p">(</span><span class="n">col</span><span class="p">,</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/azimuth.png" class="align-center" src="_images/azimuth.png" style="width: 500px; height: 400px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/final_annotation.png" class="align-center" src="_images/final_annotation.png" style="width: 500px; height: 400px;" /></a>
+<a class="reference external image-reference" href="target"><img alt="_images/pruned.png" class="align-center" src="_images/pruned.png" style="width: 500px; height: 400px;" /></a>
+<p>As you can see, scTriangulate can mix-and-match different resolutions, shown in the <code class="docutils literal notranslate"><span class="pre">final_annotation</span></code> column, and the merged final results have good
+agreement with Azimuth.</p>
+</div>
+<div class="section" id="discover-hidden-heterogeneity">
+<h4>Discover hidden heterogeneity<a class="headerlink" href="#discover-hidden-heterogeneity" title="Permalink to this headline">¶</a></h4>
+<p>scTrangulate, by design, could greedily discover any hidden heterogeneity via levaraging the cluster boundaries from each annotation. Here the scTriangulate
+suggests sub-dividing of CD14 Mono population which has been annotated in Azimuth reference.</p>
+</div>
+</div>
 </div>
 <div class="section" id="multi-modal-workflow">
 <h2>Multi-modal workflow<a class="headerlink" href="#multi-modal-workflow" title="Permalink to this headline">¶</a></h2>

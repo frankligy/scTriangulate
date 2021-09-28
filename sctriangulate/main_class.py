@@ -284,6 +284,13 @@ class ScTriangulate(object):
             df.to_csv(os.path.join(self.dir,'sctri_metrics_and_shapley_df_{}.txt'.format(barcode)),sep='\t')
         return df
 
+    def prune_result(self,win_fraction_cutoff=0.25,reassign_abs_thresh=10,scale_sccaf=True,remove1=True):
+        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf)
+        self.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
+        self.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=self.reference)
+        self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf)
+
+
     @staticmethod
     def salvage_run(step_to_start,last_step_file,compute_metrics_parallel=True,scale_sccaf=True,compute_shapley_parallel=True,win_fraction_cutoff=0.25,
                     reassign_abs_thresh=10,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
@@ -351,7 +358,7 @@ class ScTriangulate(object):
         self.serialize(name='after_metrics.p')
         self.compute_shapley(parallel=compute_shapley_parallel)
         self.serialize(name='after_shapley.p')
-        self.pruning(method='rank',discard=None)
+        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf)
         self.serialize(name='after_rank_pruning.p')
         self.uns['raw_cluster_goodness'].to_csv(os.path.join(self.dir,'raw_cluster_goodness.txt'),sep='\t')
         self.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
