@@ -32,8 +32,26 @@ It can potentially be used in an array of settings:
 
 ## Installation
 
+scTriangulate requires python >= 3.7, conda virtual environment is highly recommended.
+
 ```bash
 pip install sctriangulate
+```
+
+From source,
+
+```bash
+git clone https://github.com/frankligy/scTriangulate
+cd ./scTriangulate
+python setup.py install
+# make sure setuptools <58, I tested setuptools=57.5.0
+```
+
+A minitest is included,
+
+```bash
+cd ./test
+python -W ignore mini_test.py
 ```
 
 ## Contact

@@ -1,6 +1,6 @@
 
 import os,sys
-from distutils.core import setup
+from setuptools import setup
 
 
 # build long description
@@ -15,6 +15,7 @@ requires = [
     'yattag',
     'anytree',
     'mygene ==3.2.2',
+    'numpy <1.21'
 ]
 
 setup(
@@ -32,9 +33,10 @@ setup(
           'Ducumentation':'https://sctriangulate.readthedocs.io',
       },
       packages=['sctriangulate'],
+      package_data = {'sctriangulate':['artifact_genes.txt','viewer/*']},
       install_requires=requires,
-      python_requires='>=3.6',
-      classifers=[
+      python_requires='>=3.7',
+      classifiers=[
           'Development Status :: 3 - Alpha',
           'Programming Language :: Python :: 3',
           'License :: OSI Approved :: BSD License',
