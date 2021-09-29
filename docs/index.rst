@@ -5,28 +5,21 @@
 
 
 
-What is scTriangulate?
-==========================
+Get started
+===================
 
-scTriangulate is a python package designed to solve ``"multi-annotation"`` problem. When analyzing single cell data, you may encounter situations
-where you inevitably have multiple different sets of cell annotations:
+Hi, Welcome to scTriangulate tutorials, here are some suggestive steps to quickly get a hang of this tool:
 
-1. Running same unsupervised clustering (i.e. Leiden) algorithm using different ``resolutions``.
+1. Background: :ref:`reference_to_overview`
+2. :ref:`reference_to_single_modality_workflow`
+3. :ref:`reference_to_multi_modal_workflow`
+4. :ref:`reference_to_visualization`
 
-2. Running unsupervised clustering using different ``algorithms``.
-
-3. Running reference mapping tools using different ``reference atlases``.
-
-4. Clustering labels from matched ``multi-modalities`` (RNA, ADT, ATAC, etc)
-
-.. image:: ./_static/schema_chop.png
-   :height: 180px
-   :width: 800px
+.. image:: ./_static/schema_2.png
+   :height: 500px
+   :width: 600px
    :align: center
    :target: target
-
-scTriangulate enable the usrs to ``mix-and-match`` the individual clustering results via leveraging customizable 
-biologically meaningful metrics to assess cluster goodness, and ``Shapley Value`` from cooperative theory to attain a single stable solution.
 
 
 Contents
@@ -36,6 +29,7 @@ Contents
    :maxdepth: 2
 
    install
+   introduction
    tutorial
    principle
    api

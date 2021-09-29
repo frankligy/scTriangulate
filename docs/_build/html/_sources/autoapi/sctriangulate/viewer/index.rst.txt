@@ -1,0 +1,50 @@
+:py:mod:`sctriangulate.viewer`
+==============================
+
+.. py:module:: sctriangulate.viewer
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   sctriangulate.viewer.html_banner
+   sctriangulate.viewer.html_left_nav
+   sctriangulate.viewer.html_right_show
+   sctriangulate.viewer.to_html
+   sctriangulate.viewer.header
+   sctriangulate.viewer.left_nav
+   sctriangulate.viewer.right_show
+   sctriangulate.viewer.inspection_html
+
+
+
+.. py:function:: html_banner()
+
+
+.. py:function:: html_left_nav(key_cluster_dict)
+
+
+.. py:function:: html_right_show(key_cluster_data, total_metrics)
+
+
+.. py:function:: to_html(key_cluster_dict, key_cluster_data, total_metrics)
+
+
+.. py:function:: header()
+
+
+.. py:function:: left_nav(key_cluster_dict, reference)
+
+
+.. py:function:: right_show()
+
+
+.. py:function:: inspection_html(key_cluster_dict, reference)
+
+

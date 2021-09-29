@@ -176,6 +176,7 @@ mtx_to_large_txt()
 ~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.mtx_to_large_txt
 
+
 add_azimuth()
 ~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.add_azimuth
@@ -183,6 +184,8 @@ add_azimuth()
 add_annotations()
 ~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.add_annotations
+
+.. _reference_to_add_umap:
 
 add_umap()
 ~~~~~~~~~~~~~~

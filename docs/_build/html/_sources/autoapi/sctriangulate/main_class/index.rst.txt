@@ -1,0 +1,748 @@
+:py:mod:`sctriangulate.main_class`
+==================================
+
+.. py:module:: sctriangulate.main_class
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   sctriangulate.main_class.ScTriangulate
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   sctriangulate.main_class.penalize_artifact_void
+   sctriangulate.main_class.each_key_run
+   sctriangulate.main_class.run_shapley
+   sctriangulate.main_class.run_assign
+   sctriangulate.main_class.filter_DE_genes
+
+
+
+.. py:class:: ScTriangulate(dir, adata, query, species='human', criterion=2, verbose=1, reference=None, add_metrics={'tfidf5': tf_idf5_for_cluster}, predict_doublet=True)
+
+   Bases: :py:obj:`object`
+
+   How to create/instantiate ScTriangulate object.
+
+   :param dir: Output folder path on the disk
+   :param adata: input adata file
+   :param query: a python list contains the annotation names to query
+
+   Example::
+
+       adata = sc.read('pbmc3k_azimuth_umap.h5ad')
+       sctri = ScTriangulate(dir='./output',adata=adata,query=['leiden1','leiden2','leiden3'])
+
+
+   .. py:method:: __str__(self)
+
+      Return str(self).
+
+
+   .. py:method:: __repr__(self)
+
+      Return repr(self).
+
+
+   .. py:method:: _create_dir_if_not_exist(self)
+
+
+   .. py:method:: _check_adata(self)
+
+
+   .. py:method:: _set_logging(self)
+
+
+   .. py:method:: _to_dense(self)
+
+
+   .. py:method:: _to_sparse(self)
+
+
+   .. py:method:: obs_to_df(self, name='sctri_inspect_obs.txt')
+
+
+   .. py:method:: var_to_df(self, name='sctri_inspect_var.txt')
+
+
+   .. py:method:: gene_to_df(self, mode, key, raw=False, col='purify', n=100)
+
+      Output {mode} genes for all clusters in one annotation (key), mode can be either 'marker_genes' or 'exclusive_genes'.
+
+      :param mode: python string, either 'marker_genes' or 'exclusive_genes'
+      :param key: python string, annotation name
+      :param raw: False will generate non-raw (human readable) format. Default: False
+      :param col: Only when mode=='marker_genes', whether output 'whole' column or 'purify' column. Default: purify
+      :param n: Only when mode=='exclusive_genes', how many top exclusively expressed genes will be printed for each cluster.
+
+      Examples::
+
+          sctri.gene_to_df(mode='marker_genes',key='annotation1')
+          sctri.gene_to_df(mode='exclusive_genes',key='annotation1')
+
+
+
+
+   .. py:method:: confusion_to_df(self, mode, key)
+
+      Print out the confusion matrix with cluster labels (dataframe).
+
+      :param mode: either 'confusion_reassign' or 'confusion_sccaf'
+      :param mode: python string, for example, 'annotation1'
+
+      Examples::
+
+          sctri.confusion_to_df(mode='confusion_reassign',key='annotation1')
+
+
+
+   .. py:method:: get_metrics_and_shapley(self, barcode, save=True)
+
+      For one single cell, given barcode/or other unique index, generate the all conflicting cluster from each annotation,
+      along with the metrics associated with each cluster, including shapley value.
+
+      :param barcode: string, the barcode for the cell you want to query.
+      :param save: save the returned dataframe to directory or not. Default: True
+      :return: DataFrame
+
+      Examples::
+
+          sctri.confusion_to_df(barcode='AAACCCACATCCAATG-1',save=True)
+
+      .. image:: ./_static/get_metrics_and_shapley.png
+          :height: 100px
+          :width: 700px
+          :align: center
+          :target: target
+
+
+   .. py:method:: prune_result(self, win_fraction_cutoff=0.25, reassign_abs_thresh=10, scale_sccaf=True, remove1=True)
+
+
+   .. py:method:: salvage_run(step_to_start, last_step_file, compute_metrics_parallel=True, scale_sccaf=True, compute_shapley_parallel=True, win_fraction_cutoff=0.25, reassign_abs_thresh=10, assess_pruned=True, viewer_cluster=True, viewer_cluster_keys=None, viewer_heterogeneity=True, viewer_heterogeneity_keys=None)
+      :staticmethod:
+
+      This is a static method, which allows to user to resume running scTriangulate from certain point, instead of running from very 
+      beginning if the intermediate files are present and intact.
+
+      :param step_to_start: string, now support 'assess_pruned'.
+      :param last_step_file: string, the path to the intermediate from which we start the salvage run.
+
+      Other parameters are the same as ``lazy_run`` function.
+
+      Examples::
+
+          ScTriangulate.salvage_run(step_to_start='assess_pruned',last_step_file='output/after_rank_pruning.p')
+
+
+
+   .. py:method:: lazy_run(self, compute_metrics_parallel=True, scale_sccaf=True, compute_shapley_parallel=True, win_fraction_cutoff=0.25, reassign_abs_thresh=10, assess_pruned=True, viewer_cluster=True, viewer_cluster_keys=None, viewer_heterogeneity=True, viewer_heterogeneity_keys=None)
+
+      This is the highest level wrapper function for running every step in one goal.
+
+      :param compute_metrics_parallel: boolean, whether to parallelize ``compute_metrics`` step. Default: True
+      :param scale_sccaf: boolean, whether to first scale the expression matrix before running sccaf score. Default: True
+      :param compute_shapley_parallel: boolean, whether to parallelize ``compute_parallel`` step. Default: True
+      :param win_fraction_cutoff: float, between 0-1, the cutoff for function ``add_invalid_by_win_fraction``. Default: 0.25
+      :param reassign_abs_thresh: int, the cutoff for minimum number of cells a valid cluster should haves. Default: 10
+      :param assess_pruned: boolean, whether to run same cluster assessment metrics on final pruned cluster labels. Default: True
+      :param viewer_cluster: boolean, whether to build viewer html page for all clusters' diagnostic information. Default: True
+      :param viewer_cluster_keys: list, clusters from what annotations we want to view on the viewer, only clusters within this annotation whose diagnostic
+                                  plot will be generated under the dir name *figure4viewer*. Default: None, means all annotations in the sctri.query will be 
+                                  used.
+      :param viewer_heterogeneity: boolean, whether to build the viewer to show the heterogeneity based on one reference annotation. Default: True
+      :param viewer_heterogeneity_keys: list, the annotations we want to serve as the reference. Default: None, means the first annotation in sctri.query
+                                        will be used as the reference.
+
+      Examples::
+
+          sctri.lazy_run(viewer_heterogeneity_keys=['annotation1','annotation2'])
+
+
+   .. py:method:: add_to_invalid(self, invalid)
+
+      add individual raw cluster names to the sctri.invalid attribute list.
+
+      :param invalid: list or string, contains the raw cluster names to add
+
+      Examples::
+
+          sctri.add_to_invalid(invalid=['annotation1@c3','annotation2@4'])
+          sctri.add_to_invalid(invalid='annotation1@3')
+
+
+
+   .. py:method:: add_to_invalid_by_win_fraction(self, percent=0.25)
+
+      add individual raw cluster names to the sctri.invalid attribute list by win_fraction
+
+      :param percent: float, from 0-1, the fraction of cells within a cluster that were kept after the game. Default: 0.25
+
+      Examples::
+
+          sctri.add_to_invalid_by_win_fraction(percent=0.25)
+
+
+   .. py:method:: clear_invalid(self)
+
+      reset/clear the sctri.invalid to an empty list
+
+      Examples::
+
+          sctri.clear_invalid()
+
+
+   .. py:method:: serialize(self, name='sctri_pickle.p')
+
+      serialize the sctri object through pickle protocol to the disk
+
+      :param name: string, the name of the pickle file on the disk. Default: sctri_pickle.p
+
+      Examples::
+
+          sctri.serialize()
+
+
+   .. py:method:: deserialize(name)
+      :staticmethod:
+
+      This is static method, to deserialize a pickle file on the disk back to the ram as a sctri object
+
+      :param name: string, the name of the pickle file on the disk. 
+
+      Examples::
+
+          ScTriangulate.deserialize(name='after_rank_pruning.p')
+
+
+   .. py:method:: add_new_metrics(self, add_metrics)
+
+      Users can add new callable or pre-implemented function to the sctri.metrics attribute.
+
+      :param add_metrics: dictionary like {'metric_name': callable}, the callable can be a string of a scTriangulate pre-implemented function, for example,
+                          'tfidf5','tfidf1'. Or a callable.
+
+      Examples::
+
+          sctri.add_new_metrics(add_metrics={'tfidf1':tfidf1})  # make sure first from sctriangualte.metrics import tfidf1
+
+
+   .. py:method:: plot_winners_statistics(self, col, fontsize=3, plot=True, save=True)
+
+      For triangulated clusters, either 'raw' or 'pruned', visualize what fraction of cells won the game.
+      A horizontal barplot will be generated and a dataframe with winners statistics will be returned.
+
+      :param col: string, either 'raw' or 'pruned'
+      :param fontsize: int, the fontsize for the y-label. Default: 3
+      :param plot: boolean, whether to plot or not. Default: True
+      :param save: boolean, whether to save the plot to the sctri.dir or not. Default: True
+
+      :return: DataFarme 
+
+      Examples::
+
+          sctri.plot_winners_statistics(col='raw',fontsize=4)
+
+      .. image:: ./_static/plot_winners_statistics.png
+          :height: 300px
+          :width: 400px
+          :align: center
+          :target: target
+
+
+
+   .. py:method:: plot_clusterability(self, key, col, fontsize=3, plot=True, save=True)
+
+      We define clusterability as the number of sub-clusters the program finds out. If a cluster has being suggested to be divided into
+      three smaller clusters, then the clueterability of this cluster will be 3.
+
+      :param key: string. The clusters from which annotation that you want to assess clusterability.
+      :param col: string. Either 'raw' cluster or 'pruned' cluster.
+      :param fontsize: int. The fontsize of x-ticklabels. Default: 3
+      :param plot: boolean. Whether to plot the scatterplot or not. Default : True.
+      :param save: boolean. Whether to save the plot or not. Default: True
+
+      :return: python dictionary. {cluster1:#sub-clusters}
+
+      Examples::
+
+          sctri.plot_clusterability(key='sctri_rna_leiden_1',col='raw',fontsize=8)
+
+      .. image:: ./_static/plot_clusterability.png
+          :height: 300px
+          :width: 400px
+          :align: center
+          :target: target
+
+
+
+
+   .. py:method:: display_hierarchy(self, ref_col, query_col, save=True)
+
+      Display the hierarchy of suggestive sub-clusterings, see the example results down the page.
+
+      :param ref_col: string, the annotation/column name in adata.obs which we want to inspect how it can be sub-divided
+      :param query_col: string, either 'raw' or 'pruned'
+      :param save: boolean, whether to save it to a file or stdout. Default: True
+
+      Examples::
+
+          sctri.display_hierarchy(ref_col='sctri_rna_leiden_1',query_col='raw')
+
+      .. image:: ./_static/display_hierarchy.png
+          :height: 400px
+          :width: 300px
+          :align: center
+          :target: target        
+
+
+
+   .. py:method:: doublet_predict(self)
+
+      wrapper function of running scrublet, will add a column on adata.obs called 'doublet_scores'
+
+      Examples::
+
+          sctri.doublet_predict()
+
+
+
+   .. py:method:: _add_to_uns(self, name, key, collect)
+
+
+   .. py:method:: compute_metrics(self, parallel=True, scale_sccaf=True)
+
+      main function for computing the metrics (defined by self.metrics) of each clusters in each annotation.
+      After the run, q (# query) * m (# metrics) columns will be added to the adata.obs, the column like will be like
+      {metric_name}@{query_annotation_name}, i.e. reassign@sctri_rna_leiden_1
+
+      :param parallel: boolean, whether to run in parallel. Since computing metrics for each query annotation is idependent,
+                       the program will automatically employ q (# query) cores under the hood. If you want to fully leverage
+                       this feature, please make sure you specify at least q (# query) cores when running the program. It is highly
+                       recommend to run this in parallel. However, when the dataset is super large and have > 10 query annotation, 
+                       we may encounter RAM overhead, in this case, sequential mode will be needed. Default: True
+      :param scale_sccaf: boolean, when running SCCAF score, since it is a logistic regression problem at its core, this parameter 
+                          controls whether scale the expression data or not. It is recommended to scale the data for any machine learning
+                          algorithm, however, the liblinaer solver has been demonstrated to be robust to the scale/unscale options. When
+                          the dataset > 50,000 cells or features > 1000000 (ATAC peaks), it is advised to not scale it for faster running time.
+
+      Examples::
+
+          sctri.compute_metrics(parallel=True,scale_sccaf=True)
+
+
+
+
+   .. py:method:: run_single_key_assessment(self, key, scale_sccaf)
+
+      this is a very handy function, given a set of annotation, this function allows you to assess the biogical robustness
+      based on the metrics we define. The obtained score and cluster information will be automatically saved to self.cluster
+      and self.score, and can be further rendered by the scTriangulate viewer.
+
+      :param key: string, the annotation/column name to assess the robustness.
+      :scale_sccaf: boolean, whether to scale the expression data before running SCCAF score. See ``compute_metrics`` function
+                    for full information.
+
+      Examples::
+
+          sctri.run_single_key_assessment(key='azimuth',scale_sccaf=True)
+
+
+
+   .. py:method:: process_collect_object(self, collect)
+
+
+   .. py:method:: penalize_artifact(self, mode, stamps=None, parallel=True)
+
+      An optional step after running ``compute_metrics`` step and before the ``compute_shapley`` step.
+      Basically, we penalize clusters with certain properties by set all their metrics to zero, which forbid them to
+      win in the following "game" step. These undesirable properties can be versatial, for example, cellcylce gene 
+      enrichment. We current support two mode:
+
+      1. mode1: ``void``, users specifiy which cluster they want to penalize via ``stamps`` parameter.
+      2. mode2: ``cellcycle``, program automatically label clusters whose gsea_hit > 5 and gsea_score > 0.8 as invalid cellcyle
+         enriched clusters. And those clusters will be penalized.
+
+      :param mode: string, either 'void' or 'cellcycle'.
+      :param stamps: list, contains cluster names that the users want to penalize.
+      :param parallel: boolean, whether to run this in parallel (scatter and gather). Default: True.
+
+      Examples::
+
+          sctri.penalize_artifact(mode='void',stamps=['sctri_rna_leiden_1@c3','sctri_rna_leiden_2@c5'])
+          sctri.penalize_artifact(mode='cellcyle')
+
+
+
+   .. py:method:: regress_out_size_effect(self, regressor='background_zscore')
+
+      An optional step to regress out potential confounding effect of cluster_size on the metrics. Run after ``compute_metrics`` step
+      but before ``compute_shapley`` step. All the metrics in selfadata.obs and self.score will be modified in place.
+
+      :param regressor: string. which regressor to choose, valid values: 'background_zscore', 'background_mean', 'GLM', 'Huber', 'RANSAC', 'TheilSen'
+
+      Example::
+
+          sctri.regress_out_size(regressor='Huber')
+
+
+
+   .. py:method:: compute_shapley(self, parallel=True)
+
+      Main core function, after obtaining the metrics for each cluster. For each single cell, let's calculate the shapley
+      value for each annotation and assign the cluster to the one with highest shapley value.
+
+      :param parallel: boolean. Whether to run it in parallel. (scatter and gather). Default: True
+
+      Examples::
+
+          sctri.compute_shapley(parallel=True)
+
+
+
+   .. py:method:: _prefixing(self, col)
+
+
+   .. py:method:: pruning(self, method='reassign', discard=None, scale_sccaf=True, abs_thresh=10, remove1=True, reference=None, parallel=True)
+
+      Main function. After running ``compute_shapley``, we get **raw** cluster results. Althought the raw cluster is informative,
+      there maybe some weired clusters that accidentally win out which doesn't attribute to its biological stability. For example,
+      a cluster that only has 3 cells, or very unstable cluster. To ensure the best results, we apply a post-hoc assessment onto the
+      raw cluster result, by applying the same set of metrics function to assess the robustness/stability of the raw clusters itself.
+      And we will based on that to perform some pruning to get rid of unstable clusters. Finally, the cells within these clusters will be 
+      reassigned to thier nearest neighbors.
+
+      :param method: string, valid value: 'reassign', 'rank'. ``rank`` will compute the metrics on all the raw clusters, together with the 
+                     ``discard`` parameter which automatically discard clusters ranked at the bottom to remove unstable clusters. ``reassign``
+                     will just remove clusters that either has less than ``abs_thresh`` cells or are in the self.invalid attribute list.
+      :param discard: int. Least {discard} stable clusters to remove. Default: None, means just rank without removing.
+      :param scale_sccaf: boolean. whether to scale the expression data. See ``compute_metrics`` for full explanation. Default: True
+      :param abs_thresh: int. clusters have less than {abs_thresh} cells will be discarded in ``reassign`` mode.
+      :param remove1: boolean. When reassign the cells in the dicarded clutsers, whether to also reassign the cells who are the only one in each 
+                      ``reference`` cluster. Default: True
+      :param reference: string. which annotation will serve as the reference.
+      :param parallel: boolean, whether to perform this step in parallel. (scatter and gather).
+
+      Examples::
+
+          sctri.pruning(method='pruning',discard=None)  # just assess and rank the raw clusters
+          sctri.pruning(method='reassign',abs_thresh=10,remove1=True,reference='annotation1')  # remove invalid clusters and reassign the cells within
+
+
+
+   .. py:method:: get_cluster(self)
+
+
+   .. py:method:: plot_umap(self, col, kind='category', save=True, format='pdf', umap_dot_size=None, umap_cmap='YlOrRd', frameon=False)
+
+      plotting the umap with either category cluster label or continous metrics are important. Different from the scanpy 
+      vanilla plot function, this function automatically generate two umap, one with legend on side and another with legend on data, which
+      usually will be very helpful imagine you have > 40 clusters. Secondly, we automatically make all the background dot as light grey, instead of
+      dark color.
+
+      :param col: string, which column in self.adata.obs that we want to plot umap from.
+      :param kind: string, either 'category' or 'continuous'
+      :param save: boolean, whether to save it to disk or not. Default: True
+      :param format: string. Which format to save. Default: '.pdf'
+      :param umap_dot_size: int/float. the size of dot in scatter plot, if None, using scanpy formula, 120000/n_cells
+      :param umap_cmap: string, the matplotlib colormap to use. Default: 'YlOrRd'
+      :param frameon: boolean, whether to have the frame on the umap. Default: False
+
+      Examples::
+
+          sctri.plot_umap(col='pruned',kind='category')
+          sctri.plot_umap(col='confidence',kind='continous')
+
+      .. image:: ./_static/umap_category.png
+          :height: 700px
+          :width: 400px
+          :align: center
+          :target: target      
+
+      .. image:: ./_static/umap_continuous.png
+          :height: 300px
+          :width: 400px
+          :align: center
+          :target: target     
+
+
+   .. py:method:: plot_confusion(self, name, key, save=True, format='pdf', cmap=retrieve_pretty_cmap('scphere'), **kwargs)
+
+      plot the confusion as a heatmap.
+
+      :param name: string, either 'confusion_reassign' or 'confusion_sccaf'.
+      :param key: string, a annotation name which we want to assess the confusion matrix of the clusters.
+      :param save: boolean, whether to save the figure. Default: True.
+      :param format: boolean, file format to save. Default: '.pdf'.
+      :param cmap: colormap object, Default: scphere_cmap, which defined in colors module.
+      :param kwargs: additional keyword arguments to sns.heatmap().
+
+      Examples::
+
+          sctri.plot_confusion(name='confusion_reassign',key='sctri_rna_leiden_1')
+
+      .. image:: ./_static/pc.png
+          :height: 300px
+          :width: 400px
+          :align: center
+          :target: target          
+
+
+   .. py:method:: plot_cluster_feature(self, key, cluster, feature, enrichment_type='enrichr', save=True, format='pdf')
+
+      plot the feature of each single clusters, including:
+
+      1. enrichment of artifact genes
+      2. marker genes umap
+      3. exclusive genes umap
+      4. location of clutser umap
+
+      :param key: string. Name of the annation.
+      :param cluster: string. Name of the cluster in the annotation.
+      :param feature: string, valid value: 'enrichment','marker_genes', 'exclusive_genes', 'location'
+      :param enrichmen_type: string, either 'enrichr' or 'gsea'.
+      :param save: boolean, whether to save the figure.
+      :param format: string, which format for the saved figure.
+
+      Example::
+
+          sctri.plot_cluster_feature(key='sctri_rna_leiden_1',cluster='3',feature='enrichment')
+
+      .. image:: ./_static/enrichment.png
+          :height: 300px
+          :width: 400px
+          :align: center
+          :target: target  
+
+      Example::
+
+          sctri.plot_cluster_feature(key='sctri_rna_leiden_1',cluster='3',feature='marker_genes')
+
+      .. image:: ./_static/marker_genes.png
+          :height: 250px
+          :width: 800px
+          :align: center
+          :target: target  
+
+      Example::
+
+          sctri.plot_cluster_feature(key='sctri_rna_leiden_1',cluster='3',feature='location')
+
+      .. image:: ./_static/location.png
+          :height: 300px
+          :width: 400px
+          :align: center
+          :target: target                     
+
+
+
+   .. py:method:: plot_heterogeneity(self, key, cluster, style, col='pruned', save=True, format='pdf', genes=None, umap_zoom_out=True, umap_dot_size=None, subset=None, marker_gene_dict=None, jitter=True, rotation=60, single_gene=None, dual_gene=None, multi_gene=None, merge=None, to_sinto=False, to_samtools=False, cmap='YlOrRd', **kwarg)
+
+      Core plotting function in scTriangulate.
+
+      :param key: string, the name of the annotation.
+      :param cluster: string, the name of the cluster.
+      :param stype: string, valid values are as below:
+
+                    * **umap**: plot the umap of this cluster (including its location and its suggestive heterogeneity)
+                    * **heatmap**: plot the heatmap of the differentially expressed features across all sub-populations within this cluster.
+                    * **build**: plot both the umap and heatmap, benefit is the column and raw colorbar of the heatmap is consistent with the umap color
+                    * **heatmap_custom_gene**, plot the heatmap, but with user-defined gene dictionary.
+                    * **heatmap+umap**, it is the umap + heatmap_custom_gene, and the colorbars are matching
+                    * **violin**: plot the violin plot of the specified genes across sub populations.
+                    * **single_gene**: plot the gradient of single genes across the cluster.
+                    * **dual_gene**: plot the dual-gene plot of two genes across the cluster, usually these two genes should correspond to the marker genes in two of the sub-populations.
+                    * **multi_gene**: plot the multi-gene plot of multiple genes across the cluster.
+                    * **cellxgene**: output the h5ad object which are readily transferrable to cellxgene. It also support atac pseudobuld analysis with ``to_sinto`` or ``to_samtools`` arguments.
+                    * **sankey**: plot the sankey plot showing fraction/percentage of cells that flow into each sub population
+
+      :param col: string, either 'raw' or 'pruned'.
+      :param save: boolean, whether to save or not.
+      :param foramt: string, which format to save.
+      :param genes: list, for violin plot.
+      :param umap_zoom_out: boolean, for the umap, whether to zoom out meaning the scale is the same of the whole umap. Zoom in means an amplified version of this cluster.
+      :param umap_dot_size: int/float, for the umap.
+      :param subset: list, the sub populations we want to keep for plotting.
+      :param marker_gene_dict: dict. The custom genes we want the heatmap to display.
+      :param jitter: float, for the violin plot.
+      :param rotation: int/float, for the violin plot. rotation of the text. Default: 60
+      :param single_gene: string, the gene name for single gene plot
+      :param dual_gene: list, the dual genes for dual gene plot.
+      :param multi_genes: list, the multiple genes for multi gene plot.
+      :param merge: nested list, the sub-populations that we want to merge. [('sub-c1','sub-c2'),('sub-c3','sub-c4')]
+      :param to_sinto: boolean, for cellxgene mode, output the txt files for running sinto to generate pseudobulk bam files.
+      :param to_samtools: boolean,for cellxgene mode, output the txt files for running samtools to generate the pseudobulk bam files.
+
+      Example::
+
+          sctri.plot_heterogeneity('leiden1','0','umap',subset=['leiden1@0','leiden3@10'])
+          sctri.plot_heterogeneity('leiden1','0','heatmap',subset=['leiden1@0','leiden3@10'])
+          sctri.plot_heterogeneity('leiden1','0','violin',subset=['leiden1@0','leiden3@10'],genes=['MAPK14','ANXA1'])
+          sctri.plot_heterogeneity('leiden1','0','sankey')
+          sctri.plot_heterogeneity('leiden1','0','cellxgene')
+          sctri.plot_heterogeneity('leiden1','0','heatmap+umap',subset=['leiden1@0','leiden3@10'],marker_gene_dict=marker_gene_dict)
+          sctri.plot_heterogeneity('leiden1','0','dual_gene',dual_gene=['MAPK14','CD52'])
+
+
+
+   .. py:method:: plot_circular_barplot(self, key, col, save=True, format='pdf')
+
+
+   .. py:method:: modality_contributions(self, mode='marker_genes', key='pruned', tops=20, regex_adt='^AB_', regex_atac='^chr\\d{1,2}')
+
+      calculate teh modality contributions for multi modal analysis, the modality contributions of each modality of each cluster means
+      the number of features from this modality that made into the top {tops} feature list. Three columns will be added to obs, they are
+
+          * **adt_contribution**
+          * **atac_contribution**
+          * **rna_contribution**
+
+      :param mode: string, either 'marker_genes' or 'exclusive_genes'.
+      :param key: string, any valid categorical column in self.adata.obs
+      :param tops: int, the top n features to consider for each cluster.
+      :param regex_adt: raw string, the pattern by which the ADT feature will be defined.
+      :param regex_atac: raw string ,the pattern by which the atac feature will be defined.
+
+      Examples::
+
+          sctri.modality_contributions(mode='marker_genes',key='pruned',tops=20)
+
+
+
+   .. py:method:: plot_multi_modal_feature_rank(self, cluster, mode='marker_genes', key='pruned', tops=20, regex_adt='^AB_', regex_atac='^chr\\d{1,2}', save=True, format='.pdf')
+
+      plot the top features in each clusters, the features are colored by the modality and ranked by the importance.
+
+      :param cluster: string, the name of the cluster.
+      :param mode: string, either 'marker_genes' or 'exclusive_genes'
+      :param tops: int, top n features to plot.
+      :param regex_adt: raw string, the pattern by which the ADT feature will be defined.
+      :param regex_atac: raw string ,the pattern by which the atac feature will be defined.
+      :param save: boolean, whether to save the figures.
+      :param format: string, the format the figure will be saved.
+
+      Examples::
+
+          sctri.plot_multi_modal_feature_rank(cluster='sctri_rna_leiden_2@10')
+
+      .. image:: ./_static/plot_multi_modal_feature_rank.png
+          :height: 550px
+          :width: 500px
+          :align: center
+          :target: target 
+
+
+   .. py:method:: plot_multi_modal_feature_fraction(self, cluster, mode='marker_genes', key='pruned', tops=[10, 20, 30, 50], regex_adt='^AB_', regex_atac='^chr\\d{1,2}', save=True, format='pdf')
+
+
+   .. py:method:: plot_long_heatmap(self, clusters=None, key='pruned', n_features=5, mode='marker_genes', cmap='viridis', save=True, format='pdf', figsize=(6, 4.8), feature_fontsize=3, cluster_fontsize=5)
+
+      the default scanpy heatmap is not able to support the display of arbitrary number of marker genes for each clusters, the max feature is 50.
+      this heatmap allows you to specify as many marker genes for each cluster as possible, and the gene name will all the displayed.
+
+      :param clusters: list, what clusters we want to consider under a certain annotation.
+      :param key: string, annotation name.
+      :param n_features: int, the number of features to display.
+      :param mode: string, either 'marker_genes' or 'exclusive_genes'.
+      :param cmap: string, matplotlib cmap string.
+      :param save: boolean, whether to save or not.
+      :param format: string, which format to save.
+      :param figsize: tuple, the width and the height of the plot.
+      :param feature_fontsize: int/float. the fontsize for the feature.
+      :param cluster_fontsize: int/float, the fontsize for the cluster.
+
+      Examples::
+
+          sctri.plot_long_umap(n_features=20,figsize=(20,20))
+
+      .. image:: ./_static/long_heatmap.png
+          :height: 550px
+          :width: 550px
+          :align: center
+          :target: target         
+
+
+
+   .. py:method:: _atomic_viewer_figure(self, key)
+
+
+   .. py:method:: _atomic_viewer_hetero(self, key)
+
+
+   .. py:method:: viewer_cluster_feature_figure(self, parallel=False, select_keys=None, other_umap=None)
+
+      Generate all the figures for setting up the viewer cluster page.
+
+      :param parallel: boolean, whether to run it in parallel, only work in some linux system, so recommend to not set to True.
+      :param select_keys: list, what annotations' cluster we want to inspect.
+      :param other_umap: ndarray,replace the umap with another set.
+
+      Examples::
+
+          sctri.viewer_cluster_feature_figure(parallel=False,select_keys=['annotation1','annotation2'],other_umap=None)
+
+
+
+   .. py:method:: viewer_cluster_feature_html(self)
+
+      Setting up the viewer cluster page.
+
+      Examples::
+
+          sctri.viewer_cluster_feature_html()
+
+
+
+   .. py:method:: viewer_heterogeneity_figure(self, key, other_umap=None)
+
+      Generating the figures for the viewer heterogeneity page
+
+      :param key: string, which annotation to inspect the heterogeneity.
+      :param other_umap: ndarray, replace with other umap embedding.
+
+      Examples::
+
+          sctri.viewer_heterogeneity_figure(key='annotation1',other_umap=None)
+
+
+   .. py:method:: viewer_heterogeneity_html(self, key)
+
+      Setting up viewer heterogeneity page
+
+      :param key: string, which annotation to inspect.
+
+      Examples::
+
+          sctri.viewer_heterogeneity_html(key='annotation1')
+
+
+
+
+.. py:function:: penalize_artifact_void(obs, query, stamps, metrics)
+
+   penalize_artifact_void core function
+
+
+.. py:function:: each_key_run(sctri, key, scale_sccaf)
+
+
+.. py:function:: run_shapley(obs, query, reference, size_dict, data)
+
+
+.. py:function:: run_assign(obs)
+
+
+.. py:function:: filter_DE_genes(adata, species, criterion)
+
+

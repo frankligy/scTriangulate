@@ -1,0 +1,231 @@
+:py:mod:`sctriangulate.colors`
+==============================
+
+.. py:module:: sctriangulate.colors
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   sctriangulate.colors.generate_block
+   sctriangulate.colors.generate_gradient
+   sctriangulate.colors.bg_greyed_cmap
+   sctriangulate.colors.hex2_to_rgb3
+   sctriangulate.colors.retrieve_pretty_colors
+   sctriangulate.colors.retrieve_pretty_cmap
+   sctriangulate.colors.pick_n_colors
+   sctriangulate.colors.colors_for_set
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   sctriangulate.colors._zeileis_28
+   sctriangulate.colors._godsnot_102
+   sctriangulate.colors._pub_icgs2
+   sctriangulate.colors._pub_shap
+   sctriangulate.colors.cdict
+   sctriangulate.colors._ywb_cmap
+   sctriangulate.colors.cdict
+   sctriangulate.colors._pwb_cmap
+   sctriangulate.colors.cdict
+   sctriangulate.colors._scphere_cmap
+
+
+.. py:function:: generate_block(color_list, name)
+
+   Given a list of color (each item is a hex code), visualize them side by side. See example.
+
+
+.. py:function:: generate_gradient(cmap, name)
+
+   Given a continuous cmap, visualize them. See example.
+
+
+.. py:function:: bg_greyed_cmap(cmap_str)
+
+   set 0 value as lightgrey, which will render better effect on umap
+
+   :param cmap_str: string, any valid matplotlib colormap string
+
+   :return: colormap object
+
+   Examples::
+
+       # normal cmap
+       sc.pl.umap(sctri.adata,color='CD4',cmap='viridis')
+       plt.savefig('normal.pdf',bbox_inches='tight')
+       plt.close()
+
+       # bg_greyed cmap
+       sc.pl.umap(sctri.adata,color='CD4',cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
+       plt.savefig('bg_greyed.pdf',bbox_inches='tight')
+       plt.close()
+
+   .. image:: ./_static/normal.png
+       :height: 300px
+       :width: 300px
+       :align: left
+       :target: target     
+
+   .. image:: ./_static/bg_greyed.png
+       :height: 300px
+       :width: 300px
+       :align: right
+       :target: target    
+
+
+.. py:function:: hex2_to_rgb3(hex2)
+
+   convert a hex color 2d array to (M,N,3) RGB array, very useful in ``ax.imshow``
+
+
+.. py:function:: retrieve_pretty_colors(name)
+
+   retrieve pretty customized colors (discrete)
+
+   :param name: string, valid value 'icgs2', 'shap'
+
+   :return: list, each item is hex code
+
+   Examples::
+
+       generate_block(color_list = retrieve_pretty_colors('icgs2'),name='icgs2')
+       generate_block(color_list = retrieve_pretty_colors('shap'),name='shap')
+
+   .. image:: ./_static/colors.png
+       :height: 100px
+       :width: 550px
+       :align: center
+       :target: target      
+
+
+
+.. py:function:: retrieve_pretty_cmap(name)
+
+   retrieve pretty customized colormap
+
+   :param name: string, valid value 'altanalyze', 'shap', 'scphere'
+
+   :return: cmap object
+
+   Examples::
+
+       generate_gradient(cmap=retrieve_pretty_cmap('shap'),name='shap')
+       generate_gradient(cmap=retrieve_pretty_cmap('altanalyze'),name='altanalyze')
+       generate_gradient(cmap=retrieve_pretty_cmap('scphere'),name='scphere')
+
+   .. image:: ./_static/cmap.png
+       :height: 250px
+       :width: 550px
+       :align: center
+       :target: target   
+
+
+
+.. py:function:: pick_n_colors(n)
+
+   a very handy and abstract function, pick n colors in hex code that guarantee decent contrast.
+
+   1. n <=10, use tab10
+   2. 10 < n <= 20, use tab20 
+   3. 20 < n <= 28, use zeileis (take from scanpy)
+   4. 28 < n <= 102, use godsnot (take from scanpy)
+   5. n > 102, use jet cmap (no guarantee for obvious contrast)
+
+   :param n: int, how many colors are needed
+
+   :return: list, each item is a hex code.
+
+   Examples::
+
+       generate_block(color_list = pick_n_colors(10),name='tab10')
+       generate_block(color_list = pick_n_colors(20),name='tab20')
+       generate_block(color_list = pick_n_colors(28),name='zeileis')
+       generate_block(color_list = pick_n_colors(102),name='godsnot')
+       generate_block(color_list = pick_n_colors(120),name='jet')
+
+   .. image:: ./_static/pick_n_colors.png
+       :height: 300px
+       :width: 550px
+       :align: center
+       :target: target      
+
+
+
+
+.. py:function:: colors_for_set(setlist)
+
+   given a set of items, based on how many unique item it has, pick the n color
+
+   :param setlist: list without redundant items.
+
+   :return: dictionary, {each item: hex code}
+
+   Exmaples::
+
+       cmap_dict = colors_for_set(['batch1','batch2])
+       # {'batch1': '#1f77b4', 'batch2': '#ff7f0e'}
+
+
+
+.. py:data:: _zeileis_28
+   :annotation: = ['#023fa5', '#7d87b9', '#bec1d4', '#d6bcc0', '#bb7784', '#8e063b', '#4a6fe3', '#8595e1',...
+
+   
+
+.. py:data:: _godsnot_102
+   :annotation: = ['#FFFF00', '#1CE6FF', '#FF34FF', '#FF4A46', '#008941', '#006FA6', '#A30059', '#FFDBE5',...
+
+   
+
+.. py:data:: _pub_icgs2
+   :annotation: = ['#F26D6D', '#BF9004', '#62BF04', '#2BB7EC', '#A38BFD', '#F263DA']
+
+   
+
+.. py:data:: _pub_shap
+   :annotation: = ['#F2075D', '#158BFB']
+
+   below stores the nice cmap I encoutered in my research
+
+
+.. py:data:: cdict
+   
+
+   
+
+.. py:data:: _ywb_cmap
+   
+
+   
+
+.. py:data:: cdict
+   
+
+   
+
+.. py:data:: _pwb_cmap
+   
+
+   
+
+.. py:data:: cdict
+   
+
+   
+
+.. py:data:: _scphere_cmap
+   
+
+   
+

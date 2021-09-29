@@ -96,6 +96,7 @@ no longer be considered in the marker genes and downstream assessment::
     :target: target
 
 
+.. _reference_to_visualization:
 
 Visualization
 ----------------

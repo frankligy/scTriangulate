@@ -42,7 +42,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Principle" href="principle.html" />
-    <link rel="prev" title="Installation" href="install.html" /> 
+    <link rel="prev" title="Introduction" href="introduction.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -89,16 +89,13 @@
             
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#get-started">Get started</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#single-modality-scrna-workflow">Single Modality (scRNA) workflow</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#download-and-preprocessing">Download and preprocessing</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#running-sctriangulate">Running scTriangulate</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#lazy-run">lazy_run</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#step1-compute-metrics">Step1: compute_metrics</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#step2-compute-shapley">Step2: compute_shapley</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#step3-prune-result">Step3: prune_result</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#step4-building-the-viewer">Step4: building the viewer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#default-lazy-run">Default lazy run</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#manual-run">Manual Run</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#inspect-the-results">Inspect the results</a><ul>
@@ -188,27 +185,8 @@
             
   <div class="section" id="tutorial">
 <h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="get-started">
-<h2>Get started<a class="headerlink" href="#get-started" title="Permalink to this headline">¶</a></h2>
-<p>Hi, Welcome to scTriangulate tutorials, here are some suggestive steps to quickly get a hang of this tool:</p>
-<ol class="arabic simple">
-<li><p>Step1: Check the <a class="reference external" href="https:github.com">what the tool does</a>. (1 min)</p></li>
-<li><dl class="simple">
-<dt>step2: Understand there are three modules in scTriangulate package: (2 mins)</dt><dd><ul class="simple">
-<li><p><a class="reference external" href="https:github.com">ScTriangulate Class</a> (core functionalities)</p></li>
-<li><p><a class="reference external" href="https:github.com">preprocessing module</a> (flexible file/gene format conversion plus normalization options)</p></li>
-<li><p><a class="reference external" href="https:github.com">colors module</a> (Allow publication-quality figure generation)</p></li>
-</ul>
-</dd>
-</dl>
-</li>
-<li><p>step3: follow the two workflow example (<a class="reference external" href="https:github.com">single modality</a>, <a class="reference external" href="https:github.com">multi-modal</a>) (30 mins)</p></li>
-<li><p>step4: [Optional] Check the <a class="reference external" href="https:github.com">principle</a> part to understand the philosophy of developing the tool.</p></li>
-</ol>
-<a class="reference external image-reference" href="target"><img alt="_images/schema_2.png" class="align-center" src="_images/schema_2.png" style="width: 600px; height: 500px;" /></a>
-</div>
 <div class="section" id="single-modality-scrna-workflow">
-<h2>Single Modality (scRNA) workflow<a class="headerlink" href="#single-modality-scrna-workflow" title="Permalink to this headline">¶</a></h2>
+<span id="reference-to-single-modality-workflow"></span><h2>Single Modality (scRNA) workflow<a class="headerlink" href="#single-modality-scrna-workflow" title="Permalink to this headline">¶</a></h2>
 <p>In this example, we are going to analyze pbmc10k scRNA dataset downloaded from
 <a class="reference external" href="https://support.10xgenomics.com/single-cell-gene-expression/datasets/3.0.0/pbmc_10k_v3">10x official website</a> (chemistry v3.1). This dataset
 has also been used as the demo query data in <a class="reference external" href="https://azimuth.hubmapconsortium.org/references/#Human%20-%20PBMC">Azimuth</a>. It contains 11,769 single
@@ -275,8 +253,8 @@ and mix-and-match different solutions to achieve an optimal one.</strong></p>
 </div>
 <div class="section" id="running-sctriangulate">
 <h3>Running scTriangulate<a class="headerlink" href="#running-sctriangulate" title="Permalink to this headline">¶</a></h3>
-<div class="section" id="lazy-run">
-<h4>lazy_run<a class="headerlink" href="#lazy-run" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="default-lazy-run">
+<h4>Default lazy run<a class="headerlink" href="#default-lazy-run" title="Permalink to this headline">¶</a></h4>
 <p>Running scTriangulate can be as simple as two steps, we first instantiate the <code class="docutils literal notranslate"><span class="pre">ScTriangulate</span></code> object, then call <code class="docutils literal notranslate"><span class="pre">lazy_run</span></code> class function which will
 handle every thing for us:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;adata_after_scanpy_recipe_rna_1_2_3_umap_True.h5ad&#39;</span><span class="p">)</span>
@@ -292,9 +270,16 @@ by specify:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">query</span></code>, a list contains all the annotations that we want to triangulate.</p></li>
 </ol>
 <p>The <code class="docutils literal notranslate"><span class="pre">dir</span></code> doesn’t need to be an existing folder, the program will automatically create one if not present.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Users can switch to manually run scTriangulat step by step, in order for granular operations/modifications. The instructions are as below.
+The above <code class="docutils literal notranslate"><span class="pre">lazy_run()</span></code> function basically takes care step 1-4 automatically with default parameter settings.</p>
 </div>
+</div>
+<div class="section" id="manual-run">
+<h4>Manual Run<a class="headerlink" href="#manual-run" title="Permalink to this headline">¶</a></h4>
 <div class="section" id="step1-compute-metrics">
-<h4>Step1: compute_metrics<a class="headerlink" href="#step1-compute-metrics" title="Permalink to this headline">¶</a></h4>
+<h5>Step1: compute_metrics<a class="headerlink" href="#step1-compute-metrics" title="Permalink to this headline">¶</a></h5>
 <p>The first step of running scTriangulate is to calculate the biologically meaningful metrics for each cluster in each resolution, by default, scTriangulate will
 use <code class="docutils literal notranslate"><span class="pre">reassign</span> <span class="pre">score</span></code>, <code class="docutils literal notranslate"><span class="pre">TFIDF10</span> <span class="pre">score</span></code>, <code class="docutils literal notranslate"><span class="pre">TFIDF5</span> <span class="pre">score</span></code> and <code class="docutils literal notranslate"><span class="pre">SCCAF</span> <span class="pre">score</span></code> to measure the robustness and stability of each cluster, the metrics can be modified
 through <code class="docutils literal notranslate"><span class="pre">sctri.metrics</span></code> attribute list:</p>
@@ -308,7 +293,7 @@ through <code class="docutils literal notranslate"><span class="pre">sctri.metri
 we just calculated, click <a class="reference external" href="https://docs.google.com/spreadsheets/d/1tuaX09ZaYCWAPa4Nq9HQZDspW2lWaU4-/edit#gid=116886659">this</a> to have a look at the resultant data frame.</p>
 </div>
 <div class="section" id="step2-compute-shapley">
-<h4>Step2: compute_shapley<a class="headerlink" href="#step2-compute-shapley" title="Permalink to this headline">¶</a></h4>
+<h5>Step2: compute_shapley<a class="headerlink" href="#step2-compute-shapley" title="Permalink to this headline">¶</a></h5>
 <p>The second step is to utilize the calculated metrics, and assess which annotation/cluster is the best for <strong>each single cell</strong>. So the program iterate each row,
 which is a single cell, retrive all the metrics associated with each cluster, and calculate shapley value of each cluster (in this case, each single cell has
 three conflicting clusters). Then the program will assign the cell to the “best” clusters amongst all solutions. We refer the resultant cluster assignment as
@@ -324,7 +309,7 @@ name and cluster name but concatenated by <cite>&#64;</cite> symbol. Last added 
 to have a look at the data frame</a>.</p>
 </div>
 <div class="section" id="step3-prune-result">
-<h4>Step3: prune_result<a class="headerlink" href="#step3-prune-result" title="Permalink to this headline">¶</a></h4>
+<h5>Step3: prune_result<a class="headerlink" href="#step3-prune-result" title="Permalink to this headline">¶</a></h5>
 <p>This step is to prune the raw result, we first evaluate the robustness of the raw clusters using same set of stability metrics and add the relatively unstable
 clusters to <code class="docutils literal notranslate"><span class="pre">invalid</span></code> category. (win_fraction &lt; 0.25 by default, meaning if a cluster originally has 100 cells, but has only &lt;25 cells left). The cells in these
 unstable invalid clusters will be reassigned to its nearest neightbor’s cluster label. After this step, we have <code class="docutils literal notranslate"><span class="pre">pruned</span></code> reusult:</p>
@@ -335,7 +320,7 @@ unstable invalid clusters will be reassigned to its nearest neightbor’s cluste
 </div>
 </div>
 <div class="section" id="step4-building-the-viewer">
-<h4>Step4: building the viewer<a class="headerlink" href="#step4-building-the-viewer" title="Permalink to this headline">¶</a></h4>
+<h5>Step4: building the viewer<a class="headerlink" href="#step4-building-the-viewer" title="Permalink to this headline">¶</a></h5>
 <p>We provide an automatically generated webpage, called scTriangulate viewer, to allow users to dynamically navigate the robustness of each cluster from each
 annotations (cluster viewer). Also, it enables the inspection of further heterogeneity that might not have been captured by a
 single annotation (hetergeneity viewer). The logics of following codes are simple, we first build html, then we generate the figures that the html page would
@@ -350,6 +335,7 @@ need to render it:</p>
 <a class="reference external image-reference" href="target"><img alt="_images/cluster_viewer_1.png" class="align-center" src="_images/cluster_viewer_1.png" style="width: 600px; height: 300px;" /></a>
 <a class="reference external image-reference" href="target"><img alt="_images/cluster_viewer_2.png" class="align-center" src="_images/cluster_viewer_2.png" style="width: 600px; height: 300px;" /></a>
 <a class="reference external image-reference" href="target"><img alt="_images/heterogeneity_viewer.png" class="align-center" src="_images/heterogeneity_viewer.png" style="width: 600px; height: 350px;" /></a>
+</div>
 </div>
 </div>
 <div class="section" id="inspect-the-results">
@@ -397,7 +383,7 @@ suggests sub-dividing of CD14 Mono population which has been annotated in Azimut
 </div>
 </div>
 <div class="section" id="multi-modal-workflow">
-<h2>Multi-modal workflow<a class="headerlink" href="#multi-modal-workflow" title="Permalink to this headline">¶</a></h2>
+<span id="reference-to-multi-modal-workflow"></span><h2>Multi-modal workflow<a class="headerlink" href="#multi-modal-workflow" title="Permalink to this headline">¶</a></h2>
 <p>In this example run, we are going to use a CITE-Seq dataset from human total nucleated cells (TNCs). This dataset contains 31 ADTs and in toal 8,491 cells.
 It is normal practice to analyze and cluster each modality’s data seperately, and then try to merge them together. However, to reconcile the clustering
 differences are not a trivial tasks and it requires the simoutaneous consideration of both RNA gene expression and surface protein. Thankfully, scTriangulate
@@ -512,7 +498,7 @@ can help to make the decision.</p>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
         <a href="principle.html" class="btn btn-neutral float-right" title="Principle" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="install.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="introduction.html" class="btn btn-neutral float-left" title="Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

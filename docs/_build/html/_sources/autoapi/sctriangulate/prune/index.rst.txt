@@ -1,0 +1,38 @@
+:py:mod:`sctriangulate.prune`
+=============================
+
+.. py:module:: sctriangulate.prune
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   sctriangulate.prune.rank_pruning
+   sctriangulate.prune.reassign_pruning
+   sctriangulate.prune.inclusiveness
+   sctriangulate.prune.run_reference_pruning
+   sctriangulate.prune.reference_pruning
+
+
+
+.. py:function:: rank_pruning(sctri, discard=None, scale_sccaf=True)
+
+
+.. py:function:: reassign_pruning(sctri, abs_thresh=10, remove1=True, reference=None)
+
+
+.. py:function:: inclusiveness(obs, r, c)
+
+
+.. py:function:: run_reference_pruning(chunk, reference, size_dict, obs)
+
+
+.. py:function:: reference_pruning(obs, reference, size_dict)
+
+

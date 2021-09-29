@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>What is scTriangulate? &mdash; scTriangulate 0.9.0 documentation</title>
+  <title>Get started &mdash; scTriangulate 0.9.0 documentation</title>
   
 
   
@@ -88,6 +88,7 @@
             
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="principle.html">Principle</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
@@ -140,7 +141,7 @@
     
       <li><a href="#" class="icon icon-home"></a> &raquo;</li>
         
-      <li>What is scTriangulate?</li>
+      <li>Get started</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -159,27 +160,28 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="what-is-sctriangulate">
-<h1>What is scTriangulate?<a class="headerlink" href="#what-is-sctriangulate" title="Permalink to this headline">¶</a></h1>
-<p>scTriangulate is a python package designed to solve <code class="docutils literal notranslate"><span class="pre">&quot;multi-annotation&quot;</span></code> problem. When analyzing single cell data, you may encounter situations
-where you inevitably have multiple different sets of cell annotations:</p>
+  <div class="section" id="get-started">
+<h1>Get started<a class="headerlink" href="#get-started" title="Permalink to this headline">¶</a></h1>
+<p>Hi, Welcome to scTriangulate tutorials, here are some suggestive steps to quickly get a hang of this tool:</p>
 <ol class="arabic simple">
-<li><p>Running same unsupervised clustering (i.e. Leiden) algorithm using different <code class="docutils literal notranslate"><span class="pre">resolutions</span></code>.</p></li>
-<li><p>Running unsupervised clustering using different <code class="docutils literal notranslate"><span class="pre">algorithms</span></code>.</p></li>
-<li><p>Running reference mapping tools using different <code class="docutils literal notranslate"><span class="pre">reference</span> <span class="pre">atlases</span></code>.</p></li>
-<li><p>Clustering labels from matched <code class="docutils literal notranslate"><span class="pre">multi-modalities</span></code> (RNA, ADT, ATAC, etc)</p></li>
+<li><p>Background: <a class="reference internal" href="introduction.html#reference-to-overview"><span class="std std-ref">What is scTriangulate?</span></a></p></li>
+<li><p><a class="reference internal" href="tutorial.html#reference-to-single-modality-workflow"><span class="std std-ref">Single Modality (scRNA) workflow</span></a></p></li>
+<li><p><a class="reference internal" href="tutorial.html#reference-to-multi-modal-workflow"><span class="std std-ref">Multi-modal workflow</span></a></p></li>
+<li><p><a class="reference internal" href="principle.html#reference-to-visualization"><span class="std std-ref">Visualization</span></a></p></li>
 </ol>
-<a class="reference external image-reference" href="target"><img alt="_images/schema_chop.png" class="align-center" src="_images/schema_chop.png" style="width: 800px; height: 180px;" /></a>
-<p>scTriangulate enable the usrs to <code class="docutils literal notranslate"><span class="pre">mix-and-match</span></code> the individual clustering results via leveraging customizable
-biologically meaningful metrics to assess cluster goodness, and <code class="docutils literal notranslate"><span class="pre">Shapley</span> <span class="pre">Value</span></code> from cooperative theory to attain a single stable solution.</p>
+<a class="reference external image-reference" href="target"><img alt="_images/schema_2.png" class="align-center" src="_images/schema_2.png" style="width: 600px; height: 500px;" /></a>
 </div>
 <div class="section" id="contents">
 <h1>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#what-is-sctriangulate">What is scTriangulate?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#inputs-and-outputs">Inputs and Outputs</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial.html#get-started">Get started</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial.html#single-modality-scrna-workflow">Single Modality (scRNA) workflow</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial.html#multi-modal-workflow">Multi-modal workflow</a></li>
 </ul>

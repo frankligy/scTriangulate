@@ -1,24 +1,7 @@
 Tutorial
 ==========
 
-Get started
-------------------------
-
-Hi, Welcome to scTriangulate tutorials, here are some suggestive steps to quickly get a hang of this tool:
-
-1. Step1: Check the `what the tool does <https:github.com>`_. (1 min)
-2. step2: Understand there are three modules in scTriangulate package: (2 mins)
-    * `ScTriangulate Class <https:github.com>`_ (core functionalities)
-    * `preprocessing module <https:github.com>`_ (flexible file/gene format conversion plus normalization options)
-    * `colors module <https:github.com>`_ (Allow publication-quality figure generation)
-3. step3: follow the two workflow example (`single modality <https:github.com>`_, `multi-modal <https:github.com>`_) (30 mins)
-4. step4: [Optional] Check the `principle <https:github.com>`_ part to understand the philosophy of developing the tool.
-
-.. image:: ./_static/schema_2.png
-   :height: 500px
-   :width: 600px
-   :align: center
-   :target: target
+.. _reference_to_single_modality_workflow:
 
 Single Modality (scRNA) workflow
 -----------------------------------
@@ -119,8 +102,8 @@ and mix-and-match different solutions to achieve an optimal one.**
 Running scTriangulate
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-lazy_run
-+++++++++++
+Default lazy run
+<<<<<<<<<<<<<<<<<<<<<
 
 Running scTriangulate can be as simple as two steps, we first instantiate the ``ScTriangulate`` object, then call ``lazy_run`` class function which will
 handle every thing for us::
@@ -137,6 +120,14 @@ by specify:
 3. ``query``, a list contains all the annotations that we want to triangulate.
 
 The ``dir`` doesn't need to be an existing folder, the program will automatically create one if not present.
+
+.. note::
+
+    Users can switch to manually run scTriangulat step by step, in order for granular operations/modifications. The instructions are as below.
+    The above ``lazy_run()`` function basically takes care step 1-4 automatically with default parameter settings.
+
+Manual Run
+<<<<<<<<<<<<<
 
 Step1: compute_metrics
 +++++++++++++++++++++++++
@@ -220,7 +211,7 @@ Inspect the results
 Now we start to look at the scTriangulate results,
 
 Comparison with Azimuth mapping
-++++++++++++++++++++++++++++++++++
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 Azimuth leverages > 200 ADTs to delineate the major populations in PBMC, which can serve as a silver standard. First we obtain the Azimuth mapping results 
 using the h5ad object after we performed qc::
@@ -252,7 +243,7 @@ As you can see, scTriangulate can mix-and-match different resolutions, shown in 
 agreement with Azimuth. 
 
 Discover hidden heterogeneity
-+++++++++++++++++++++++++++++++++
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 scTrangulate, by design, could greedily discover any hidden heterogeneity via levaraging the cluster boundaries from each annotation. Here the scTriangulate 
 suggests sub-dividing of CD14 Mono population which has been annotated in Azimuth reference::
@@ -284,7 +275,7 @@ Then by pulling out the marker genes the program detected, we reason that it was
    :target: target
 
 
-
+.. _reference_to_multi_modal_workflow:
 
 Multi-modal workflow
 -----------------------------------

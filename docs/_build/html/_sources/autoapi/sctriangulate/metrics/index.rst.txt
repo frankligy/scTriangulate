@@ -1,0 +1,99 @@
+:py:mod:`sctriangulate.metrics`
+===============================
+
+.. py:module:: sctriangulate.metrics
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   sctriangulate.metrics.check_filter_single_cluster
+   sctriangulate.metrics.doublet_compute
+   sctriangulate.metrics.compute_combo_score
+   sctriangulate.metrics.run_enrichr
+   sctriangulate.metrics.run_gsea
+   sctriangulate.metrics.read_artifact_genes
+   sctriangulate.metrics.purify_gene
+   sctriangulate.metrics.marker_gene
+   sctriangulate.metrics.reassign_score
+   sctriangulate.metrics.background_normalizer
+   sctriangulate.metrics.regress_size
+   sctriangulate.metrics.tf_idf_bare_compute
+   sctriangulate.metrics.single_size_query
+   sctriangulate.metrics.get_size_in_metrics
+   sctriangulate.metrics.tf_idf10_for_cluster
+   sctriangulate.metrics.tf_idf5_for_cluster
+   sctriangulate.metrics.tf_idf1_for_cluster
+   sctriangulate.metrics.SCCAF_score
+
+
+
+.. py:function:: check_filter_single_cluster(adata, key)
+
+
+.. py:function:: doublet_compute(adata, key)
+
+
+.. py:function:: compute_combo_score(rank_uns, cluster)
+
+
+.. py:function:: run_enrichr(gene_list, key, name, folder)
+
+
+.. py:function:: run_gsea(gene_list, key, name, folder)
+
+
+.. py:function:: read_artifact_genes(species, criterion)
+
+   criterion1: all will be artifact
+   criterion2: all will be artifact except cellcycle
+   criterion3: all will be artifact except cellcycle, ribosome
+   criterion4: all will be artifact except cellcycle, ribosome, mitochondrial
+   criterion5: all will be artifact except cellcycle, ribosome, mitochondrial, antisense
+   criterion6: all will be artifact except cellcycle, ribosome, mitochondrial, antisense, predict_gene
+
+
+.. py:function:: purify_gene(genelist, species, criterion)
+
+
+.. py:function:: marker_gene(adata, key, species, criterion, folder)
+
+
+.. py:function:: reassign_score(adata, key, marker, regress_size=False)
+
+
+.. py:function:: background_normalizer(df, n_neighbors=10, scale=True)
+
+
+.. py:function:: regress_size(df_inspect, regressor='background_zscore', n_neighbors=10, to_dict=False)
+
+
+.. py:function:: tf_idf_bare_compute(df, cluster)
+
+   now the df contains all the gene for and an additional column for cluster
+
+
+.. py:function:: single_size_query(obs, c)
+
+
+.. py:function:: get_size_in_metrics(obs, key)
+
+
+.. py:function:: tf_idf10_for_cluster(adata, key, species, criterion, regress_size=False)
+
+
+.. py:function:: tf_idf5_for_cluster(adata, key, species, criterion, regress_size=False)
+
+
+.. py:function:: tf_idf1_for_cluster(adata, key, species, criterion, regress_size=False)
+
+
+.. py:function:: SCCAF_score(adata, key, species, criterion, scale_sccaf, regress_size=False)
+
+

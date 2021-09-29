@@ -1,0 +1,60 @@
+:py:mod:`sctriangulate.shapley`
+===============================
+
+.. py:module:: sctriangulate.shapley
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   sctriangulate.shapley.single_size_query
+   sctriangulate.shapley.get_size
+   sctriangulate.shapley.size_sort
+   sctriangulate.shapley.cheat_add_bonus
+   sctriangulate.shapley.shapley_value
+   sctriangulate.shapley.approximate_shapley_value
+   sctriangulate.shapley.which_to_take
+
+
+
+.. py:function:: single_size_query(obs, c)
+
+
+.. py:function:: get_size(obs, query)
+
+
+.. py:function:: size_sort(size_list)
+
+
+.. py:function:: cheat_add_bonus(total_matrix, index_matrix, bonus)
+
+
+.. py:function:: shapley_value(index, data)
+
+   it takes in a 2d ndarray, row means how many players, col means the metrics for a game performance
+   [[0.5,0.4,0.7],             edge case 
+    [2.3,4.5,6.7],             change last row, equal or approximately equal to row2,               
+    [0.1,0.1,0.1],             see what's going on.
+    [9.1,9.2,9.9]]   
+
+   also need to take in an index, row index, tell function which player's contribution you want to compute
+
+
+.. py:function:: approximate_shapley_value(data, n_sample=6, n_time=1000)
+
+
+.. py:function:: which_to_take(result, query, reference, cluster_row, size_dict)
+
+   query: [leiden0.5,leiden1,leiden2,gs]
+   result: [0.3, 0.5, 0.4, 0.5]
+   reference = gs
+   cluster_row: 1,4,7,ERP3     (the cluster of that row)
+   size_dict: {gs:{ERP1:54,ERP2:100},...}
+
+
