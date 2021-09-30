@@ -4,6 +4,8 @@ from sctriangulate.colors import *
 from sctriangulate.preprocessing import *
 print('===================\nimport modules test:',u'\u2713','\n====================')
 
+sctriangulate_setting(backend='Agg')
+
 adata = sc.read('input.h5ad')
 sctri = ScTriangulate(dir='output',adata=adata,add_metrics={},query=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
 print('====================\ninstantiation test:',u'\u2713','\n====================')

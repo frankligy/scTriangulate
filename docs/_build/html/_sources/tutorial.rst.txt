@@ -112,6 +112,14 @@ handle every thing for us::
     sctri = ScTriangulate(dir='./output',adata=adata,query=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
     sctri.lazy_run()  # done!!!
 
+We first instantiate ``ScTriangulate`` object by specify:
+
+1. ``dir``, where all the intermediate and final results/plots will go into?
+2. ``adata``, the adata that we want to start with.
+3. ``query``, a list contains all the annotations that we want to triangulate.
+
+The ``dir`` doesn't need to be an existing folder, the program will automatically create one if not present.
+
 .. note::
 
     To save time, please run lazy_run(scale_sccaf=False,viewer_cluster=False), the first argument instruct the program to compute SCCAF score without
@@ -119,14 +127,7 @@ handle every thing for us::
     not build the cluster_viewer, it will take some time to generate all the images that the cluster viewer needs.
 
 
-However for the purpose of instructing users how to understand this tool, we are going to run it step by step. We first instantiate ``ScTriangulate`` object 
-by specify:
-
-1. ``dir``, where all the intermediate and final results/plots will go into?
-2. ``adata``, the adata that we want to start with.
-3. ``query``, a list contains all the annotations that we want to triangulate.
-
-The ``dir`` doesn't need to be an existing folder, the program will automatically create one if not present.
+However for the purpose of instructing users how to understand this tool, we are going to run it step by step. 
 
 .. note::
 
@@ -149,7 +150,12 @@ through ``sctri.metrics`` attribute list::
     sctri.serialize('break_point_after_metrics.p')   # save it for next step
 
 After this step, 3 * 4 = 12 columns will be added to the ``sctri.adata.obs`` dataframe, 3 means 3 resolutions, 4 means 4 metrics, those columns store the metrics
-we just calculated, click `this <https://docs.google.com/spreadsheets/d/1tuaX09ZaYCWAPa4Nq9HQZDspW2lWaU4-/edit#gid=116886659>`_ to have a look at the resultant data frame.
+we just calculated, the first 10 rows are shown below.
+
+.. csv-table:: After compute metrics
+    :file: ./_static/tutorial/single_modality/head_check_after_metrics.csv
+    :widths: 10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
+    :header-rows: 1
 
 Step2: compute_shapley
 ++++++++++++++++++++++++
@@ -165,8 +171,13 @@ three conflicting clusters). Then the program will assign the cell to the "best"
 
 After this step, 3 + 1 + 1 + 1 columns will be added to the ``sctri.adata.obs``, they are 3 columns corresponding to the shapley value for each annotation, plus
 one column named 'final_annotation' storing which annotation is the winner for each cell, and column 'raw' contains raw clusters which are basically annotation
-name and cluster name but concatenated by `@` symbol. Last added column is 'prefix', which is just a concatenation of original cluster and current raw cluster. `Click
-to have a look at the data frame <https://docs.google.com/spreadsheets/d/19HgWRNdOjn087f_7OTrEf_84IU-fgCGE/edit#gid=431987812>`_.
+name and cluster name but concatenated by `@` symbol. Last added column is 'prefix', which is just a concatenation of original cluster and current raw cluster. 
+
+.. csv-table:: After compute shapley
+    :file: ./_static/tutorial/single_modality/head_check_after_shapley.csv
+    :widths: 10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
+    :header-rows: 1
+
 
 Step3: prune_result
 ++++++++++++++++++++++++
@@ -178,6 +189,13 @@ unstable invalid clusters will be reassigned to its nearest neightbor's cluster 
     sctri = ScTriangulate.deserialize('output/break_point_after_shapley.p')
     sctri.prune_result()
     sctri.serialize('break_point_after_prune.p')
+
+A column named "pruned" will be added, also "confidence" column stores the confidence the program hold to call it out.
+
+.. csv-table:: After prune result
+    :file: ./_static/tutorial/single_modality/head_check_after_prune.csv
+    :widths: 10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
+    :header-rows: 1
 
 
 Step4: building the viewer
@@ -384,9 +402,7 @@ Running scTriangulate
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 Just use ``lazy_run()`` function, I have broken it down in the single_modality section::
 
-    adata_combine = sc.read('combined_rna_adt.h5ad')
-    sctri = ScTriangulate(dir='output',adata=adata_combine,add_metrics={},predict_doublet='precomputed',
-                          query=['sctri_adt_leiden_1','sctri_adt_leiden_2','sctri_adt_leiden_3','sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
+    sctri = ScTriangulate(dir='output',adata=adata_combine,add_metrics={},query=['sctri_adt_leiden_1','sctri_adt_leiden_2','sctri_adt_leiden_3','sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
     sctri.lazy_run()
 
 All the intermediate results would be stored at ./output folder.

@@ -262,20 +262,20 @@ handle every thing for us:</p>
 <span class="n">sctri</span><span class="o">.</span><span class="n">lazy_run</span><span class="p">()</span>  <span class="c1"># done!!!</span>
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>To save time, please run lazy_run(scale_sccaf=False,viewer_cluster=False), the first argument instruct the program to compute SCCAF score without
-firstly scaling the data, which will save quite a lot time. By default this option is set to True. The second argument is to instruct the program to
-not build the cluster_viewer, it will take some time to generate all the images that the cluster viewer needs.</p>
-</div>
-<p>However for the purpose of instructing users how to understand this tool, we are going to run it step by step. We first instantiate <code class="docutils literal notranslate"><span class="pre">ScTriangulate</span></code> object
-by specify:</p>
+<p>We first instantiate <code class="docutils literal notranslate"><span class="pre">ScTriangulate</span></code> object by specify:</p>
 <ol class="arabic simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">dir</span></code>, where all the intermediate and final results/plots will go into?</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">adata</span></code>, the adata that we want to start with.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">query</span></code>, a list contains all the annotations that we want to triangulate.</p></li>
 </ol>
 <p>The <code class="docutils literal notranslate"><span class="pre">dir</span></code> doesn’t need to be an existing folder, the program will automatically create one if not present.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To save time, please run lazy_run(scale_sccaf=False,viewer_cluster=False), the first argument instruct the program to compute SCCAF score without
+firstly scaling the data, which will save quite a lot time. By default this option is set to True. The second argument is to instruct the program to
+not build the cluster_viewer, it will take some time to generate all the images that the cluster viewer needs.</p>
+</div>
+<p>However for the purpose of instructing users how to understand this tool, we are going to run it step by step.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Users can switch to manually run scTriangulat step by step, in order for granular operations/modifications. The instructions are as below.
@@ -296,7 +296,312 @@ through <code class="docutils literal notranslate"><span class="pre">sctri.metri
 </pre></div>
 </div>
 <p>After this step, 3 * 4 = 12 columns will be added to the <code class="docutils literal notranslate"><span class="pre">sctri.adata.obs</span></code> dataframe, 3 means 3 resolutions, 4 means 4 metrics, those columns store the metrics
-we just calculated, click <a class="reference external" href="https://docs.google.com/spreadsheets/d/1tuaX09ZaYCWAPa4Nq9HQZDspW2lWaU4-/edit#gid=116886659">this</a> to have a look at the resultant data frame.</p>
+we just calculated, the first 10 rows are shown below.</p>
+<table class="colwidths-given docutils align-default" id="id3">
+<caption><span class="caption-text">After compute metrics</span><a class="headerlink" href="#id3" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+<col style="width: 4%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>n_genes_by_counts</p></th>
+<th class="head"><p>total_counts</p></th>
+<th class="head"><p>total_counts_mt</p></th>
+<th class="head"><p>pct_counts_mt</p></th>
+<th class="head"><p>n_genes</p></th>
+<th class="head"><p>n_counts</p></th>
+<th class="head"><p>sctri_rna_leiden_1</p></th>
+<th class="head"><p>sctri_rna_leiden_2</p></th>
+<th class="head"><p>sctri_rna_leiden_3</p></th>
+<th class="head"><p>doublet_scores</p></th>
+<th class="head"><p><a class="reference external" href="mailto:reassign&#37;&#52;&#48;sctri_rna_leiden_1">reassign<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf10&#37;&#52;&#48;sctri_rna_leiden_1">tfidf10<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:SCCAF&#37;&#52;&#48;sctri_rna_leiden_1">SCCAF<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:doublet&#37;&#52;&#48;sctri_rna_leiden_1">doublet<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf5&#37;&#52;&#48;sctri_rna_leiden_1">tfidf5<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:reassign&#37;&#52;&#48;sctri_rna_leiden_2">reassign<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf10&#37;&#52;&#48;sctri_rna_leiden_2">tfidf10<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:SCCAF&#37;&#52;&#48;sctri_rna_leiden_2">SCCAF<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:doublet&#37;&#52;&#48;sctri_rna_leiden_2">doublet<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf5&#37;&#52;&#48;sctri_rna_leiden_2">tfidf5<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:reassign&#37;&#52;&#48;sctri_rna_leiden_3">reassign<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf10&#37;&#52;&#48;sctri_rna_leiden_3">tfidf10<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:SCCAF&#37;&#52;&#48;sctri_rna_leiden_3">SCCAF<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:doublet&#37;&#52;&#48;sctri_rna_leiden_3">doublet<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf5&#37;&#52;&#48;sctri_rna_leiden_3">tfidf5<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>AAACCCAAGCGCCCAT-1</p></td>
+<td><p>1087</p></td>
+<td><p>2204.0</p></td>
+<td><p>52.0</p></td>
+<td><p>2.3593466</p></td>
+<td><p>1087</p></td>
+<td><p>2204.0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>20</p></td>
+<td><p>0.06075768406004289</p></td>
+<td><p>0.8950276243093923</p></td>
+<td><p>0.3439838075846785</p></td>
+<td><p>0.9251533742331288</p></td>
+<td><p>0.10092147725346746</p></td>
+<td><p>0.37130280304671465</p></td>
+<td><p>0.8042789223454834</p></td>
+<td><p>0.3507859300918892</p></td>
+<td><p>0.8890649762282092</p></td>
+<td><p>0.10148899088645824</p></td>
+<td><p>0.3805522921317833</p></td>
+<td><p>0.704225352112676</p></td>
+<td><p>0.4331249394858995</p></td>
+<td><p>0.616822429906542</p></td>
+<td><p>0.06823584435065695</p></td>
+<td><p>0.5248428314538921</p></td>
+</tr>
+<tr class="row-odd"><td><p>AAACCCAAGGTTCCGC-1</p></td>
+<td><p>4200</p></td>
+<td><p>20090.0</p></td>
+<td><p>1324.0</p></td>
+<td><p>6.5903435</p></td>
+<td><p>4200</p></td>
+<td><p>20090.0</p></td>
+<td><p>14</p></td>
+<td><p>18</p></td>
+<td><p>22</p></td>
+<td><p>0.032894736842105275</p></td>
+<td><p>0.8297872340425532</p></td>
+<td><p>0.8158574236335182</p></td>
+<td><p>0.8617021276595744</p></td>
+<td><p>0.06828310525665475</p></td>
+<td><p>0.8788859218463015</p></td>
+<td><p>0.9056603773584906</p></td>
+<td><p>0.8757826138745951</p></td>
+<td><p>0.9375</p></td>
+<td><p>0.0669894608659765</p></td>
+<td><p>1.0037564111504598</p></td>
+<td><p>0.9005847953216374</p></td>
+<td><p>0.8539603438702356</p></td>
+<td><p>0.8470588235294118</p></td>
+<td><p>0.0675555298114107</p></td>
+<td><p>0.9552786801551147</p></td>
+</tr>
+<tr class="row-even"><td><p>AAACCCACAGAGTTGG-1</p></td>
+<td><p>1836</p></td>
+<td><p>5884.0</p></td>
+<td><p>633.0</p></td>
+<td><p>10.757988</p></td>
+<td><p>1836</p></td>
+<td><p>5884.0</p></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>0.05390835579514825</p></td>
+<td><p>0.7060869565217391</p></td>
+<td><p>0.4181291163421069</p></td>
+<td><p>0.8104347826086956</p></td>
+<td><p>0.07300475660048267</p></td>
+<td><p>0.42582579367389656</p></td>
+<td><p>0.6565853658536586</p></td>
+<td><p>0.4078403118313299</p></td>
+<td><p>0.787109375</p></td>
+<td><p>0.07208010563020643</p></td>
+<td><p>0.4239485989320037</p></td>
+<td><p>0.6717791411042945</p></td>
+<td><p>0.42090114511950677</p></td>
+<td><p>0.7760736196319018</p></td>
+<td><p>0.06426933099136449</p></td>
+<td><p>0.4266449489575865</p></td>
+</tr>
+<tr class="row-odd"><td><p>AAACCCACAGGTATGG-1</p></td>
+<td><p>2216</p></td>
+<td><p>5530.0</p></td>
+<td><p>434.0</p></td>
+<td><p>7.848101</p></td>
+<td><p>2216</p></td>
+<td><p>5530.0</p></td>
+<td><p>7</p></td>
+<td><p>7</p></td>
+<td><p>5</p></td>
+<td><p>0.008906882591093117</p></td>
+<td><p>0.9783783783783784</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9820143884892086</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>0.9495495495495495</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9855595667870036</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>0.9207207207207208</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9820143884892086</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+</tr>
+<tr class="row-even"><td><p>AAACCCACATAGTCAC-1</p></td>
+<td><p>1615</p></td>
+<td><p>5106.0</p></td>
+<td><p>553.0</p></td>
+<td><p>10.830396</p></td>
+<td><p>1615</p></td>
+<td><p>5106.0</p></td>
+<td><p>4</p></td>
+<td><p>3</p></td>
+<td><p>0</p></td>
+<td><p>0.025075225677031094</p></td>
+<td><p>0.9898682877406282</p></td>
+<td><p>0.6648462514443869</p></td>
+<td><p>0.9817813765182186</p></td>
+<td><p>0.029651745213786315</p></td>
+<td><p>0.7176015036667331</p></td>
+<td><p>0.9916492693110647</p></td>
+<td><p>0.6692931115772808</p></td>
+<td><p>0.9770354906054279</p></td>
+<td><p>0.02911431201925055</p></td>
+<td><p>0.7193190390843421</p></td>
+<td><p>0.9414758269720102</p></td>
+<td><p>0.6523547740200044</p></td>
+<td><p>0.9567430025445293</p></td>
+<td><p>0.029681243164883617</p></td>
+<td><p>0.7248931329792404</p></td>
+</tr>
+<tr class="row-odd"><td><p>AAACCCACATCCAATG-1</p></td>
+<td><p>1800</p></td>
+<td><p>4572.0</p></td>
+<td><p>411.0</p></td>
+<td><p>8.989501</p></td>
+<td><p>1800</p></td>
+<td><p>4572.0</p></td>
+<td><p>7</p></td>
+<td><p>7</p></td>
+<td><p>5</p></td>
+<td><p>0.07363420427553445</p></td>
+<td><p>0.9783783783783784</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9820143884892086</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>0.9495495495495495</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9855595667870036</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>0.9207207207207208</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9820143884892086</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+</tr>
+<tr class="row-even"><td><p>AAACCCAGTGGCTACC-1</p></td>
+<td><p>1965</p></td>
+<td><p>6702.0</p></td>
+<td><p>424.0</p></td>
+<td><p>6.32647</p></td>
+<td><p>1965</p></td>
+<td><p>6702.0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>3</p></td>
+<td><p>0.06849315068493152</p></td>
+<td><p>0.8950276243093923</p></td>
+<td><p>0.3439838075846785</p></td>
+<td><p>0.9251533742331288</p></td>
+<td><p>0.10092147725346746</p></td>
+<td><p>0.37130280304671465</p></td>
+<td><p>0.8042789223454834</p></td>
+<td><p>0.3507859300918892</p></td>
+<td><p>0.8890649762282092</p></td>
+<td><p>0.10148899088645824</p></td>
+<td><p>0.3805522921317833</p></td>
+<td><p>0.790625</p></td>
+<td><p>0.3736026863699238</p></td>
+<td><p>0.64375</p></td>
+<td><p>0.10099172212080179</p></td>
+<td><p>0.40115765301328327</p></td>
+</tr>
+<tr class="row-odd"><td><p>AAACCCATCCCGAGAC-1</p></td>
+<td><p>1960</p></td>
+<td><p>7092.0</p></td>
+<td><p>545.0</p></td>
+<td><p>7.6847153</p></td>
+<td><p>1960</p></td>
+<td><p>7092.0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>3</p></td>
+<td><p>0.104390243902439</p></td>
+<td><p>0.8950276243093923</p></td>
+<td><p>0.3439838075846785</p></td>
+<td><p>0.9251533742331288</p></td>
+<td><p>0.10092147725346746</p></td>
+<td><p>0.37130280304671465</p></td>
+<td><p>0.8042789223454834</p></td>
+<td><p>0.3507859300918892</p></td>
+<td><p>0.8890649762282092</p></td>
+<td><p>0.10148899088645824</p></td>
+<td><p>0.3805522921317833</p></td>
+<td><p>0.790625</p></td>
+<td><p>0.3736026863699238</p></td>
+<td><p>0.64375</p></td>
+<td><p>0.10099172212080179</p></td>
+<td><p>0.40115765301328327</p></td>
+</tr>
+<tr class="row-even"><td><p>AAACCCATCTGGCCGA-1</p></td>
+<td><p>1695</p></td>
+<td><p>5370.0</p></td>
+<td><p>571.0</p></td>
+<td><p>10.633146</p></td>
+<td><p>1695</p></td>
+<td><p>5370.0</p></td>
+<td><p>8</p></td>
+<td><p>9</p></td>
+<td><p>9</p></td>
+<td><p>0.25563909774436094</p></td>
+<td><p>0.7735849056603774</p></td>
+<td><p>0.4140609851013919</p></td>
+<td><p>0.907563025210084</p></td>
+<td><p>0.13099806496107133</p></td>
+<td><p>0.49547402236082677</p></td>
+<td><p>0.7281553398058253</p></td>
+<td><p>0.46148281492953686</p></td>
+<td><p>0.8883495145631068</p></td>
+<td><p>0.1427853920941894</p></td>
+<td><p>0.5486776444570318</p></td>
+<td><p>0.767590618336887</p></td>
+<td><p>0.34400131931724975</p></td>
+<td><p>0.7435897435897436</p></td>
+<td><p>0.11643270856376918</p></td>
+<td><p>0.3644349082676911</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="step2-compute-shapley">
 <h5>Step2: compute_shapley<a class="headerlink" href="#step2-compute-shapley" title="Permalink to this headline">¶</a></h5>
@@ -311,8 +616,378 @@ three conflicting clusters). Then the program will assign the cell to the “bes
 </div>
 <p>After this step, 3 + 1 + 1 + 1 columns will be added to the <code class="docutils literal notranslate"><span class="pre">sctri.adata.obs</span></code>, they are 3 columns corresponding to the shapley value for each annotation, plus
 one column named ‘final_annotation’ storing which annotation is the winner for each cell, and column ‘raw’ contains raw clusters which are basically annotation
-name and cluster name but concatenated by <cite>&#64;</cite> symbol. Last added column is ‘prefix’, which is just a concatenation of original cluster and current raw cluster. <a class="reference external" href="https://docs.google.com/spreadsheets/d/19HgWRNdOjn087f_7OTrEf_84IU-fgCGE/edit#gid=431987812">Click
-to have a look at the data frame</a>.</p>
+name and cluster name but concatenated by <cite>&#64;</cite> symbol. Last added column is ‘prefix’, which is just a concatenation of original cluster and current raw cluster.</p>
+<table class="colwidths-given docutils align-default" id="id4">
+<caption><span class="caption-text">After compute shapley</span><a class="headerlink" href="#id4" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+<col style="width: 3%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>n_genes_by_counts</p></th>
+<th class="head"><p>total_counts</p></th>
+<th class="head"><p>total_counts_mt</p></th>
+<th class="head"><p>pct_counts_mt</p></th>
+<th class="head"><p>n_genes</p></th>
+<th class="head"><p>n_counts</p></th>
+<th class="head"><p>sctri_rna_leiden_1</p></th>
+<th class="head"><p>sctri_rna_leiden_2</p></th>
+<th class="head"><p>sctri_rna_leiden_3</p></th>
+<th class="head"><p>doublet_scores</p></th>
+<th class="head"><p><a class="reference external" href="mailto:reassign&#37;&#52;&#48;sctri_rna_leiden_1">reassign<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf10&#37;&#52;&#48;sctri_rna_leiden_1">tfidf10<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:SCCAF&#37;&#52;&#48;sctri_rna_leiden_1">SCCAF<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:doublet&#37;&#52;&#48;sctri_rna_leiden_1">doublet<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf5&#37;&#52;&#48;sctri_rna_leiden_1">tfidf5<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:reassign&#37;&#52;&#48;sctri_rna_leiden_2">reassign<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf10&#37;&#52;&#48;sctri_rna_leiden_2">tfidf10<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:SCCAF&#37;&#52;&#48;sctri_rna_leiden_2">SCCAF<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:doublet&#37;&#52;&#48;sctri_rna_leiden_2">doublet<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf5&#37;&#52;&#48;sctri_rna_leiden_2">tfidf5<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:reassign&#37;&#52;&#48;sctri_rna_leiden_3">reassign<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf10&#37;&#52;&#48;sctri_rna_leiden_3">tfidf10<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:SCCAF&#37;&#52;&#48;sctri_rna_leiden_3">SCCAF<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:doublet&#37;&#52;&#48;sctri_rna_leiden_3">doublet<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf5&#37;&#52;&#48;sctri_rna_leiden_3">tfidf5<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p>final_annotation</p></th>
+<th class="head"><p>sctri_rna_leiden_1_shapley</p></th>
+<th class="head"><p>sctri_rna_leiden_2_shapley</p></th>
+<th class="head"><p>sctri_rna_leiden_3_shapley</p></th>
+<th class="head"><p>raw</p></th>
+<th class="head"><p>prefixed</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>AAACCCAAGCGCCCAT-1</p></td>
+<td><p>1087</p></td>
+<td><p>2204.0</p></td>
+<td><p>52.0</p></td>
+<td><p>2.3593466</p></td>
+<td><p>1087</p></td>
+<td><p>2204.0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>20</p></td>
+<td><p>0.06075768406004289</p></td>
+<td><p>0.8937998772252916</p></td>
+<td><p>0.3439838075846785</p></td>
+<td><p>0.9251533742331288</p></td>
+<td><p>0.10092147725346746</p></td>
+<td><p>0.37130280304671465</p></td>
+<td><p>0.8050713153724247</p></td>
+<td><p>0.3507859300918892</p></td>
+<td><p>0.8890649762282092</p></td>
+<td><p>0.10148899088645824</p></td>
+<td><p>0.3805522921317833</p></td>
+<td><p>0.6995305164319249</p></td>
+<td><p>0.4331249394858995</p></td>
+<td><p>0.616822429906542</p></td>
+<td><p>0.06823584435065695</p></td>
+<td><p>0.5248428314538921</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>4.0</p></td>
+<td><p>1.3333333333333333</p></td>
+<td><p>3.333333333333333</p></td>
+<td><p>sctri_rna_leiden_1&#64;0</p></td>
+<td><p>sctri_rna_leiden_1&#64;0|sctri_rna_leiden_1&#64;0</p></td>
+</tr>
+<tr class="row-odd"><td><p>AAACCCAAGGTTCCGC-1</p></td>
+<td><p>4200</p></td>
+<td><p>20090.0</p></td>
+<td><p>1324.0</p></td>
+<td><p>6.5903435</p></td>
+<td><p>4200</p></td>
+<td><p>20090.0</p></td>
+<td><p>14</p></td>
+<td><p>18</p></td>
+<td><p>22</p></td>
+<td><p>0.032894736842105275</p></td>
+<td><p>0.8297872340425532</p></td>
+<td><p>0.8158574236335182</p></td>
+<td><p>0.8617021276595744</p></td>
+<td><p>0.06828310525665475</p></td>
+<td><p>0.8788859218463015</p></td>
+<td><p>0.9056603773584906</p></td>
+<td><p>0.8757826138745951</p></td>
+<td><p>0.9375</p></td>
+<td><p>0.0669894608659765</p></td>
+<td><p>1.0037564111504598</p></td>
+<td><p>0.9005847953216374</p></td>
+<td><p>0.8539603438702356</p></td>
+<td><p>0.8470588235294118</p></td>
+<td><p>0.0675555298114107</p></td>
+<td><p>0.9552786801551147</p></td>
+<td><p>sctri_rna_leiden_2</p></td>
+<td><p>0.3333333333333333</p></td>
+<td><p>6.666666666666666</p></td>
+<td><p>2.333333333333333</p></td>
+<td><p><a class="reference external" href="mailto:sctri_rna_leiden_2&#37;&#52;&#48;18">sctri_rna_leiden_2<span>&#64;</span>18</a></p></td>
+<td><p>sctri_rna_leiden_1&#64;14|sctri_rna_leiden_2&#64;18</p></td>
+</tr>
+<tr class="row-even"><td><p>AAACCCACAGAGTTGG-1</p></td>
+<td><p>1836</p></td>
+<td><p>5884.0</p></td>
+<td><p>633.0</p></td>
+<td><p>10.757988</p></td>
+<td><p>1836</p></td>
+<td><p>5884.0</p></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>0.05390835579514825</p></td>
+<td><p>0.7095652173913043</p></td>
+<td><p>0.4181291163421069</p></td>
+<td><p>0.8104347826086956</p></td>
+<td><p>0.07300475660048267</p></td>
+<td><p>0.42582579367389656</p></td>
+<td><p>0.6780487804878049</p></td>
+<td><p>0.4078403118313299</p></td>
+<td><p>0.787109375</p></td>
+<td><p>0.07208010563020643</p></td>
+<td><p>0.4239485989320037</p></td>
+<td><p>0.6809815950920245</p></td>
+<td><p>0.42090114511950677</p></td>
+<td><p>0.7760736196319018</p></td>
+<td><p>0.06426933099136449</p></td>
+<td><p>0.4266449489575865</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>6.666666666666666</p></td>
+<td><p>2.333333333333333</p></td>
+<td><p>3.6666666666666665</p></td>
+<td><p>sctri_rna_leiden_1&#64;2</p></td>
+<td><p>sctri_rna_leiden_1&#64;2|sctri_rna_leiden_1&#64;2</p></td>
+</tr>
+<tr class="row-odd"><td><p>AAACCCACAGGTATGG-1</p></td>
+<td><p>2216</p></td>
+<td><p>5530.0</p></td>
+<td><p>434.0</p></td>
+<td><p>7.848101</p></td>
+<td><p>2216</p></td>
+<td><p>5530.0</p></td>
+<td><p>7</p></td>
+<td><p>7</p></td>
+<td><p>5</p></td>
+<td><p>0.008906882591093117</p></td>
+<td><p>0.9783783783783784</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9820143884892086</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>0.9477477477477477</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9855595667870036</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>0.918918918918919</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9820143884892086</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>6.666666666666666</p></td>
+<td><p>5.333333333333333</p></td>
+<td><p>5.0</p></td>
+<td><p>sctri_rna_leiden_1&#64;7</p></td>
+<td><p>sctri_rna_leiden_1&#64;7|sctri_rna_leiden_1&#64;7</p></td>
+</tr>
+<tr class="row-even"><td><p>AAACCCACATAGTCAC-1</p></td>
+<td><p>1615</p></td>
+<td><p>5106.0</p></td>
+<td><p>553.0</p></td>
+<td><p>10.830396</p></td>
+<td><p>1615</p></td>
+<td><p>5106.0</p></td>
+<td><p>4</p></td>
+<td><p>3</p></td>
+<td><p>0</p></td>
+<td><p>0.025075225677031094</p></td>
+<td><p>0.9898682877406282</p></td>
+<td><p>0.6648462514443869</p></td>
+<td><p>0.9817813765182186</p></td>
+<td><p>0.029651745213786315</p></td>
+<td><p>0.7176015036667331</p></td>
+<td><p>0.9916492693110647</p></td>
+<td><p>0.6692931115772808</p></td>
+<td><p>0.9770354906054279</p></td>
+<td><p>0.02911431201925055</p></td>
+<td><p>0.7193190390843421</p></td>
+<td><p>0.9402035623409669</p></td>
+<td><p>0.6523547740200044</p></td>
+<td><p>0.9567430025445293</p></td>
+<td><p>0.029681243164883617</p></td>
+<td><p>0.7248931329792404</p></td>
+<td><p>sctri_rna_leiden_2</p></td>
+<td><p>6.666666666666666</p></td>
+<td><p>6.666666666666666</p></td>
+<td><p>1.6666666666666665</p></td>
+<td><p>sctri_rna_leiden_2&#64;3</p></td>
+<td><p>sctri_rna_leiden_1&#64;4|sctri_rna_leiden_2&#64;3</p></td>
+</tr>
+<tr class="row-odd"><td><p>AAACCCACATCCAATG-1</p></td>
+<td><p>1800</p></td>
+<td><p>4572.0</p></td>
+<td><p>411.0</p></td>
+<td><p>8.989501</p></td>
+<td><p>1800</p></td>
+<td><p>4572.0</p></td>
+<td><p>7</p></td>
+<td><p>7</p></td>
+<td><p>5</p></td>
+<td><p>0.07363420427553445</p></td>
+<td><p>0.9783783783783784</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9820143884892086</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>0.9477477477477477</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9855595667870036</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>0.918918918918919</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9820143884892086</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>6.666666666666666</p></td>
+<td><p>5.333333333333333</p></td>
+<td><p>5.0</p></td>
+<td><p>sctri_rna_leiden_1&#64;7</p></td>
+<td><p>sctri_rna_leiden_1&#64;7|sctri_rna_leiden_1&#64;7</p></td>
+</tr>
+<tr class="row-even"><td><p>AAACCCAGTGGCTACC-1</p></td>
+<td><p>1965</p></td>
+<td><p>6702.0</p></td>
+<td><p>424.0</p></td>
+<td><p>6.32647</p></td>
+<td><p>1965</p></td>
+<td><p>6702.0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>3</p></td>
+<td><p>0.06849315068493152</p></td>
+<td><p>0.8937998772252916</p></td>
+<td><p>0.3439838075846785</p></td>
+<td><p>0.9251533742331288</p></td>
+<td><p>0.10092147725346746</p></td>
+<td><p>0.37130280304671465</p></td>
+<td><p>0.8050713153724247</p></td>
+<td><p>0.3507859300918892</p></td>
+<td><p>0.8890649762282092</p></td>
+<td><p>0.10148899088645824</p></td>
+<td><p>0.3805522921317833</p></td>
+<td><p>0.7859375</p></td>
+<td><p>0.3736026863699238</p></td>
+<td><p>0.64375</p></td>
+<td><p>0.10099172212080179</p></td>
+<td><p>0.40115765301328327</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>4.0</p></td>
+<td><p>1.3333333333333333</p></td>
+<td><p>3.333333333333333</p></td>
+<td><p>sctri_rna_leiden_1&#64;0</p></td>
+<td><p>sctri_rna_leiden_1&#64;0|sctri_rna_leiden_1&#64;0</p></td>
+</tr>
+<tr class="row-odd"><td><p>AAACCCATCCCGAGAC-1</p></td>
+<td><p>1960</p></td>
+<td><p>7092.0</p></td>
+<td><p>545.0</p></td>
+<td><p>7.6847153</p></td>
+<td><p>1960</p></td>
+<td><p>7092.0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>3</p></td>
+<td><p>0.104390243902439</p></td>
+<td><p>0.8937998772252916</p></td>
+<td><p>0.3439838075846785</p></td>
+<td><p>0.9251533742331288</p></td>
+<td><p>0.10092147725346746</p></td>
+<td><p>0.37130280304671465</p></td>
+<td><p>0.8050713153724247</p></td>
+<td><p>0.3507859300918892</p></td>
+<td><p>0.8890649762282092</p></td>
+<td><p>0.10148899088645824</p></td>
+<td><p>0.3805522921317833</p></td>
+<td><p>0.7859375</p></td>
+<td><p>0.3736026863699238</p></td>
+<td><p>0.64375</p></td>
+<td><p>0.10099172212080179</p></td>
+<td><p>0.40115765301328327</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>4.0</p></td>
+<td><p>1.3333333333333333</p></td>
+<td><p>3.333333333333333</p></td>
+<td><p>sctri_rna_leiden_1&#64;0</p></td>
+<td><p>sctri_rna_leiden_1&#64;0|sctri_rna_leiden_1&#64;0</p></td>
+</tr>
+<tr class="row-even"><td><p>AAACCCATCTGGCCGA-1</p></td>
+<td><p>1695</p></td>
+<td><p>5370.0</p></td>
+<td><p>571.0</p></td>
+<td><p>10.633146</p></td>
+<td><p>1695</p></td>
+<td><p>5370.0</p></td>
+<td><p>8</p></td>
+<td><p>9</p></td>
+<td><p>9</p></td>
+<td><p>0.25563909774436094</p></td>
+<td><p>0.7672955974842768</p></td>
+<td><p>0.4140609851013919</p></td>
+<td><p>0.907563025210084</p></td>
+<td><p>0.13099806496107133</p></td>
+<td><p>0.49547402236082677</p></td>
+<td><p>0.7330097087378641</p></td>
+<td><p>0.46148281492953686</p></td>
+<td><p>0.8883495145631068</p></td>
+<td><p>0.1427853920941894</p></td>
+<td><p>0.5486776444570318</p></td>
+<td><p>0.7633262260127932</p></td>
+<td><p>0.34400131931724975</p></td>
+<td><p>0.7435897435897436</p></td>
+<td><p>0.11643270856376918</p></td>
+<td><p>0.3644349082676911</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>4.0</p></td>
+<td><p>3.6666666666666665</p></td>
+<td><p>1.6666666666666665</p></td>
+<td><p>sctri_rna_leiden_1&#64;8</p></td>
+<td><p>sctri_rna_leiden_1&#64;8|sctri_rna_leiden_1&#64;8</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="step3-prune-result">
 <h5>Step3: prune_result<a class="headerlink" href="#step3-prune-result" title="Permalink to this headline">¶</a></h5>
@@ -324,6 +999,521 @@ unstable invalid clusters will be reassigned to its nearest neightbor’s cluste
 <span class="n">sctri</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="s1">&#39;break_point_after_prune.p&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>A column named “pruned” will be added, also “confidence” column stores the confidence the program hold to call it out.</p>
+<table class="colwidths-given docutils align-default" id="id5">
+<caption><span class="caption-text">After prune result</span><a class="headerlink" href="#id5" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+<col style="width: 2%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>n_genes_by_counts</p></th>
+<th class="head"><p>total_counts</p></th>
+<th class="head"><p>total_counts_mt</p></th>
+<th class="head"><p>pct_counts_mt</p></th>
+<th class="head"><p>n_genes</p></th>
+<th class="head"><p>n_counts</p></th>
+<th class="head"><p>sctri_rna_leiden_1</p></th>
+<th class="head"><p>sctri_rna_leiden_2</p></th>
+<th class="head"><p>sctri_rna_leiden_3</p></th>
+<th class="head"><p>doublet_scores</p></th>
+<th class="head"><p><a class="reference external" href="mailto:reassign&#37;&#52;&#48;sctri_rna_leiden_1">reassign<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf10&#37;&#52;&#48;sctri_rna_leiden_1">tfidf10<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:SCCAF&#37;&#52;&#48;sctri_rna_leiden_1">SCCAF<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:doublet&#37;&#52;&#48;sctri_rna_leiden_1">doublet<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf5&#37;&#52;&#48;sctri_rna_leiden_1">tfidf5<span>&#64;</span>sctri_rna_leiden_1</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:reassign&#37;&#52;&#48;sctri_rna_leiden_2">reassign<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf10&#37;&#52;&#48;sctri_rna_leiden_2">tfidf10<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:SCCAF&#37;&#52;&#48;sctri_rna_leiden_2">SCCAF<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:doublet&#37;&#52;&#48;sctri_rna_leiden_2">doublet<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf5&#37;&#52;&#48;sctri_rna_leiden_2">tfidf5<span>&#64;</span>sctri_rna_leiden_2</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:reassign&#37;&#52;&#48;sctri_rna_leiden_3">reassign<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf10&#37;&#52;&#48;sctri_rna_leiden_3">tfidf10<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:SCCAF&#37;&#52;&#48;sctri_rna_leiden_3">SCCAF<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:doublet&#37;&#52;&#48;sctri_rna_leiden_3">doublet<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf5&#37;&#52;&#48;sctri_rna_leiden_3">tfidf5<span>&#64;</span>sctri_rna_leiden_3</a></p></th>
+<th class="head"><p>final_annotation</p></th>
+<th class="head"><p>sctri_rna_leiden_1_shapley</p></th>
+<th class="head"><p>sctri_rna_leiden_2_shapley</p></th>
+<th class="head"><p>sctri_rna_leiden_3_shapley</p></th>
+<th class="head"><p>raw</p></th>
+<th class="head"><p>prefixed</p></th>
+<th class="head"><p><a class="reference external" href="mailto:reassign&#37;&#52;&#48;raw">reassign<span>&#64;</span>raw</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf10&#37;&#52;&#48;raw">tfidf10<span>&#64;</span>raw</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:SCCAF&#37;&#52;&#48;raw">SCCAF<span>&#64;</span>raw</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:doublet&#37;&#52;&#48;raw">doublet<span>&#64;</span>raw</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf5&#37;&#52;&#48;raw">tfidf5<span>&#64;</span>raw</a></p></th>
+<th class="head"><p>pruned</p></th>
+<th class="head"><p>confidence</p></th>
+<th class="head"><p>ori</p></th>
+<th class="head"><p><a class="reference external" href="mailto:reassign&#37;&#52;&#48;pruned">reassign<span>&#64;</span>pruned</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf10&#37;&#52;&#48;pruned">tfidf10<span>&#64;</span>pruned</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:SCCAF&#37;&#52;&#48;pruned">SCCAF<span>&#64;</span>pruned</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:doublet&#37;&#52;&#48;pruned">doublet<span>&#64;</span>pruned</a></p></th>
+<th class="head"><p><a class="reference external" href="mailto:tfidf5&#37;&#52;&#48;pruned">tfidf5<span>&#64;</span>pruned</a></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>AAACCCAAGCGCCCAT-1</p></td>
+<td><p>1087</p></td>
+<td><p>2204.0</p></td>
+<td><p>52.0</p></td>
+<td><p>2.3593466</p></td>
+<td><p>1087</p></td>
+<td><p>2204.0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>20</p></td>
+<td><p>0.06075768406004289</p></td>
+<td><p>0.8937998772252916</p></td>
+<td><p>0.3439838075846785</p></td>
+<td><p>0.9251533742331288</p></td>
+<td><p>0.10092147725346746</p></td>
+<td><p>0.37130280304671465</p></td>
+<td><p>0.8050713153724247</p></td>
+<td><p>0.3507859300918892</p></td>
+<td><p>0.8890649762282092</p></td>
+<td><p>0.10148899088645824</p></td>
+<td><p>0.3805522921317833</p></td>
+<td><p>0.6995305164319249</p></td>
+<td><p>0.4331249394858995</p></td>
+<td><p>0.616822429906542</p></td>
+<td><p>0.06823584435065695</p></td>
+<td><p>0.5248428314538921</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>4.0</p></td>
+<td><p>1.3333333333333333</p></td>
+<td><p>3.333333333333333</p></td>
+<td><p>sctri_rna_leiden_1&#64;0</p></td>
+<td><p>sctri_rna_leiden_1&#64;0|sctri_rna_leiden_1&#64;0</p></td>
+<td><p>0.6856508875739645</p></td>
+<td><p>0.3422339406894759</p></td>
+<td><p>0.8668639053254438</p></td>
+<td><p>0.09982013932055393</p></td>
+<td><p>0.37524819649429547</p></td>
+<td><p>sctri_rna_leiden_1&#64;0</p></td>
+<td><p>0.8299570288520565</p></td>
+<td><p>0</p></td>
+<td><p>0.7318681318681318</p></td>
+<td><p>0.34087432957319</p></td>
+<td><p>0.890190336749634</p></td>
+<td><p>0.09965020294622279</p></td>
+<td><p>0.372858462455373</p></td>
+</tr>
+<tr class="row-odd"><td><p>AAACCCAAGGTTCCGC-1</p></td>
+<td><p>4200</p></td>
+<td><p>20090.0</p></td>
+<td><p>1324.0</p></td>
+<td><p>6.5903435</p></td>
+<td><p>4200</p></td>
+<td><p>20090.0</p></td>
+<td><p>14</p></td>
+<td><p>18</p></td>
+<td><p>22</p></td>
+<td><p>0.032894736842105275</p></td>
+<td><p>0.8297872340425532</p></td>
+<td><p>0.8158574236335182</p></td>
+<td><p>0.8617021276595744</p></td>
+<td><p>0.06828310525665475</p></td>
+<td><p>0.8788859218463015</p></td>
+<td><p>0.9056603773584906</p></td>
+<td><p>0.8757826138745951</p></td>
+<td><p>0.9375</p></td>
+<td><p>0.0669894608659765</p></td>
+<td><p>1.0037564111504598</p></td>
+<td><p>0.9005847953216374</p></td>
+<td><p>0.8539603438702356</p></td>
+<td><p>0.8470588235294118</p></td>
+<td><p>0.0675555298114107</p></td>
+<td><p>0.9552786801551147</p></td>
+<td><p>sctri_rna_leiden_2</p></td>
+<td><p>0.3333333333333333</p></td>
+<td><p>6.666666666666666</p></td>
+<td><p>2.333333333333333</p></td>
+<td><p><a class="reference external" href="mailto:sctri_rna_leiden_2&#37;&#52;&#48;18">sctri_rna_leiden_2<span>&#64;</span>18</a></p></td>
+<td><p>sctri_rna_leiden_1&#64;14|sctri_rna_leiden_2&#64;18</p></td>
+<td><p>0.8050314465408805</p></td>
+<td><p>0.8767835124228538</p></td>
+<td><p>0.9625</p></td>
+<td><p>0.0669894608659765</p></td>
+<td><p>1.0036722009000825</p></td>
+<td><p><a class="reference external" href="mailto:sctri_rna_leiden_2&#37;&#52;&#48;18">sctri_rna_leiden_2<span>&#64;</span>18</a></p></td>
+<td><p>1.0</p></td>
+<td><p>1</p></td>
+<td><p>0.9259259259259259</p></td>
+<td><p>0.8715118012431851</p></td>
+<td><p>0.9382716049382716</p></td>
+<td><p>0.06659199654812879</p></td>
+<td><p>0.9851686771624536</p></td>
+</tr>
+<tr class="row-even"><td><p>AAACCCACAGAGTTGG-1</p></td>
+<td><p>1836</p></td>
+<td><p>5884.0</p></td>
+<td><p>633.0</p></td>
+<td><p>10.757988</p></td>
+<td><p>1836</p></td>
+<td><p>5884.0</p></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>2</p></td>
+<td><p>0.05390835579514825</p></td>
+<td><p>0.7095652173913043</p></td>
+<td><p>0.4181291163421069</p></td>
+<td><p>0.8104347826086956</p></td>
+<td><p>0.07300475660048267</p></td>
+<td><p>0.42582579367389656</p></td>
+<td><p>0.6780487804878049</p></td>
+<td><p>0.4078403118313299</p></td>
+<td><p>0.787109375</p></td>
+<td><p>0.07208010563020643</p></td>
+<td><p>0.4239485989320037</p></td>
+<td><p>0.6809815950920245</p></td>
+<td><p>0.42090114511950677</p></td>
+<td><p>0.7760736196319018</p></td>
+<td><p>0.06426933099136449</p></td>
+<td><p>0.4266449489575865</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>6.666666666666666</p></td>
+<td><p>2.333333333333333</p></td>
+<td><p>3.6666666666666665</p></td>
+<td><p>sctri_rna_leiden_1&#64;2</p></td>
+<td><p>sctri_rna_leiden_1&#64;2|sctri_rna_leiden_1&#64;2</p></td>
+<td><p>0.6542338709677419</p></td>
+<td><p>0.40788362684536184</p></td>
+<td><p>0.7701612903225806</p></td>
+<td><p>0.07158873082273735</p></td>
+<td><p>0.4237630150366414</p></td>
+<td><p>sctri_rna_leiden_1&#64;2</p></td>
+<td><p>0.8626086956521739</p></td>
+<td><p>2</p></td>
+<td><p>0.6700100300902708</p></td>
+<td><p>0.4079180019195594</p></td>
+<td><p>0.7831325301204819</p></td>
+<td><p>0.07165279317880446</p></td>
+<td><p>0.42336364967356116</p></td>
+</tr>
+<tr class="row-odd"><td><p>AAACCCACAGGTATGG-1</p></td>
+<td><p>2216</p></td>
+<td><p>5530.0</p></td>
+<td><p>434.0</p></td>
+<td><p>7.848101</p></td>
+<td><p>2216</p></td>
+<td><p>5530.0</p></td>
+<td><p>7</p></td>
+<td><p>7</p></td>
+<td><p>5</p></td>
+<td><p>0.008906882591093117</p></td>
+<td><p>0.9783783783783784</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9820143884892086</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>0.9477477477477477</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9855595667870036</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>0.918918918918919</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9820143884892086</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>6.666666666666666</p></td>
+<td><p>5.333333333333333</p></td>
+<td><p>5.0</p></td>
+<td><p>sctri_rna_leiden_1&#64;7</p></td>
+<td><p>sctri_rna_leiden_1&#64;7|sctri_rna_leiden_1&#64;7</p></td>
+<td><p>0.9153153153153153</p></td>
+<td><p>0.7867280231606432</p></td>
+<td><p>0.9748201438848921</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8770345847482843</p></td>
+<td><p>sctri_rna_leiden_1&#64;7</p></td>
+<td><p>1.0</p></td>
+<td><p>3</p></td>
+<td><p>0.9117117117117117</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9819494584837545</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+</tr>
+<tr class="row-even"><td><p>AAACCCACATAGTCAC-1</p></td>
+<td><p>1615</p></td>
+<td><p>5106.0</p></td>
+<td><p>553.0</p></td>
+<td><p>10.830396</p></td>
+<td><p>1615</p></td>
+<td><p>5106.0</p></td>
+<td><p>4</p></td>
+<td><p>3</p></td>
+<td><p>0</p></td>
+<td><p>0.025075225677031094</p></td>
+<td><p>0.9898682877406282</p></td>
+<td><p>0.6648462514443869</p></td>
+<td><p>0.9817813765182186</p></td>
+<td><p>0.029651745213786315</p></td>
+<td><p>0.7176015036667331</p></td>
+<td><p>0.9916492693110647</p></td>
+<td><p>0.6692931115772808</p></td>
+<td><p>0.9770354906054279</p></td>
+<td><p>0.02911431201925055</p></td>
+<td><p>0.7193190390843421</p></td>
+<td><p>0.9402035623409669</p></td>
+<td><p>0.6523547740200044</p></td>
+<td><p>0.9567430025445293</p></td>
+<td><p>0.029681243164883617</p></td>
+<td><p>0.7248931329792404</p></td>
+<td><p>sctri_rna_leiden_2</p></td>
+<td><p>6.666666666666666</p></td>
+<td><p>6.666666666666666</p></td>
+<td><p>1.6666666666666665</p></td>
+<td><p>sctri_rna_leiden_2&#64;3</p></td>
+<td><p>sctri_rna_leiden_1&#64;4|sctri_rna_leiden_2&#64;3</p></td>
+<td><p>0.9102296450939458</p></td>
+<td><p>0.6694248039875961</p></td>
+<td><p>0.9874739039665971</p></td>
+<td><p>0.02911431201925055</p></td>
+<td><p>0.7191829641398122</p></td>
+<td><p>sctri_rna_leiden_2&#64;3</p></td>
+<td><p>1.0</p></td>
+<td><p>4</p></td>
+<td><p>0.9898682877406282</p></td>
+<td><p>0.6648462514443869</p></td>
+<td><p>0.9837728194726166</p></td>
+<td><p>0.029651745213786315</p></td>
+<td><p>0.7176015036667331</p></td>
+</tr>
+<tr class="row-odd"><td><p>AAACCCACATCCAATG-1</p></td>
+<td><p>1800</p></td>
+<td><p>4572.0</p></td>
+<td><p>411.0</p></td>
+<td><p>8.989501</p></td>
+<td><p>1800</p></td>
+<td><p>4572.0</p></td>
+<td><p>7</p></td>
+<td><p>7</p></td>
+<td><p>5</p></td>
+<td><p>0.07363420427553445</p></td>
+<td><p>0.9783783783783784</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9820143884892086</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>0.9477477477477477</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9855595667870036</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>0.918918918918919</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9820143884892086</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>6.666666666666666</p></td>
+<td><p>5.333333333333333</p></td>
+<td><p>5.0</p></td>
+<td><p>sctri_rna_leiden_1&#64;7</p></td>
+<td><p>sctri_rna_leiden_1&#64;7|sctri_rna_leiden_1&#64;7</p></td>
+<td><p>0.9153153153153153</p></td>
+<td><p>0.7867280231606432</p></td>
+<td><p>0.9748201438848921</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8770345847482843</p></td>
+<td><p>sctri_rna_leiden_1&#64;7</p></td>
+<td><p>1.0</p></td>
+<td><p>5</p></td>
+<td><p>0.9117117117117117</p></td>
+<td><p>0.7868703149865569</p></td>
+<td><p>0.9819494584837545</p></td>
+<td><p>0.034403601185809866</p></td>
+<td><p>0.8771728968728391</p></td>
+</tr>
+<tr class="row-even"><td><p>AAACCCAGTGGCTACC-1</p></td>
+<td><p>1965</p></td>
+<td><p>6702.0</p></td>
+<td><p>424.0</p></td>
+<td><p>6.32647</p></td>
+<td><p>1965</p></td>
+<td><p>6702.0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>3</p></td>
+<td><p>0.06849315068493152</p></td>
+<td><p>0.8937998772252916</p></td>
+<td><p>0.3439838075846785</p></td>
+<td><p>0.9251533742331288</p></td>
+<td><p>0.10092147725346746</p></td>
+<td><p>0.37130280304671465</p></td>
+<td><p>0.8050713153724247</p></td>
+<td><p>0.3507859300918892</p></td>
+<td><p>0.8890649762282092</p></td>
+<td><p>0.10148899088645824</p></td>
+<td><p>0.3805522921317833</p></td>
+<td><p>0.7859375</p></td>
+<td><p>0.3736026863699238</p></td>
+<td><p>0.64375</p></td>
+<td><p>0.10099172212080179</p></td>
+<td><p>0.40115765301328327</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>4.0</p></td>
+<td><p>1.3333333333333333</p></td>
+<td><p>3.333333333333333</p></td>
+<td><p>sctri_rna_leiden_1&#64;0</p></td>
+<td><p>sctri_rna_leiden_1&#64;0|sctri_rna_leiden_1&#64;0</p></td>
+<td><p>0.6856508875739645</p></td>
+<td><p>0.3422339406894759</p></td>
+<td><p>0.8668639053254438</p></td>
+<td><p>0.09982013932055393</p></td>
+<td><p>0.37524819649429547</p></td>
+<td><p>sctri_rna_leiden_1&#64;0</p></td>
+<td><p>0.8299570288520565</p></td>
+<td><p>6</p></td>
+<td><p>0.7318681318681318</p></td>
+<td><p>0.34087432957319</p></td>
+<td><p>0.890190336749634</p></td>
+<td><p>0.09965020294622279</p></td>
+<td><p>0.372858462455373</p></td>
+</tr>
+<tr class="row-odd"><td><p>AAACCCATCCCGAGAC-1</p></td>
+<td><p>1960</p></td>
+<td><p>7092.0</p></td>
+<td><p>545.0</p></td>
+<td><p>7.6847153</p></td>
+<td><p>1960</p></td>
+<td><p>7092.0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>3</p></td>
+<td><p>0.104390243902439</p></td>
+<td><p>0.8937998772252916</p></td>
+<td><p>0.3439838075846785</p></td>
+<td><p>0.9251533742331288</p></td>
+<td><p>0.10092147725346746</p></td>
+<td><p>0.37130280304671465</p></td>
+<td><p>0.8050713153724247</p></td>
+<td><p>0.3507859300918892</p></td>
+<td><p>0.8890649762282092</p></td>
+<td><p>0.10148899088645824</p></td>
+<td><p>0.3805522921317833</p></td>
+<td><p>0.7859375</p></td>
+<td><p>0.3736026863699238</p></td>
+<td><p>0.64375</p></td>
+<td><p>0.10099172212080179</p></td>
+<td><p>0.40115765301328327</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>4.0</p></td>
+<td><p>1.3333333333333333</p></td>
+<td><p>3.333333333333333</p></td>
+<td><p>sctri_rna_leiden_1&#64;0</p></td>
+<td><p>sctri_rna_leiden_1&#64;0|sctri_rna_leiden_1&#64;0</p></td>
+<td><p>0.6856508875739645</p></td>
+<td><p>0.3422339406894759</p></td>
+<td><p>0.8668639053254438</p></td>
+<td><p>0.09982013932055393</p></td>
+<td><p>0.37524819649429547</p></td>
+<td><p>sctri_rna_leiden_1&#64;0</p></td>
+<td><p>0.8299570288520565</p></td>
+<td><p>7</p></td>
+<td><p>0.7318681318681318</p></td>
+<td><p>0.34087432957319</p></td>
+<td><p>0.890190336749634</p></td>
+<td><p>0.09965020294622279</p></td>
+<td><p>0.372858462455373</p></td>
+</tr>
+<tr class="row-even"><td><p>AAACCCATCTGGCCGA-1</p></td>
+<td><p>1695</p></td>
+<td><p>5370.0</p></td>
+<td><p>571.0</p></td>
+<td><p>10.633146</p></td>
+<td><p>1695</p></td>
+<td><p>5370.0</p></td>
+<td><p>8</p></td>
+<td><p>9</p></td>
+<td><p>9</p></td>
+<td><p>0.25563909774436094</p></td>
+<td><p>0.7672955974842768</p></td>
+<td><p>0.4140609851013919</p></td>
+<td><p>0.907563025210084</p></td>
+<td><p>0.13099806496107133</p></td>
+<td><p>0.49547402236082677</p></td>
+<td><p>0.7330097087378641</p></td>
+<td><p>0.46148281492953686</p></td>
+<td><p>0.8883495145631068</p></td>
+<td><p>0.1427853920941894</p></td>
+<td><p>0.5486776444570318</p></td>
+<td><p>0.7633262260127932</p></td>
+<td><p>0.34400131931724975</p></td>
+<td><p>0.7435897435897436</p></td>
+<td><p>0.11643270856376918</p></td>
+<td><p>0.3644349082676911</p></td>
+<td><p>sctri_rna_leiden_1</p></td>
+<td><p>4.0</p></td>
+<td><p>3.6666666666666665</p></td>
+<td><p>1.6666666666666665</p></td>
+<td><p>sctri_rna_leiden_1&#64;8</p></td>
+<td><p>sctri_rna_leiden_1&#64;8|sctri_rna_leiden_2&#64;9</p></td>
+<td><p>0.8125</p></td>
+<td><p>0.26366270719185436</p></td>
+<td><p>0.5</p></td>
+<td><p>0.07300331728524727</p></td>
+<td><p>0.3589422599550743</p></td>
+<td><p>sctri_rna_leiden_2&#64;9</p></td>
+<td><p>0.13417190775681342</p></td>
+<td><p>8</p></td>
+<td><p>0.8958333333333334</p></td>
+<td><p>0.3804105780430053</p></td>
+<td><p>0.5625</p></td>
+<td><p>0.1860030766024984</p></td>
+<td><p>0.4289774942532307</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="step4-building-the-viewer">
 <h5>Step4: building the viewer<a class="headerlink" href="#step4-building-the-viewer" title="Permalink to this headline">¶</a></h5>
@@ -455,9 +1645,7 @@ can help to make the decision.</p>
 <div class="section" id="id1">
 <h3>Running scTriangulate<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>Just use <code class="docutils literal notranslate"><span class="pre">lazy_run()</span></code> function, I have broken it down in the single_modality section:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata_combine</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;combined_rna_adt.h5ad&#39;</span><span class="p">)</span>
-<span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;output&#39;</span><span class="p">,</span><span class="n">adata</span><span class="o">=</span><span class="n">adata_combine</span><span class="p">,</span><span class="n">add_metrics</span><span class="o">=</span><span class="p">{},</span><span class="n">predict_doublet</span><span class="o">=</span><span class="s1">&#39;precomputed&#39;</span><span class="p">,</span>
-                      <span class="n">query</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_adt_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_adt_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_adt_leiden_3&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_3&#39;</span><span class="p">])</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;output&#39;</span><span class="p">,</span><span class="n">adata</span><span class="o">=</span><span class="n">adata_combine</span><span class="p">,</span><span class="n">add_metrics</span><span class="o">=</span><span class="p">{},</span><span class="n">query</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_adt_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_adt_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_adt_leiden_3&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_3&#39;</span><span class="p">])</span>
 <span class="n">sctri</span><span class="o">.</span><span class="n">lazy_run</span><span class="p">()</span>
 </pre></div>
 </div>

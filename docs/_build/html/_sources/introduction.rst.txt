@@ -35,7 +35,7 @@ Inputs and Outputs
 scTriangulate is designed for h5ad file, it works seemlessly with popular scanpy packages if you are familiar with it. In addtion to that, we offer 
 a myriad of preprocessing convenient functions to ease the file conversion process, currently we accept following format:
 
-    * **Anndata** (.h5ad), the annotations are the columns in adata.obs
+    * **Anndata** (.h5 & .h5ad), the annotations are the columns in adata.obs
     * **mtx**, annotations information should be supplied as addtional txt file (barcode -> label)
     * **dense matrix**, txt expression matrix, annotations should be aupplied as addtional txt file.
 
