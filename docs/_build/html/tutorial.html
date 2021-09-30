@@ -204,7 +204,7 @@ annotations, and automatically mix-and-match cluster boundary from different res
 <span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="o">*</span>
 </pre></div>
 </div>
-<p>The h5 file can be downloaded from <a class="reference external" href="https://drive.google.com/file/d/1_s-a621ADH5Y3cHW32WusFyoOo5cKs_b/view?usp=sharing">here</a>. We used scanpy and scTriangulate
+<p>The h5 file can be downloaded from <a class="reference external" href="http://altanalyze.org/scTriangulate/scRNASeq/pbmc_10k_v3.h5">here</a>. We used scanpy and scTriangulate
 preprocessing module to conduct basic QC filtering and single cell pipeline:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read_10x_h5</span><span class="p">(</span><span class="s1">&#39;./pbmc_10k_v3_filtered_feature_bc_matrix.h5&#39;</span><span class="p">)</span>
 <span class="n">adata</span><span class="o">.</span><span class="n">var_names_make_unique</span><span class="p">()</span>
@@ -1540,7 +1540,8 @@ need to render it:</p>
 <div class="section" id="comparison-with-azimuth-mapping">
 <h4>Comparison with Azimuth mapping<a class="headerlink" href="#comparison-with-azimuth-mapping" title="Permalink to this headline">¶</a></h4>
 <p>Azimuth leverages &gt; 200 ADTs to delineate the major populations in PBMC, which can serve as a silver standard. First we obtain the Azimuth mapping results
-using the h5ad object after we performed qc:</p>
+using the h5ad object after we performed qc, azimuth predction results can be downloaded from
+<a class="reference external" href="http://altanalyze.org/scTriangulate/scRNASeq/azimuth_pred.tsv">this</a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/break_point_after_prune.p&#39;</span><span class="p">)</span>
 <span class="n">add_azimuth</span><span class="p">(</span><span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="p">,</span><span class="s1">&#39;azimuth_pred.tsv&#39;</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;azimuth&#39;</span><span class="p">,</span><span class="s1">&#39;pruned&#39;</span><span class="p">,</span><span class="s1">&#39;final_annotation&#39;</span><span class="p">]:</span>
@@ -1588,6 +1589,7 @@ suggests sub-dividing of CD14 Mono population which has been annotated in Azimut
 It is normal practice to analyze and cluster each modality’s data seperately, and then try to merge them together. However, to reconcile the clustering
 differences are not a trivial tasks and it requires the simoutaneous consideration of both RNA gene expression and surface protein. Thankfully, scTriangulate
 can help to make the decision.</p>
+<p>the dataset can be downloaded from the <a class="reference external" href="http://altanalyze.org/scTriangulate/CITESeq/TNC_r1-RNA-ADT.h5">website</a>.</p>
 <div class="section" id="load-data-and-preprocessing">
 <h3>Load data and preprocessing<a class="headerlink" href="#load-data-and-preprocessing" title="Permalink to this headline">¶</a></h3>
 <p>Load packages:</p>
@@ -1675,7 +1677,7 @@ can help to make the decision.</p>
 </div>
 <a class="reference external image-reference" href="target"><img alt="_images/contributions.png" class="align-center" src="_images/contributions.png" style="width: 600px; height: 300px;" /></a>
 <a class="reference external image-reference" href="target"><img alt="_images/resolutions.png" class="align-center" src="_images/resolutions.png" style="width: 400px; height: 300px;" /></a>
-<p>scTriangulate discovers new cell state due to ADT markers:</p>
+<p>scTriangulate discovers new cell state due to ADT markers, azimuth prediction can be downloaded <a class="reference external" href="http://altanalyze.org/scTriangulate/CITESeq/azimuth_pred.tsv">from here</a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/after_pruned_assess.p&#39;</span><span class="p">)</span>
 <span class="n">add_azimuth</span><span class="p">(</span><span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="p">,</span><span class="s1">&#39;azimuth_pred.tsv&#39;</span><span class="p">)</span>
 <span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;dummy_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;dummy_cluster&#39;</span><span class="p">)</span>

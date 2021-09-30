@@ -26,7 +26,7 @@ First load the packages::
     from sctriangulate import *
     from sctriangulate.preprocessing import *
 
-The h5 file can be downloaded from `here <https://drive.google.com/file/d/1_s-a621ADH5Y3cHW32WusFyoOo5cKs_b/view?usp=sharing>`_. We used scanpy and scTriangulate
+The h5 file can be downloaded from `here <http://altanalyze.org/scTriangulate/scRNASeq/pbmc_10k_v3.h5>`_. We used scanpy and scTriangulate
 preprocessing module to conduct basic QC filtering and single cell pipeline::
 
     adata = sc.read_10x_h5('./pbmc_10k_v3_filtered_feature_bc_matrix.h5')
@@ -239,7 +239,8 @@ Comparison with Azimuth mapping
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 Azimuth leverages > 200 ADTs to delineate the major populations in PBMC, which can serve as a silver standard. First we obtain the Azimuth mapping results 
-using the h5ad object after we performed qc::
+using the h5ad object after we performed qc, azimuth predction results can be downloaded from 
+`this <http://altanalyze.org/scTriangulate/scRNASeq/azimuth_pred.tsv>`_::
 
     sctri = ScTriangulate.deserialize('output/break_point_after_prune.p')
     add_azimuth(sctri.adata,'azimuth_pred.tsv')
@@ -313,6 +314,8 @@ In this example run, we are going to use a CITE-Seq dataset from human total nuc
 It is normal practice to analyze and cluster each modality's data seperately, and then try to merge them together. However, to reconcile the clustering
 differences are not a trivial tasks and it requires the simoutaneous consideration of both RNA gene expression and surface protein. Thankfully, scTriangulate
 can help to make the decision.
+
+the dataset can be downloaded from the `website <http://altanalyze.org/scTriangulate/CITESeq/TNC_r1-RNA-ADT.h5>`_.
 
 Load data and preprocessing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -442,7 +445,7 @@ scTriangulate allows the triangulation amongst diverse resolutions and modalitie
    :align: center
    :target: target
 
-scTriangulate discovers new cell state due to ADT markers::
+scTriangulate discovers new cell state due to ADT markers, azimuth prediction can be downloaded `from here <http://altanalyze.org/scTriangulate/CITESeq/azimuth_pred.tsv>`_::
 
     sctri = ScTriangulate.deserialize('output/after_pruned_assess.p')
     add_azimuth(sctri.adata,'azimuth_pred.tsv')
