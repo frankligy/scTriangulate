@@ -38,6 +38,9 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'Arial'
 
+# change the backend
+mpl.use('Agg')
+
 # # for publication and super large dataset
 # mpl.rcParams['savefig.dpi'] = 600
 # mpl.rcParams['figure.dpi'] = 600
@@ -2129,6 +2132,9 @@ class ScTriangulate(object):
             sctri.viewer_heterogeneity_html(key='annotation1')
 
         '''
+        # create a folder to store all the figures
+        if not os.path.exists(os.path.join(self.dir,'figure4viewer')):
+            os.mkdir(os.path.join(self.dir,'figure4viewer'))
         key_cluster_dict = copy.deepcopy(self.cluster)
         if key not in key_cluster_dict.keys():
             key_cluster_dict[key] = self.adata.obs[key].unique().tolist()
