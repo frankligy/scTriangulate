@@ -38,13 +38,15 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'Arial'
 
-# change the backend
-mpl.use('Agg')
 
-# # for publication and super large dataset
-# mpl.rcParams['savefig.dpi'] = 600
-# mpl.rcParams['figure.dpi'] = 600
 
+def sctriangulate_setting(backend='Agg',png=False):
+    # change the backend
+    mpl.use(backend)
+    if png:
+        # for publication and super large dataset
+        mpl.rcParams['savefig.dpi'] = 600
+        mpl.rcParams['figure.dpi'] = 600
 
 
 # define ScTriangulate Object

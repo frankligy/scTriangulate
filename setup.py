@@ -15,7 +15,9 @@ requires = [
     'yattag',
     'anytree',
     'mygene ==3.2.2',
-    'numpy <1.21'
+    'numpy ==1.19.5',
+    'pandas ==1.1.5',
+    'leidenalg',
 ]
 
 setup(

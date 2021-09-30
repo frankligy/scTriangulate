@@ -22,7 +22,14 @@ mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'Arial'
 
-mpl.use('Agg')
+
+def sctriangulate_preprocessing_setting(backend='Agg',png=False):
+    # change the backend
+    mpl.use(backend)
+    if png:
+        # for publication and super large dataset
+        mpl.rcParams['savefig.dpi'] = 600
+        mpl.rcParams['figure.dpi'] = 600
 
 
 def small_txt_to_adata(int_file,gene_is_index=True):

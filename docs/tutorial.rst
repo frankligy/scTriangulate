@@ -112,6 +112,13 @@ handle every thing for us::
     sctri = ScTriangulate(dir='./output',adata=adata,query=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
     sctri.lazy_run()  # done!!!
 
+.. note::
+
+    To save time, please run lazy_run(scale_sccaf=False,viewer_cluster=False), the first argument instruct the program to compute SCCAF score without
+    firstly scaling the data, which will save quite a lot time. By default this option is set to True. The second argument is to instruct the program to
+    not build the cluster_viewer, it will take some time to generate all the images that the cluster viewer needs.
+
+
 However for the purpose of instructing users how to understand this tool, we are going to run it step by step. We first instantiate ``ScTriangulate`` object 
 by specify:
 
@@ -248,7 +255,11 @@ Discover hidden heterogeneity
 scTrangulate, by design, could greedily discover any hidden heterogeneity via levaraging the cluster boundaries from each annotation. Here the scTriangulate 
 suggests sub-dividing of CD14 Mono population which has been annotated in Azimuth reference::
 
+    # if we run lazy_run
+    sctri = ScTriangulate.deserialize('output/after_pruned_assess.p)
+    # if we run manual step-by-step
     sctri = ScTriangulate.deserialize('output/break_point_after_prune.p')
+    # next is the same
     add_azimuth(sctri.adata,'azimuth_pred.tsv')
     sctri.plot_heterogeneity('azimuth','CD14 Mono','umap')
 
