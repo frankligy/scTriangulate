@@ -1,5 +1,5 @@
 import scanpy as sc
-from sctriangulate import ScTriangulate
+from sctriangulate import *
 from sctriangulate.colors import *
 from sctriangulate.preprocessing import *
 print('===================\nimport modules test:',u'\u2713','\n====================')

@@ -2001,6 +2001,7 @@ class ScTriangulate(object):
     
         if save:
             plt.savefig(os.path.join(self.dir,'sctri_long_umap.pdf'),bbox_inches='tight')
+            plt.close()
         # return that can be imported to morpheus
         export = pd.DataFrame(data=draw_data,columns=p_adata.obs_names,index=p_adata.var_names)
         return export
