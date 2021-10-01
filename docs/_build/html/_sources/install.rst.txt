@@ -10,6 +10,9 @@ From source::
 
     git clone https://github.com/frankligy/scTriangulate
     cd ./scTriangulate
+    conda create -n sctriangulate_env python=3.7
+    conda activate sctriangulate_env
+    pip install --upgrade setuptools==57.5.0   
     python setup.py install
     # make sure setuptools <58, I tested setuptools=57.5.0
 
@@ -24,7 +27,9 @@ From source::
     * 'yattag',
     * 'anytree',
     * 'mygene ==3.2.2',
-    * 'numpy <1.21'
+    * 'numpy ==1.19.5',
+    * 'pandas ==1.1.5',
+    * 'leidenalg'
 
 
 
