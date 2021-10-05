@@ -23,6 +23,12 @@ It can potentially be used in an array of settings:
 
 Check our documentation.
 
+## Citation
+
+scTriangulate will be presented in ![2021 CZI Single-Cell Biology Annual Meeting](https://docs.google.com/document/d/142W5qCsXpv9CyyvQhmu_Re-Wf6mN7zZrAzarMMI6Se4/edit). 
+
+A preprint will come out soon.
+
 
 ## Installation
 
