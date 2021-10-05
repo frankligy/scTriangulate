@@ -3,6 +3,10 @@
 scTriangulate is a Python package to mix-and-match conflicting clustering results in single cell analysis, and generate reconciled 
 clustering solutions.
 
+## Tutorials
+
+Check our full [documentation.](https://sctriangulate.readthedocs.io/en/latest/)
+
 ## Overview
 
 ![schema](./image/schema.png)
@@ -19,9 +23,6 @@ It can potentially be used in an array of settings:
 
 ![schuma_chop](./image/schema_chop.png)
 
-## Get started
-
-Check our documentation.
 
 ## Citation
 
@@ -29,33 +30,6 @@ scTriangulate will be presented in [2021 CZI Single-Cell Biology Annual Meeting]
 
 A preprint will come out soon.
 
-
-## Installation
-
-scTriangulate requires python >= 3.7, conda virtual environment is highly recommended.
-
-```bash
-pip install sctriangulate
-```
-
-From source,
-
-```bash
-git clone https://github.com/frankligy/scTriangulate
-cd ./scTriangulate
-conda create -n sctriangulate_env python=3.7
-conda activate sctriangulate_env
-pip install --upgrade setuptools==57.5.0
-python setup.py install
-# make sure setuptools <58, I tested setuptools=57.5.0
-```
-
-A minitest is included,
-
-```bash
-cd ./test
-python -W ignore mini_test.py
-```
 
 ## Contact
 
