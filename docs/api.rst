@@ -12,7 +12,7 @@ ScTriangulate Class Methods
                       display_hierarchy, doublet_predict, compute_metrics, run_single_key_assessment, penalize_artifact,
                       regress_out_size_effect, compute_shapley, pruning, plot_umap, plot_confusion, plot_cluster_feature,
                       modality_contributions, plot_multi_modal_feature_rank, plot_long_heatmap, viewer_cluster_feature_figure,
-                      viewer_cluster_feature_html, viewer_heterogeneity_figure, viewer_heterogeneity_html
+                      viewer_cluster_feature_html, viewer_heterogeneity_figure, viewer_heterogeneity_html, plot_concordance
 
 
 (static) salvage_run()
@@ -87,6 +87,10 @@ plot_clusterability()
 plot_cluster_feature()
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.main_class.ScTriangulate.plot_cluster_feature
+
+plot_concordance()
+~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.main_class.ScTriangulate.plot_concordance
 
 plot_confusion()
 ~~~~~~~~~~~~~~~~~~~

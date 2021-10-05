@@ -1123,6 +1123,86 @@ class ScTriangulate(object):
                 plt.savefig(os.path.join(self.dir,'umap_sctriangulate_{}.{}'.format(col,format)),bbox_inches='tight')
                 plt.close()
 
+
+    def plot_concordance(self,key1,key2,style='3dbar',save=True,format='pdf',cmap=retrieve_pretty_cmap('scphere'),**kwargs):
+        '''
+        given two annotation, we want to know how the cluster labels from one correponds to the other.
+
+        :param key1: string, first annotation key
+        :param key2: string, second annotation key 
+        :param style: string, which style of plot, either 'heatmap' or '3dbar'
+        :param save: boolean, save the figure or not
+        :param format: string, format to save
+        :param cmap: string or cmap object, the cmap to use for heatmap
+
+        :return: dataframe, the confusion matrix
+
+        Examples::
+
+            sctri.plot_concordance(key1='azimuth',key2='pruned',style='3dbar')
+        
+        .. image:: ./_static/3dbar.png
+            :height: 350px
+            :width: 400px
+            :align: center
+            :target: target          
+
+        '''
+        # construct key1 and key2 map
+        key1_map = self.adata.obs[key1].to_frame().groupby(by=key1).apply(lambda x:x.index.to_list()).to_dict()
+        key2_map = self.adata.obs[key2].to_frame().groupby(by=key2).apply(lambda x:x.index.to_list()).to_dict()
+        # build confusion_df
+        confusion_mat = np.empty(shape=(len(key1_map),len(key2_map)),dtype=np.int64)
+        for i,(k1,v1) in enumerate(key1_map.items()):
+            for j,(k2,v2) in enumerate(key2_map.items()):
+                overlap = set(key1_map[k1]).intersection(set(key2_map[k2]))
+                n_overlap = len(overlap)
+                confusion_mat[i,j] = n_overlap
+        confusion_df = pd.DataFrame(data=confusion_mat,index=list(key1_map.keys()),columns=list(key2_map.keys()))
+        # plot heatmap
+        if style == 'heatmap':
+            sns.heatmap(confusion_df,cmap=cmap,**kwargs)  
+            if save:
+                plt.savefig(os.path.join(self.dir,'concordance_heatmap_{}_{}.{}'.format(key1,key2,format)),bbox_inches='tight')
+                plt.close()
+        # plot 3D barplot
+        elif style == '3dbar':
+            fig = plt.figure()
+            ax1 = fig.add_subplot(111, projection='3d')
+            _x = np.arange(confusion_df.shape[0])
+            _y = np.arange(confusion_df.shape[1])
+            _xx,_yy = np.meshgrid(_x,_y)
+            x,y = _xx.flatten(), _yy.flatten()
+            dz = confusion_mat.T.flatten().astype(dtype=np.float64)
+            z = np.zeros(len(x))
+            dx = np.full(len(x),fill_value=0.6)
+            dy = np.full(len(x),fill_value=0.6)
+            from scipy.interpolate import interp1d
+            from matplotlib import cm
+            m = interp1d((dz.min(),dz.max()),(0,255))
+            c = [cm.jet(round(i)) for i in m(dz)]
+            ax1.bar3d(x, y, z,dx,dy,dz,color=c)
+            ax1.set_xlabel('{} cluster labels'.format(key1))
+            ax1.set_ylabel('{} cluster labels'.format(key2))
+            ax1.set_zlabel('# cells')
+            ax1.set_xticks(_x)
+            ax1.set_xticklabels(confusion_df.index,fontsize=2)
+            ax1.set_yticks(_y+1)
+            ax1.set_yticklabels(confusion_df.columns,fontsize=2)
+            # # make the panes transparent
+            # ax1.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+            # ax1.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+            # ax1.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+            # make the grid lines transparent
+            # ax1.xaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+            # ax1.yaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+            # ax1.zaxis._axinfo["grid"]['color'] =  (1,1,1,0)
+            if save:
+                plt.savefig(os.path.join(self.dir,'concordance_3dbarplot_{}_{}.{}'.format(key1,key2,format)),bbox_inches='tight')
+                plt.close()
+
+        return confusion_df
+
     def plot_confusion(self,name,key,save=True,format='pdf',cmap=retrieve_pretty_cmap('scphere'),**kwargs):
         '''
         plot the confusion as a heatmap.

@@ -112,6 +112,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#penalize-artifact">penalize_artifact()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-clusterability">plot_clusterability()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-cluster-feature">plot_cluster_feature()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-concordance">plot_concordance()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-confusion">plot_confusion()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-heterogeneity">plot_heterogeneity()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-long-heatmap">plot_long_heatmap()</a></li>
@@ -685,6 +686,35 @@ three smaller clusters, then the clueterability of this cluster will be 3.</p>
 </pre></div>
 </div>
 <a class="reference external image-reference" href="target"><img alt="_images/location.png" class="align-center" src="_images/location.png" style="width: 400px; height: 300px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="plot-concordance">
+<h3>plot_concordance()<a class="headerlink" href="#plot-concordance" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.plot_concordance">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">plot_concordance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">self</span></em>, <em class="sig-param"><span class="pre">key1</span></em>, <em class="sig-param"><span class="pre">key2</span></em>, <em class="sig-param"><span class="pre">style='3dbar'</span></em>, <em class="sig-param"><span class="pre">save=True</span></em>, <em class="sig-param"><span class="pre">format='pdf'</span></em>, <em class="sig-param"><span class="pre">cmap=&lt;matplotlib.colors.LinearSegmentedColormap</span> <span class="pre">object&gt;</span></em>, <em class="sig-param"><span class="pre">**kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.plot_concordance" title="Permalink to this definition">¶</a></dt>
+<dd><p>given two annotation, we want to know how the cluster labels from one correponds to the other.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key1</strong> – string, first annotation key</p></li>
+<li><p><strong>key2</strong> – string, second annotation key</p></li>
+<li><p><strong>style</strong> – string, which style of plot, either ‘heatmap’ or ‘3dbar’</p></li>
+<li><p><strong>save</strong> – boolean, save the figure or not</p></li>
+<li><p><strong>format</strong> – string, format to save</p></li>
+<li><p><strong>cmap</strong> – string or cmap object, the cmap to use for heatmap</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dataframe, the confusion matrix</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_concordance</span><span class="p">(</span><span class="n">key1</span><span class="o">=</span><span class="s1">&#39;azimuth&#39;</span><span class="p">,</span><span class="n">key2</span><span class="o">=</span><span class="s1">&#39;pruned&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;3dbar&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/3dbar.png" class="align-center" src="_images/3dbar.png" style="width: 400px; height: 350px;" /></a>
 </dd></dl>
 
 </div>

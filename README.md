@@ -21,13 +21,7 @@ It can potentially be used in an array of settings:
 
 ## Get started
 
-1. Step1: Check the [what the tool does](https:github.com). (1 min)
-2. step2: Understand there are three modules in scTriangulate package: (2 mins)
-    * [ScTriangulate Class](https:github.com) (core functionalities)
-    * [preprocessing module](https:github.com) (flexible file/gene format conversion plus normalization options)
-    * [colors module](https:github.com) (Allow publication-quality figure generation)
-3. step3: follow the two workflow example ([single modality](https:github.com), [multi-modal](https:github.com) (30 mins)
-4. step4: [Optional] Check the [principl](https:github.com) part to understand the philosophy of developing the tool.
+Check our documentation.
 
 
 ## Installation
@@ -43,6 +37,9 @@ From source,
 ```bash
 git clone https://github.com/frankligy/scTriangulate
 cd ./scTriangulate
+conda create -n sctriangulate_env python=3.7
+conda activate sctriangulate_env
+pip install --upgrade setuptools==57.5.0
 python setup.py install
 # make sure setuptools <58, I tested setuptools=57.5.0
 ```
