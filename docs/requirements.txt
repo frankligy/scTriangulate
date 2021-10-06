@@ -10,5 +10,7 @@ mygene==3.2.2
 anytree
 yattag
 scrublet==0.2.3
-gseapy ==0.10.4
+gseapy==0.10.4
+mock
+
 
