@@ -1,6 +1,14 @@
-setuptools==57.5.0
 sphinx==4.1.1
 sphinx_rtd_theme==0.5.2
 readthedocs-sphinx-search==0.1.0rc3
 sphinx-autoapi==1.8.4
-sctriangulate==0.9.0
+scanpy==1.7.2
+numpy==1.19.5
+pandas==1.1.5
+leidenalg
+mygene==3.2.2
+anytree
+yattag
+scrublet==0.2.3
+gseapy ==0.10.4
+
