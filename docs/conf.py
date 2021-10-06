@@ -15,7 +15,8 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 import mock
-MOCK_MODULES = ['pandas','numpy','matplotlib','seaborn','anytree','scipy','scanpy','anndata','gseapy','scrublet']
+MOCK_MODULES = ['pandas','numpy','matplotlib.pyplot','matplotlib','seaborn','anytree','scipy.sparse','scipy.spatial.distance',
+                'scipy.cluster.hierarchy','scanpy','anndata','gseapy','scrublet','scipy.stats','scipy.io','matplotlib.colors']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 
