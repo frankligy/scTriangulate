@@ -17,10 +17,10 @@ import matplotlib as mpl
 
 
 
-# # for publication ready figure
-# mpl.rcParams['pdf.fonttype'] = 42
-# mpl.rcParams['ps.fonttype'] = 42
-# mpl.rcParams['font.family'] = 'Arial'
+# for publication ready figure
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'Arial'
 
 
 def sctriangulate_preprocessing_setting(backend='Agg',png=False):

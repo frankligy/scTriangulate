@@ -6,9 +6,9 @@ import copy
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-# mpl.rcParams['pdf.fonttype'] = 42
-# mpl.rcParams['ps.fonttype'] = 42
-# mpl.rcParams['font.family'] = 'Arial'
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'Arial'
 
 # test_discrete_look
 def generate_block(color_list,name):
