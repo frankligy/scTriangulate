@@ -101,10 +101,14 @@ no longer be considered in the marker genes and downstream assessment::
 Visualization
 ----------------
 
+scTriangulate offers a powerful toolkit allowing end users to visualize the hidden heterogeneity in many different ways, also the ``color`` Module
+provide necessary function to assist in making publication quality figures. Here we highlight some of the plotting function and we would like to refer
+the users to the ``API`` part for more details.
+
 plot_heterogeneity
 ~~~~~~~~~~~~~~~~~~~~~
 
-This is the main feature of scTriangulate visualization functionality, built on top of scanpy. since scTriangualte mix-and-match cluster boundaries from 
+This is the main feature of scTriangulate visualizations, built on top of scanpy. Since scTriangualte can mix-and-match cluster boundaries from 
 diverse annotations, it empowers the users to discover further and hidden heterogeneity. Now, question is how the user can visualize the heterogeneity?
 
 .. image:: ./_static/plot_heterogeneity_chop.png
@@ -113,11 +117,11 @@ diverse annotations, it empowers the users to discover further and hidden hetero
     :align: center
     :target: target
 
-Now as you can see, **annoatation@c1** has been suggested to be divided by two sub populations, now we want to know:
+The philosophy behind this function is to first pick a viewpoint from which we want to look at the final result. For instance, here we choose "annotation1" as 
+the viewpoint. As you can see, **annoatation@c1** has been suggested to be divided by two sub populations, now we want to know:
 
 1. how these two sub populations are lait out on umap?
 2. what are the differentially expressed features between these two sub populations?
-3. How many cells are in each sub populations?
 
 Let's show some of the functionalities:
 
@@ -151,11 +155,67 @@ Let's show some of the functionalities:
     :align: center
     :target: target
 
+plot_concordance
+~~~~~~~~~~~~~~~~~~
 
-Other plotting funcctions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When we have more than 2 annotation-sets, we want to know how they correspond to each other, what fraction of cells in annotation1 flow into
+another annotation and vice versus::
 
-**1.plot_confusion**
+    sctri.plot_concordance(key1='azimuth',key2='pruned',style='3dbar')
+
+.. image:: ./_static/3dbar.png
+    :height: 400px
+    :width: 500px
+    :align: center
+    :target: target
+
+plot_clusterability
+~~~~~~~~~~~~~~~~~~~~~~
+
+Do you want to know for a specific annotation-set, which cluster is most likely to be subdivided and which is the least? We refer to this as
+clusterability::
+
+    sctri.plot_clusterability(key='sctri_rna_leiden_1',col='raw',fontsize=8)
+
+.. image:: ./_static/plot_clusterability.png
+    :height: 400px
+    :width: 500px
+    :align: center
+    :target: target
+
+plot_long_heatmap
+~~~~~~~~~~~~~~~~~~~~~~
+
+A heatmap that can be arbitrarily long and ALWAYS display every gene::
+
+    sctri.plot_long_umap(n_features=20,figsize=(20,20))
+
+.. image:: ./_static/long_heatmap.png
+    :height: 400px
+    :width: 500px
+    :align: center
+    :target: target
+
+plot_multi_modal_feature_rank
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In multi-modal setting, a cluster's identify usually defined by all modalities, do you want to know by which modality a cluster is mainly defined?::
+
+    sctri.plot_multi_modal_feature_rank(cluster='sctri_rna_leiden_2@10')
+
+.. image:: ./_static/plot_multi_modal_feature_rank.png
+    :height: 500px
+    :width: 500px
+    :align: center
+    :target: target
+
+
+
+
+
+
+plot_confusion
+~~~~~~~~~~~~~~~~
 
 It allows you to visualize the stability of each clustes in one annotation::
 

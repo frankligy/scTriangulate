@@ -180,7 +180,7 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None):
     Examples::
 
         from sctriangulate.preprocessing import add_annotations
-        add_annotations(adata,input='./annotation.txt',cols_input=['col1,'col2'],index_col=0,cols_output=['annotation1','annontation2'])
+        add_annotations(adata,input='./annotation.txt',cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'])
 
     '''
     # means a single file such that one column is barcodes, annotations are within other columns
@@ -204,7 +204,12 @@ def add_umap(adata,inputs,mode,cols=None,index_col=0):
     :param adata: Anndata
     :param inputs: string, path to the the txt file where the umap embedding was stored.
     :param mode: string, valid value 'pandas_disk', 'pandas_memory', 'numpy'
-    :param cols: list, what columns contain umap embeddings.s
+
+        * **pandas_disk**: the `inputs` argument should be the path to the txt file
+        * **pandas_memory**: the `inputs` argument should be the name of the pandas dataframe in the program, inputs=df
+        * **numpy**, the `inputs` argument should be a 2D ndarray contains pre-sorted (same order as barcodes in adata) umap coordinates
+
+    :param cols: list, what columns contain umap embeddings
     :param index_col: int, which column will serve as the index column.
 
     Examples::

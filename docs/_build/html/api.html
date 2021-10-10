@@ -94,6 +94,7 @@
 <li class="toctree-l1"><a class="reference internal" href="principle.html">Principle</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#sctriangulate-class-methods">ScTriangulate Class Methods</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#init">__init__()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#static-salvage-run">(static) salvage_run()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#statis-deserialize">(statis) deserialize()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#add-new-metrics">add_new_metrics()</a></li>
@@ -236,6 +237,8 @@
 <h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="sctriangulate-class-methods">
 <h2>ScTriangulate Class Methods<a class="headerlink" href="#sctriangulate-class-methods" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="init">
+<span id="reference-to-instantiation"></span><h3>__init__()<a class="headerlink" href="#init" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.</span></span><span class="sig-name descname"><span class="pre">ScTriangulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">dir</span></em>, <em class="sig-param"><span class="pre">adata</span></em>, <em class="sig-param"><span class="pre">query</span></em>, <em class="sig-param"><span class="pre">species='human'</span></em>, <em class="sig-param"><span class="pre">criterion=2</span></em>, <em class="sig-param"><span class="pre">verbose=1</span></em>, <em class="sig-param"><span class="pre">reference=None</span></em>, <em class="sig-param"><span class="pre">add_metrics={'tfidf5':</span> <span class="pre">&lt;function</span> <span class="pre">tf_idf5_for_cluster&gt;}</span></em>, <em class="sig-param"><span class="pre">predict_doublet=True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate" title="Permalink to this definition">¶</a></dt>
@@ -246,6 +249,29 @@
 <li><p><strong>dir</strong> – Output folder path on the disk</p></li>
 <li><p><strong>adata</strong> – input adata file</p></li>
 <li><p><strong>query</strong> – a python list contains the annotation names to query</p></li>
+<li><p><strong>species</strong> – string, either human (default) or mouse, it will impact how the program searches for artifact genes in the database</p></li>
+<li><p><strong>criterion</strong> – <p>int, it controls what genes would be considered as artifact genes:</p>
+<ul>
+<li><p><cite>criterion1</cite>: all will be artifact</p></li>
+<li><p><cite>criterion2</cite>: all will be artifact except cellcycle  [Default]</p></li>
+<li><p><cite>criterion3</cite>: all will be artifact except cellcycle, ribosome</p></li>
+<li><p><cite>criterion4</cite>: all will be artifact except cellcycle, ribosome, mitochondrial</p></li>
+<li><p><cite>criterion5</cite>: all will be artifact except cellcycle, ribosome, mitochondrial, antisense</p></li>
+<li><p><cite>criterion6</cite>: all will be artifact except cellcycle, ribosome, mitochondrial, antisense, predict_gene</p></li>
+</ul>
+</p></li>
+<li><p><strong>verbose</strong> – int, it controls how the log file will be generated. 1 means print to stdout (default), 2 means print to a file in the directory
+specified by dir parameter.</p></li>
+<li><p><strong>add_metrics</strong> – python dictionary. These allows users to add additional metrics to favor or disqualify certain cluster. By default,
+we add tfidf5 score {‘tfidf5’:tf_idf5_for_cluster}, remember the value in the dictionary should be the name of a callable, user
+can define the callable by themselves.</p></li>
+<li><p><strong>predict_doublet</strong> – <p>boolean or string, whether to predict doublet using scrublet or not. Valid value:</p>
+<ul>
+<li><p>True: will predict doublet score</p></li>
+<li><p>False: will not predict doublet score</p></li>
+<li><p>(string) precomputed: will not predict doublet score but just use existing one</p></li>
+</ul>
+</p></li>
 </ul>
 </dd>
 </dl>
@@ -256,6 +282,7 @@
 </div>
 </dd></dl>
 
+</div>
 <div class="section" id="static-salvage-run">
 <h3>(static) salvage_run()<a class="headerlink" href="#static-salvage-run" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
@@ -527,7 +554,7 @@ along with the metrics associated with each cluster, including shapley value.</p
 <h3>lazy_run()<a class="headerlink" href="#lazy-run" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.lazy_run">
-<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">lazy_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_metrics_parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_sccaf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_shapley_parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">win_fraction_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reassign_abs_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assess_pruned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viewer_cluster</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viewer_cluster_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viewer_heterogeneity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viewer_heterogeneity_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.lazy_run" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">lazy_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_metrics_parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_sccaf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compute_shapley_parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">win_fraction_cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reassign_abs_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assess_raw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assess_pruned</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viewer_cluster</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viewer_cluster_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viewer_heterogeneity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viewer_heterogeneity_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.lazy_run" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the highest level wrapper function for running every step in one goal.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -537,6 +564,7 @@ along with the metrics associated with each cluster, including shapley value.</p
 <li><p><strong>compute_shapley_parallel</strong> – boolean, whether to parallelize <code class="docutils literal notranslate"><span class="pre">compute_parallel</span></code> step. Default: True</p></li>
 <li><p><strong>win_fraction_cutoff</strong> – float, between 0-1, the cutoff for function <code class="docutils literal notranslate"><span class="pre">add_invalid_by_win_fraction</span></code>. Default: 0.25</p></li>
 <li><p><strong>reassign_abs_thresh</strong> – int, the cutoff for minimum number of cells a valid cluster should haves. Default: 10</p></li>
+<li><p><strong>assess_raw</strong> – boolean, whether to run the same cluster assessment metrics on raw cluster labels. Default: False</p></li>
 <li><p><strong>assess_pruned</strong> – boolean, whether to run same cluster assessment metrics on final pruned cluster labels. Default: True</p></li>
 <li><p><strong>viewer_cluster</strong> – boolean, whether to build viewer html page for all clusters’ diagnostic information. Default: True</p></li>
 <li><p><strong>viewer_cluster_keys</strong> – list, clusters from what annotations we want to view on the viewer, only clusters within this annotation whose diagnostic
@@ -924,7 +952,7 @@ A horizontal barplot will be generated and a dataframe with winners statistics w
 <h3>pruning()<a class="headerlink" href="#pruning" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="sctriangulate.main_class.ScTriangulate.pruning">
-<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">pruning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'reassign'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_sccaf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.pruning" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.main_class.ScTriangulate.</span></span><span class="sig-name descname"><span class="pre">pruning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'reassign'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_sccaf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abs_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assess_raw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.main_class.ScTriangulate.pruning" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main function. After running <code class="docutils literal notranslate"><span class="pre">compute_shapley</span></code>, we get <strong>raw</strong> cluster results. Althought the raw cluster is informative,
 there maybe some weired clusters that accidentally win out which doesn’t attribute to its biological stability. For example,
 a cluster that only has 3 cells, or very unstable cluster. To ensure the best results, we apply a post-hoc assessment onto the
@@ -943,7 +971,8 @@ will just remove clusters that either has less than <code class="docutils litera
 <li><p><strong>remove1</strong> – boolean. When reassign the cells in the dicarded clutsers, whether to also reassign the cells who are the only one in each 
 <code class="docutils literal notranslate"><span class="pre">reference</span></code> cluster. Default: True</p></li>
 <li><p><strong>reference</strong> – string. which annotation will serve as the reference.</p></li>
-<li><p><strong>parallel</strong> – boolean, whether to perform this step in parallel. (scatter and gather).</p></li>
+<li><p><strong>parallel</strong> – boolean, whether to perform this step in parallel. (scatter and gather).Default is True</p></li>
+<li><p><strong>assess_raw</strong> – boolean, whether to run the same set of cluster stability metrics on the raw cluster. Default is False</p></li>
 </ul>
 </dd>
 </dl>
@@ -1284,7 +1313,7 @@ we convert it to either ‘int16’ if original data is count, or ‘float32’ 
 
 </div>
 <div class="section" id="add-annotations">
-<h3>add_annotations()<a class="headerlink" href="#add-annotations" title="Permalink to this headline">¶</a></h3>
+<span id="reference-to-add-annotation"></span><h3>add_annotations()<a class="headerlink" href="#add-annotations" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="sctriangulate.preprocessing.add_annotations">
 <span class="sig-prename descclassname"><span class="pre">sctriangulate.preprocessing.</span></span><span class="sig-name descname"><span class="pre">add_annotations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cols_input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cols_output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.preprocessing.add_annotations" title="Permalink to this definition">¶</a></dt>
@@ -1302,7 +1331,7 @@ we convert it to either ‘int16’ if original data is count, or ‘float32’ 
 </dl>
 <p>Examples:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="n">add_annotations</span>
-<span class="n">add_annotations</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="nb">input</span><span class="o">=</span><span class="s1">&#39;./annotation.txt&#39;</span><span class="p">,</span><span class="n">cols_input</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;col1,&#39;</span><span class="n">col2</span><span class="s1">&#39;],index_col=0,cols_output=[&#39;</span><span class="n">annotation1</span><span class="s1">&#39;,&#39;</span><span class="n">annontation2</span><span class="s1">&#39;])</span>
+<span class="n">add_annotations</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="nb">input</span><span class="o">=</span><span class="s1">&#39;./annotation.txt&#39;</span><span class="p">,</span><span class="n">cols_input</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;col1&#39;</span><span class="p">,</span><span class="s1">&#39;col2&#39;</span><span class="p">],</span><span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">cols_output</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;annotation1&#39;</span><span class="p">,</span><span class="s1">&#39;annontation2&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1319,8 +1348,14 @@ we convert it to either ‘int16’ if original data is count, or ‘float32’ 
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>adata</strong> – Anndata</p></li>
 <li><p><strong>inputs</strong> – string, path to the the txt file where the umap embedding was stored.</p></li>
-<li><p><strong>mode</strong> – string, valid value ‘pandas_disk’, ‘pandas_memory’, ‘numpy’</p></li>
-<li><p><strong>cols</strong> – list, what columns contain umap embeddings.s</p></li>
+<li><p><strong>mode</strong> – <p>string, valid value ‘pandas_disk’, ‘pandas_memory’, ‘numpy’</p>
+<ul>
+<li><p><strong>pandas_disk</strong>: the <cite>inputs</cite> argument should be the path to the txt file</p></li>
+<li><p><strong>pandas_memory</strong>: the <cite>inputs</cite> argument should be the name of the pandas dataframe in the program, inputs=df</p></li>
+<li><p><strong>numpy</strong>, the <cite>inputs</cite> argument should be a 2D ndarray contains pre-sorted (same order as barcodes in adata) umap coordinates</p></li>
+</ul>
+</p></li>
+<li><p><strong>cols</strong> – list, what columns contain umap embeddings</p></li>
 <li><p><strong>index_col</strong> – int, which column will serve as the index column.</p></li>
 </ul>
 </dd>

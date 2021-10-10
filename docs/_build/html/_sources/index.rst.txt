@@ -33,6 +33,7 @@ Contents
    tutorial
    principle
    api
+   change_log
    contact
 
 

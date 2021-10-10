@@ -13,7 +13,7 @@ cells before filtering.
 
 Here we first conduct basic single cell analysis to obtain Leiden clustering results, however, at various resolutions (r=1,2,3). Smaller resolutions lead to
 broader clusters, and larger resolution value will result in more granular clustering. We leverage scTriangulate to take the three resolutions as the query 
-annotations, and automatically mix-and-match cluster boundary from different resolutions, which at the end, yield scTriangulate reconciled cluster solutions.
+annotation-sets, and automatically mix-and-match cluster boundary from different resolutions, which at the end, yield scTriangulate reconciled cluster solutions.
 
 Download and preprocessing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -26,7 +26,7 @@ First load the packages::
     from sctriangulate import *
     from sctriangulate.preprocessing import *
 
-The h5 file can be downloaded from `here <http://altanalyze.org/scTriangulate/scRNASeq/pbmc_10k_v3.h5>`_. We used scanpy and scTriangulate
+The h5 file can be downloaded from `here <http://altanalyze.org/scTriangulate/scRNASeq/pbmc_10k_v3.h5>`_. First use scanpy and scTriangulate
 preprocessing module to conduct basic QC filtering and single cell pipeline::
 
     adata = sc.read_10x_h5('./pbmc_10k_v3_filtered_feature_bc_matrix.h5')
@@ -69,7 +69,7 @@ Visualize the important QC metrics and make the decision on the proper cutoffs::
    :align: right
    :target: target
 
-We filtered out the cells whose min_genes = 300, min_counts = 500, mt > 20%, 11,022 cells left::
+Then filter out the cells whose min_genes = 300, min_counts = 500, mt > 20%, 11,022 cells left::
 
     sc.pp.filter_cells(adata, min_genes=300)
     sc.pp.filter_cells(adata, min_counts=500)
@@ -77,14 +77,14 @@ We filtered out the cells whose min_genes = 300, min_counts = 500, mt > 20%, 11,
     print(adata)  # 11022 × 33538
 
 
-Then we will use scTriangulate wrapper functions to obtain the Leiden clutser results at different resolutions (r=1,2,3), specifically, 
+Then use scTriangulate wrapper functions to obtain the Leiden clutser results at different resolutions (r=1,2,3), specifically, 
 we chose number of PCs as 50, and 3000 highly variable genes::
 
     adata = scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],pca_n_comps=50,n_top_genes=3000)
 
-After running this command, we will have three columns in ``adata.obs``, namely, ``sctri_rna_leiden_1``, ``sctri_rna_leiden_2``, ``sctri_rna_leiden_3``. 
+After running this command, you will have three columns in ``adata.obs``, namely, ``sctri_rna_leiden_1``, ``sctri_rna_leiden_2``, ``sctri_rna_leiden_3``. 
 Also a h5ad file named ``adata_after_scanpy_recipe_rna_1_2_3_umap_True.h5ad`` will be automatically saved to current directory so there's no need to re-run this
-step again, Now let's visualize them::
+pre-processing step again, Now let's visualize them::
 
     umap_dual_view_save(adata,cols=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
     # three umaps will be saved to your current directory.
@@ -95,9 +95,9 @@ step again, Now let's visualize them::
    :align: center
    :target: target
 
-As we can see, different resolutions lead to various number of clusters, and it is clear that certain regions got sub-divided in higher resolutions. However,
-we don't know whether this sub-populations are valid off the top of our heads. **Here comes scTriangulate, which will scan each clusters at each resolutions,
-and mix-and-match different solutions to achieve an optimal one.**
+As you can see, different resolutions lead to various number of clusters, and it is clear that certain regions get sub-divided in higher resolutions. However,
+we don't know whether this sub-populations are valid off the top of our heads. Here comes scTriangulate, which will scan each clusters at each resolution,
+and mix-and-match different solutions to achieve a reconciled result.
 
 Running scTriangulate
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,7 +110,7 @@ handle every thing for us::
 
     adata = sc.read('adata_after_scanpy_recipe_rna_1_2_3_umap_True.h5ad')
     sctri = ScTriangulate(dir='./output',adata=adata,query=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
-    sctri.lazy_run()  # done!!!
+    sctri.lazy_run(assess_pruned=False,viewer_cluster=False,viewer_heterogeneity=False)  # done!!!
 
 We first instantiate ``ScTriangulate`` object by specify:
 
@@ -118,21 +118,19 @@ We first instantiate ``ScTriangulate`` object by specify:
 2. ``adata``, the adata that we want to start with.
 3. ``query``, a list contains all the annotations that we want to triangulate.
 
-The ``dir`` doesn't need to be an existing folder, the program will automatically create one if not present.
+The ``dir`` doesn't need to be an existing folder, the program will automatically create one if not present. More information about instantiation can be
+found in the API :ref:`reference_to_instantiation`.
+
+
+The purpose of three arguments in ``lazy_run()`` is just to save time, you can leave it as default by calling ``lazy_run()``, which will automatically
+assess the stability of the final defined cluster, generate the cluster viewer and heterogeneity viewer. However, if you only want to obtain the scTriangulate
+reconciled cluster information, you don't need the above three steps, so we turn them off.
+
 
 .. note::
 
-    To save time, please run lazy_run(scale_sccaf=False,viewer_cluster=False), the first argument instruct the program to compute SCCAF score without
-    firstly scaling the data, which will save quite a lot time. By default this option is set to True. The second argument is to instruct the program to
-    not build the cluster_viewer, it will take some time to generate all the images that the cluster viewer needs.
-
-
-However for the purpose of instructing users how to understand this tool, we are going to run it step by step. 
-
-.. note::
-
-    Users can switch to manually run scTriangulat step by step, in order for granular operations/modifications. The instructions are as below.
-    The above ``lazy_run()`` function basically takes care step 1-4 automatically with default parameter settings.
+    However for the purpose of instructing users how to understand this tool, we are going to run it step by step to let the readers get a sense
+    of how the program work. We refer to it as Manual Run.
 
 Manual Run
 <<<<<<<<<<<<<
@@ -161,7 +159,7 @@ Step2: compute_shapley
 ++++++++++++++++++++++++
 
 The second step is to utilize the calculated metrics, and assess which annotation/cluster is the best for **each single cell**. So the program iterate each row,
-which is a single cell, retrive all the metrics associated with each cluster, and calculate shapley value of each cluster (in this case, each single cell has 
+representing a single cell, retrive all the metrics associated with each cluster, and calculate shapley value for each cluster (in this case, each single cell has 
 three conflicting clusters). Then the program will assign the cell to the "best" clusters amongst all solutions. We refer the resultant cluster assignment as
 ``raw`` cluster result::
 
@@ -190,7 +188,7 @@ unstable invalid clusters will be reassigned to its nearest neightbor's cluster 
     sctri.prune_result()
     sctri.serialize('break_point_after_prune.p')
 
-A column named "pruned" will be added, also "confidence" column stores the confidence the program hold to call it out.
+A column named "pruned" will be added, also "confidence" column stores the confidence the program hold to call this cluster out.
 
 .. csv-table:: After prune result
     :file: ./_static/tutorial/single_modality/head_check_after_prune.csv
@@ -201,10 +199,10 @@ A column named "pruned" will be added, also "confidence" column stores the confi
 Step4: building the viewer
 ++++++++++++++++++++++++++++++
 
-We provide an automatically generated webpage, called scTriangulate viewer, to allow users to dynamically navigate the robustness of each cluster from each
+We provide an automatically generated html page, called scTriangulate viewer, to allow users to dynamically toggle different clusters the robustness of each cluster from each
 annotations (cluster viewer). Also, it enables the inspection of further heterogeneity that might not have been captured by a 
 single annotation (hetergeneity viewer). The logics of following codes are simple, we first build html, then we generate the figures that the html page would 
-need to render it::
+need for proper rendering::
 
     sctri = ScTriangulate.deserialize('output/break_point_after_prune.p')
     sctri.viewer_cluster_feature_html()
@@ -272,7 +270,7 @@ Discover hidden heterogeneity
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 scTrangulate, by design, could greedily discover any hidden heterogeneity via levaraging the cluster boundaries from each annotation. Here the scTriangulate 
-suggests sub-dividing of CD14 Mono population which has been annotated in Azimuth reference::
+suggests sub-dividing of CD14 Mono population which has not been annotated in Azimuth reference::
 
     # if we run lazy_run
     sctri = ScTriangulate.deserialize('output/after_pruned_assess.p)
@@ -288,7 +286,8 @@ suggests sub-dividing of CD14 Mono population which has been annotated in Azimut
    :align: center
    :target: target
 
-Then by pulling out the marker genes the program detected, we reason that it was caused by at least three distinctive sub-groups:
+Then by pulling out the marker genes the program detected, we reason that the heterogeneity reflect at least three sub cell states, supported by
+`literatures <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6077267/>`_:
 
 1. **classifical CD14+ Monocyte**: CLEC5A, CLEC4D, S100A9
 2. **intermediate CD14+ Monocyte**: FCGR3A, CLEC10A, HLA-DRA
@@ -311,9 +310,9 @@ Multi-modal workflow
 -----------------------------------
 
 In this example run, we are going to use a CITE-Seq dataset from human total nucleated cells (TNCs). This dataset contains 31 ADTs and in toal 8,491 cells.
-It is normal practice to analyze and cluster each modality's data seperately, and then try to merge them together. However, to reconcile the clustering
+It is a common practice to analyze and cluster based on each modality seperately, and then try to merge them result together. However, to reconcile the clustering
 differences are not a trivial tasks and it requires the simoutaneous consideration of both RNA gene expression and surface protein. Thankfully, scTriangulate
-can help to make the decision.
+can help us make the decision.
 
 the dataset can be downloaded from the `website <http://altanalyze.org/scTriangulate/CITESeq/TNC_r1-RNA-ADT.h5>`_.
 
@@ -406,7 +405,7 @@ Running scTriangulate
 Just use ``lazy_run()`` function, I have broken it down in the single_modality section::
 
     sctri = ScTriangulate(dir='output',adata=adata_combine,add_metrics={},query=['sctri_adt_leiden_1','sctri_adt_leiden_2','sctri_adt_leiden_3','sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
-    sctri.lazy_run()
+    sctri.lazy_run(assess_pruned=False,viewer_cluster=False,viewer_heterogeneity=False)
 
 All the intermediate results would be stored at ./output folder.
 
@@ -445,7 +444,8 @@ scTriangulate allows the triangulation amongst diverse resolutions and modalitie
    :align: center
    :target: target
 
-scTriangulate discovers new cell state due to ADT markers, azimuth prediction can be downloaded `from here <http://altanalyze.org/scTriangulate/CITESeq/azimuth_pred.tsv>`_::
+scTriangulate discovers new cell state due to ADT markers (CD56 high MAIT cell), supported by `previous literature <https://www.pnas.org/content/114/27/E5434>`_,
+azimuth prediction can be downloaded `from here <http://altanalyze.org/scTriangulate/CITESeq/azimuth_pred.tsv>`_::
 
     sctri = ScTriangulate.deserialize('output/after_pruned_assess.p')
     add_azimuth(sctri.adata,'azimuth_pred.tsv')

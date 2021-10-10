@@ -20,42 +20,47 @@ from .metrics import *
 
 
 
-def rank_pruning(sctri,discard=None,scale_sccaf=True):
+def rank_pruning(sctri,discard=None,scale_sccaf=True,assess_raw=False):
 
-    # construct data for shapley
-    sctri.run_single_key_assessment(key='raw',scale_sccaf=scale_sccaf)
-    subprocess.run(['rm','-r','{}'.format(os.path.join(sctri.dir,'scTriangulate_local_mode_enrichr/'))])
-    score_info = copy.deepcopy(sctri.score['raw'])
-    score_info.pop('cluster_to_doublet',None)  # don't consider doublet score
+    if assess_raw:
+        # construct data for shapley
+        sctri.run_single_key_assessment(key='raw',scale_sccaf=scale_sccaf)
+        subprocess.run(['rm','-r','{}'.format(os.path.join(sctri.dir,'scTriangulate_local_mode_enrichr/'))])
+        score_info = copy.deepcopy(sctri.score['raw'])
+        score_info.pop('cluster_to_doublet',None)  # don't consider doublet score
 
-    data_shape0 = len(score_info['cluster_to_reassign'])
-    data_shape1 = len(score_info)
-    data = np.empty(shape=[data_shape0,data_shape1])
-    df_index = list(score_info['cluster_to_reassign'].keys())
-    df_columns = list(score_info.keys())
-    for m,(metric,info) in enumerate(score_info.items()):
-        for c,(cluster,score) in enumerate(info.items()):
-            data[c,m] = score
-
-
-    # compute shapley
-    appro_shapley = approximate_shapley_value(data)
-    df = pd.DataFrame(data=data,index=df_index,columns=df_columns)
-    df['appro_shapley'] = appro_shapley
-    df.sort_values(by='appro_shapley',ascending=False,inplace=True)
+        data_shape0 = len(score_info['cluster_to_reassign'])
+        data_shape1 = len(score_info)
+        data = np.empty(shape=[data_shape0,data_shape1])
+        df_index = list(score_info['cluster_to_reassign'].keys())
+        df_columns = list(score_info.keys())
+        for m,(metric,info) in enumerate(score_info.items()):
+            for c,(cluster,score) in enumerate(info.items()):
+                data[c,m] = score
 
 
-    # concat clusters that have only one cells back to the df for completeness
-    all_clusters = sctri.adata.obs['raw'].unique()
-    ones_clusters = list(set(all_clusters).difference(set(df.index)))
-    data_ones = np.zeros(shape=[len(ones_clusters),data_shape1+1])  # add one for appro_shapley column
-    df_ones = pd.DataFrame(data=data_ones,index=ones_clusters,columns=df.columns)
-    df_total = pd.concat([df,df_ones])
-    # min-max scaler the appro_shapley
-    max_shapley = df_total['appro_shapley'].max()
-    min_shapley = df_total['appro_shapley'].min()
-    scaled = [(item - min_shapley) / (max_shapley - min_shapley) for item in df_total['appro_shapley'].values]
-    df_total['scaled_shapley'] = scaled
+        # compute shapley
+        appro_shapley = approximate_shapley_value(data)
+        df = pd.DataFrame(data=data,index=df_index,columns=df_columns)
+        df['appro_shapley'] = appro_shapley
+        df.sort_values(by='appro_shapley',ascending=False,inplace=True)
+
+
+        # concat clusters that have only one cells back to the df for completeness
+        all_clusters = sctri.adata.obs['raw'].unique()
+        ones_clusters = list(set(all_clusters).difference(set(df.index)))
+        data_ones = np.zeros(shape=[len(ones_clusters),data_shape1+1])  # add one for appro_shapley column
+        df_ones = pd.DataFrame(data=data_ones,index=ones_clusters,columns=df.columns)
+        df_total = pd.concat([df,df_ones])
+        # min-max scaler the appro_shapley
+        max_shapley = df_total['appro_shapley'].max()
+        min_shapley = df_total['appro_shapley'].min()
+        scaled = [(item - min_shapley) / (max_shapley - min_shapley) for item in df_total['appro_shapley'].values]
+        df_total['scaled_shapley'] = scaled
+
+    else:
+        df_total = pd.DataFrame(index=sctri.adata.obs['raw'].unique())
+        
     # add cluster size
     raw_size_dict = sctri.adata.obs['raw'].value_counts().to_dict()
     df_total['raw_cluster_size'] = df_total.index.map(raw_size_dict).values

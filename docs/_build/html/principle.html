@@ -95,7 +95,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#sctriangulate-object">ScTriangulate Object</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#visualization">Visualization</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#plot-heterogeneity">plot_heterogeneity</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#other-plotting-funcctions">Other plotting funcctions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-concordance">plot_concordance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-clusterability">plot_clusterability</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-long-heatmap">plot_long_heatmap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-multi-modal-feature-rank">plot_multi_modal_feature_rank</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-confusion">plot_confusion</a></li>
 </ul>
 </li>
 </ul>
@@ -239,16 +243,19 @@ no longer be considered in the marker genes and downstream assessment:</p>
 </div>
 <div class="section" id="visualization">
 <span id="reference-to-visualization"></span><h2>Visualization<a class="headerlink" href="#visualization" title="Permalink to this headline">¶</a></h2>
+<p>scTriangulate offers a powerful toolkit allowing end users to visualize the hidden heterogeneity in many different ways, also the <code class="docutils literal notranslate"><span class="pre">color</span></code> Module
+provide necessary function to assist in making publication quality figures. Here we highlight some of the plotting function and we would like to refer
+the users to the <code class="docutils literal notranslate"><span class="pre">API</span></code> part for more details.</p>
 <div class="section" id="plot-heterogeneity">
 <h3>plot_heterogeneity<a class="headerlink" href="#plot-heterogeneity" title="Permalink to this headline">¶</a></h3>
-<p>This is the main feature of scTriangulate visualization functionality, built on top of scanpy. since scTriangualte mix-and-match cluster boundaries from
+<p>This is the main feature of scTriangulate visualizations, built on top of scanpy. Since scTriangualte can mix-and-match cluster boundaries from
 diverse annotations, it empowers the users to discover further and hidden heterogeneity. Now, question is how the user can visualize the heterogeneity?</p>
 <a class="reference external image-reference" href="target"><img alt="_images/plot_heterogeneity_chop.png" class="align-center" src="_images/plot_heterogeneity_chop.png" style="width: 600px; height: 200px;" /></a>
-<p>Now as you can see, <strong>annoatation&#64;c1</strong> has been suggested to be divided by two sub populations, now we want to know:</p>
+<p>The philosophy behind this function is to first pick a viewpoint from which we want to look at the final result. For instance, here we choose “annotation1” as
+the viewpoint. As you can see, <strong>annoatation&#64;c1</strong> has been suggested to be divided by two sub populations, now we want to know:</p>
 <ol class="arabic simple">
 <li><p>how these two sub populations are lait out on umap?</p></li>
 <li><p>what are the differentially expressed features between these two sub populations?</p></li>
-<li><p>How many cells are in each sub populations?</p></li>
 </ol>
 <p>Let’s show some of the functionalities:</p>
 <p><strong>1. UMAP</strong>:</p>
@@ -267,9 +274,42 @@ diverse annotations, it empowers the users to discover further and hidden hetero
 </div>
 <a class="reference external image-reference" href="target"><img alt="_images/ph_dual_gene.png" class="align-center" src="_images/ph_dual_gene.png" style="width: 500px; height: 350px;" /></a>
 </div>
-<div class="section" id="other-plotting-funcctions">
-<h3>Other plotting funcctions<a class="headerlink" href="#other-plotting-funcctions" title="Permalink to this headline">¶</a></h3>
-<p><strong>1.plot_confusion</strong></p>
+<div class="section" id="plot-concordance">
+<h3>plot_concordance<a class="headerlink" href="#plot-concordance" title="Permalink to this headline">¶</a></h3>
+<p>When we have more than 2 annotation-sets, we want to know how they correspond to each other, what fraction of cells in annotation1 flow into
+another annotation and vice versus:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_concordance</span><span class="p">(</span><span class="n">key1</span><span class="o">=</span><span class="s1">&#39;azimuth&#39;</span><span class="p">,</span><span class="n">key2</span><span class="o">=</span><span class="s1">&#39;pruned&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;3dbar&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/3dbar.png" class="align-center" src="_images/3dbar.png" style="width: 500px; height: 400px;" /></a>
+</div>
+<div class="section" id="plot-clusterability">
+<h3>plot_clusterability<a class="headerlink" href="#plot-clusterability" title="Permalink to this headline">¶</a></h3>
+<p>Do you want to know for a specific annotation-set, which cluster is most likely to be subdivided and which is the least? We refer to this as
+clusterability:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_clusterability</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">col</span><span class="o">=</span><span class="s1">&#39;raw&#39;</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/plot_clusterability.png" class="align-center" src="_images/plot_clusterability.png" style="width: 500px; height: 400px;" /></a>
+</div>
+<div class="section" id="plot-long-heatmap">
+<h3>plot_long_heatmap<a class="headerlink" href="#plot-long-heatmap" title="Permalink to this headline">¶</a></h3>
+<p>A heatmap that can be arbitrarily long and ALWAYS display every gene:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_long_umap</span><span class="p">(</span><span class="n">n_features</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">20</span><span class="p">))</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/long_heatmap.png" class="align-center" src="_images/long_heatmap.png" style="width: 500px; height: 400px;" /></a>
+</div>
+<div class="section" id="plot-multi-modal-feature-rank">
+<h3>plot_multi_modal_feature_rank<a class="headerlink" href="#plot-multi-modal-feature-rank" title="Permalink to this headline">¶</a></h3>
+<p>In multi-modal setting, a cluster’s identify usually defined by all modalities, do you want to know by which modality a cluster is mainly defined?:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_multi_modal_feature_rank</span><span class="p">(</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_2@10&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/plot_multi_modal_feature_rank.png" class="align-center" src="_images/plot_multi_modal_feature_rank.png" style="width: 500px; height: 500px;" /></a>
+</div>
+<div class="section" id="plot-confusion">
+<h3>plot_confusion<a class="headerlink" href="#plot-confusion" title="Permalink to this headline">¶</a></h3>
 <p>It allows you to visualize the stability of each clustes in one annotation:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_confusion</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;confusion_reassign&#39;</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">)</span>
 </pre></div>

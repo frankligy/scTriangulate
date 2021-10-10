@@ -4,6 +4,10 @@ API
 ScTriangulate Class Methods
 -----------------------------
 
+.. _reference_to_instantiation:
+
+__init__()
+~~~~~~~~~~~~~~~~
 .. autoclass:: sctriangulate.main_class.ScTriangulate
     :members: 
     :exclude-members: confusion_to_df, plot_heterogeneity, gene_to_df, get_metrics_and_shapley, 
@@ -13,7 +17,6 @@ ScTriangulate Class Methods
                       regress_out_size_effect, compute_shapley, pruning, plot_umap, plot_confusion, plot_cluster_feature,
                       modality_contributions, plot_multi_modal_feature_rank, plot_long_heatmap, viewer_cluster_feature_figure,
                       viewer_cluster_feature_html, viewer_heterogeneity_figure, viewer_heterogeneity_html, plot_concordance
-
 
 (static) salvage_run()
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -184,6 +187,8 @@ mtx_to_large_txt()
 add_azimuth()
 ~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.add_azimuth
+
+.. _reference_to_add_annotation:
 
 add_annotations()
 ~~~~~~~~~~~~~~~~~~

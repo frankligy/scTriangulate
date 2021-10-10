@@ -183,8 +183,8 @@ biologically meaningful metrics to assess cluster goodness, and <a class="refere
 to attain a single stable solution.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>For larger dataset, it is advisable to run on a Linux system with enough RAM and space. The current release has been tested on both Mac and
-Linux Cluster.</p>
+<p>A typical scRNA-Seq dataset (10k cells) with four provided annotation-sets can run in ~10 minutes in a laptop. For larger datasets (100k cells) or multiome
+(GEX + ATAC) with &gt; 100k features (gene + peak), it is recommended to run the program in the high-performance compute environment.</p>
 </div>
 </div>
 <div class="section" id="inputs-and-outputs">
@@ -194,9 +194,47 @@ a myriad of preprocessing convenient functions to ease the file conversion proce
 <blockquote>
 <div><ul class="simple">
 <li><p><strong>Anndata</strong> (.h5 &amp; .h5ad), the annotations are the columns in adata.obs</p></li>
-<li><p><strong>mtx</strong>, annotations information should be supplied as addtional txt file (barcode -&gt; label)</p></li>
-<li><p><strong>dense matrix</strong>, txt expression matrix, annotations should be aupplied as addtional txt file.</p></li>
+<li><p><strong>mtx</strong>, annotations information should be supplied as addtional txt file (see below example and <a class="reference internal" href="api.html#reference-to-add-annotation"><span class="std std-ref">add_annotations()</span></a>)</p></li>
+<li><p><strong>dense matrix</strong>, txt expression matrix, annotations should be aupplied as addtional txt file (see below example and <a class="reference internal" href="api.html#reference-to-add-annotation"><span class="std std-ref">add_annotations()</span></a>).</p></li>
 </ul>
+<table class="colwidths-given docutils align-default" id="id1">
+<caption><span class="caption-text">annotation txt file</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>barcode</p></th>
+<th class="head"><p>label</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>D150_GTGTTAGAGGTGCTAG</p></td>
+<td><p>Mesothelial FB</p></td>
+</tr>
+<tr class="row-odd"><td><p>D150_ACTACGATCTCAGGCG</p></td>
+<td><p>Mesothelial FB</p></td>
+</tr>
+<tr class="row-even"><td><p>D150_GGAGATGTCACACCGG</p></td>
+<td><p>Mesothelial FB</p></td>
+</tr>
+<tr class="row-odd"><td><p>D150_CGGACACGTCGTGCCA</p></td>
+<td><p>Mesothelial FB</p></td>
+</tr>
+<tr class="row-even"><td><p>D062_TTCTTCCCACGACTAT</p></td>
+<td><p>Mesothelial FB</p></td>
+</tr>
+<tr class="row-odd"><td><p>D150_TCGATTTAGGATATGT</p></td>
+<td><p>Mesothelial FB</p></td>
+</tr>
+<tr class="row-even"><td><p>D150_GGTAATCGTAAGCTCT</p></td>
+<td><p>Mesothelial FB</p></td>
+</tr>
+<tr class="row-odd"><td><p>D150_GCCATGGAGGGTGAAA</p></td>
+<td><p>Mesothelial FB</p></td>
+</tr>
+</tbody>
+</table>
 </div></blockquote>
 <p>Optionally, users can supply their own umap embeddings, Please refer to <a class="reference internal" href="api.html#reference-to-add-umap"><span class="std std-ref">add_umap()</span></a> function for the details.</p>
 <p>All the intermediate outputs and final clustering results, plus interactive visualizations, will be automatically named and saved to the user-defined

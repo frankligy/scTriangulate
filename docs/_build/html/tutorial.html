@@ -193,7 +193,7 @@ has also been used as the demo query data in <a class="reference external" href=
 cells before filtering.</p>
 <p>Here we first conduct basic single cell analysis to obtain Leiden clustering results, however, at various resolutions (r=1,2,3). Smaller resolutions lead to
 broader clusters, and larger resolution value will result in more granular clustering. We leverage scTriangulate to take the three resolutions as the query
-annotations, and automatically mix-and-match cluster boundary from different resolutions, which at the end, yield scTriangulate reconciled cluster solutions.</p>
+annotation-sets, and automatically mix-and-match cluster boundary from different resolutions, which at the end, yield scTriangulate reconciled cluster solutions.</p>
 <div class="section" id="download-and-preprocessing">
 <h3>Download and preprocessing<a class="headerlink" href="#download-and-preprocessing" title="Permalink to this headline">¶</a></h3>
 <p>First load the packages:</p>
@@ -204,7 +204,7 @@ annotations, and automatically mix-and-match cluster boundary from different res
 <span class="kn">from</span> <span class="nn">sctriangulate.preprocessing</span> <span class="kn">import</span> <span class="o">*</span>
 </pre></div>
 </div>
-<p>The h5 file can be downloaded from <a class="reference external" href="http://altanalyze.org/scTriangulate/scRNASeq/pbmc_10k_v3.h5">here</a>. We used scanpy and scTriangulate
+<p>The h5 file can be downloaded from <a class="reference external" href="http://altanalyze.org/scTriangulate/scRNASeq/pbmc_10k_v3.h5">here</a>. First use scanpy and scTriangulate
 preprocessing module to conduct basic QC filtering and single cell pipeline:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read_10x_h5</span><span class="p">(</span><span class="s1">&#39;./pbmc_10k_v3_filtered_feature_bc_matrix.h5&#39;</span><span class="p">)</span>
 <span class="n">adata</span><span class="o">.</span><span class="n">var_names_make_unique</span><span class="p">()</span>
@@ -227,29 +227,29 @@ preprocessing module to conduct basic QC filtering and single cell pipeline:</p>
 <a class="reference external image-reference" href="target"><img alt="_images/qc_n_genes_by_counts.png" class="align-right" src="_images/qc_n_genes_by_counts.png" style="width: 320px; height: 250px;" /></a>
 <a class="reference external image-reference" href="target"><img alt="_images/qc_pct_counts_mt.png" class="align-left" src="_images/qc_pct_counts_mt.png" style="width: 320px; height: 250px;" /></a>
 <a class="reference external image-reference" href="target"><img alt="_images/qc_scatter.png" class="align-right" src="_images/qc_scatter.png" style="width: 320px; height: 250px;" /></a>
-<p>We filtered out the cells whose min_genes = 300, min_counts = 500, mt &gt; 20%, 11,022 cells left:</p>
+<p>Then filter out the cells whose min_genes = 300, min_counts = 500, mt &gt; 20%, 11,022 cells left:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_cells</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">min_genes</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
 <span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_cells</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span> <span class="n">min_counts</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
 <span class="n">adata</span> <span class="o">=</span> <span class="n">adata</span><span class="p">[</span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">pct_counts_mt</span> <span class="o">&lt;</span> <span class="mi">20</span><span class="p">,</span> <span class="p">:]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">adata</span><span class="p">)</span>  <span class="c1"># 11022 × 33538</span>
 </pre></div>
 </div>
-<p>Then we will use scTriangulate wrapper functions to obtain the Leiden clutser results at different resolutions (r=1,2,3), specifically,
+<p>Then use scTriangulate wrapper functions to obtain the Leiden clutser results at different resolutions (r=1,2,3), specifically,
 we chose number of PCs as 50, and 3000 highly variable genes:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span> <span class="o">=</span> <span class="n">scanpy_recipe</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">is_log</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">resolutions</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span><span class="n">pca_n_comps</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span><span class="n">n_top_genes</span><span class="o">=</span><span class="mi">3000</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>After running this command, we will have three columns in <code class="docutils literal notranslate"><span class="pre">adata.obs</span></code>, namely, <code class="docutils literal notranslate"><span class="pre">sctri_rna_leiden_1</span></code>, <code class="docutils literal notranslate"><span class="pre">sctri_rna_leiden_2</span></code>, <code class="docutils literal notranslate"><span class="pre">sctri_rna_leiden_3</span></code>.
+<p>After running this command, you will have three columns in <code class="docutils literal notranslate"><span class="pre">adata.obs</span></code>, namely, <code class="docutils literal notranslate"><span class="pre">sctri_rna_leiden_1</span></code>, <code class="docutils literal notranslate"><span class="pre">sctri_rna_leiden_2</span></code>, <code class="docutils literal notranslate"><span class="pre">sctri_rna_leiden_3</span></code>.
 Also a h5ad file named <code class="docutils literal notranslate"><span class="pre">adata_after_scanpy_recipe_rna_1_2_3_umap_True.h5ad</span></code> will be automatically saved to current directory so there’s no need to re-run this
-step again, Now let’s visualize them:</p>
+pre-processing step again, Now let’s visualize them:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">umap_dual_view_save</span><span class="p">(</span><span class="n">adata</span><span class="p">,</span><span class="n">cols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_3&#39;</span><span class="p">])</span>
 <span class="c1"># three umaps will be saved to your current directory.</span>
 </pre></div>
 </div>
 <a class="reference external image-reference" href="target"><img alt="_images/three_resolutions.png" class="align-center" src="_images/three_resolutions.png" style="width: 900px; height: 300px;" /></a>
-<p>As we can see, different resolutions lead to various number of clusters, and it is clear that certain regions got sub-divided in higher resolutions. However,
-we don’t know whether this sub-populations are valid off the top of our heads. <strong>Here comes scTriangulate, which will scan each clusters at each resolutions,
-and mix-and-match different solutions to achieve an optimal one.</strong></p>
+<p>As you can see, different resolutions lead to various number of clusters, and it is clear that certain regions get sub-divided in higher resolutions. However,
+we don’t know whether this sub-populations are valid off the top of our heads. Here comes scTriangulate, which will scan each clusters at each resolution,
+and mix-and-match different solutions to achieve a reconciled result.</p>
 </div>
 <div class="section" id="running-sctriangulate">
 <h3>Running scTriangulate<a class="headerlink" href="#running-sctriangulate" title="Permalink to this headline">¶</a></h3>
@@ -259,7 +259,7 @@ and mix-and-match different solutions to achieve an optimal one.</strong></p>
 handle every thing for us:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adata</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;adata_after_scanpy_recipe_rna_1_2_3_umap_True.h5ad&#39;</span><span class="p">)</span>
 <span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;./output&#39;</span><span class="p">,</span><span class="n">adata</span><span class="o">=</span><span class="n">adata</span><span class="p">,</span><span class="n">query</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_3&#39;</span><span class="p">])</span>
-<span class="n">sctri</span><span class="o">.</span><span class="n">lazy_run</span><span class="p">()</span>  <span class="c1"># done!!!</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">lazy_run</span><span class="p">(</span><span class="n">assess_pruned</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">viewer_cluster</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">viewer_heterogeneity</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># done!!!</span>
 </pre></div>
 </div>
 <p>We first instantiate <code class="docutils literal notranslate"><span class="pre">ScTriangulate</span></code> object by specify:</p>
@@ -268,18 +268,15 @@ handle every thing for us:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">adata</span></code>, the adata that we want to start with.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">query</span></code>, a list contains all the annotations that we want to triangulate.</p></li>
 </ol>
-<p>The <code class="docutils literal notranslate"><span class="pre">dir</span></code> doesn’t need to be an existing folder, the program will automatically create one if not present.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">dir</span></code> doesn’t need to be an existing folder, the program will automatically create one if not present. More information about instantiation can be
+found in the API <a class="reference internal" href="api.html#reference-to-instantiation"><span class="std std-ref">__init__()</span></a>.</p>
+<p>The purpose of three arguments in <code class="docutils literal notranslate"><span class="pre">lazy_run()</span></code> is just to save time, you can leave it as default by calling <code class="docutils literal notranslate"><span class="pre">lazy_run()</span></code>, which will automatically
+assess the stability of the final defined cluster, generate the cluster viewer and heterogeneity viewer. However, if you only want to obtain the scTriangulate
+reconciled cluster information, you don’t need the above three steps, so we turn them off.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>To save time, please run lazy_run(scale_sccaf=False,viewer_cluster=False), the first argument instruct the program to compute SCCAF score without
-firstly scaling the data, which will save quite a lot time. By default this option is set to True. The second argument is to instruct the program to
-not build the cluster_viewer, it will take some time to generate all the images that the cluster viewer needs.</p>
-</div>
-<p>However for the purpose of instructing users how to understand this tool, we are going to run it step by step.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Users can switch to manually run scTriangulat step by step, in order for granular operations/modifications. The instructions are as below.
-The above <code class="docutils literal notranslate"><span class="pre">lazy_run()</span></code> function basically takes care step 1-4 automatically with default parameter settings.</p>
+<p>However for the purpose of instructing users how to understand this tool, we are going to run it step by step to let the readers get a sense
+of how the program work. We refer to it as Manual Run.</p>
 </div>
 </div>
 <div class="section" id="manual-run">
@@ -606,7 +603,7 @@ we just calculated, the first 10 rows are shown below.</p>
 <div class="section" id="step2-compute-shapley">
 <h5>Step2: compute_shapley<a class="headerlink" href="#step2-compute-shapley" title="Permalink to this headline">¶</a></h5>
 <p>The second step is to utilize the calculated metrics, and assess which annotation/cluster is the best for <strong>each single cell</strong>. So the program iterate each row,
-which is a single cell, retrive all the metrics associated with each cluster, and calculate shapley value of each cluster (in this case, each single cell has
+representing a single cell, retrive all the metrics associated with each cluster, and calculate shapley value for each cluster (in this case, each single cell has
 three conflicting clusters). Then the program will assign the cell to the “best” clusters amongst all solutions. We refer the resultant cluster assignment as
 <code class="docutils literal notranslate"><span class="pre">raw</span></code> cluster result:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/break_point_after_metrics.p&#39;</span><span class="p">)</span>
@@ -999,7 +996,7 @@ unstable invalid clusters will be reassigned to its nearest neightbor’s cluste
 <span class="n">sctri</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="s1">&#39;break_point_after_prune.p&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>A column named “pruned” will be added, also “confidence” column stores the confidence the program hold to call it out.</p>
+<p>A column named “pruned” will be added, also “confidence” column stores the confidence the program hold to call this cluster out.</p>
 <table class="colwidths-given docutils align-default" id="id5">
 <caption><span class="caption-text">After prune result</span><a class="headerlink" href="#id5" title="Permalink to this table">¶</a></caption>
 <colgroup>
@@ -1517,10 +1514,10 @@ unstable invalid clusters will be reassigned to its nearest neightbor’s cluste
 </div>
 <div class="section" id="step4-building-the-viewer">
 <h5>Step4: building the viewer<a class="headerlink" href="#step4-building-the-viewer" title="Permalink to this headline">¶</a></h5>
-<p>We provide an automatically generated webpage, called scTriangulate viewer, to allow users to dynamically navigate the robustness of each cluster from each
+<p>We provide an automatically generated html page, called scTriangulate viewer, to allow users to dynamically toggle different clusters the robustness of each cluster from each
 annotations (cluster viewer). Also, it enables the inspection of further heterogeneity that might not have been captured by a
 single annotation (hetergeneity viewer). The logics of following codes are simple, we first build html, then we generate the figures that the html page would
-need to render it:</p>
+need for proper rendering:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/break_point_after_prune.p&#39;</span><span class="p">)</span>
 <span class="n">sctri</span><span class="o">.</span><span class="n">viewer_cluster_feature_html</span><span class="p">()</span>
 <span class="n">sctri</span><span class="o">.</span><span class="n">viewer_cluster_feature_figure</span><span class="p">(</span><span class="n">parallel</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">select_keys</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;pruned&#39;</span><span class="p">])</span>
@@ -1557,7 +1554,7 @@ agreement with Azimuth.</p>
 <div class="section" id="discover-hidden-heterogeneity">
 <h4>Discover hidden heterogeneity<a class="headerlink" href="#discover-hidden-heterogeneity" title="Permalink to this headline">¶</a></h4>
 <p>scTrangulate, by design, could greedily discover any hidden heterogeneity via levaraging the cluster boundaries from each annotation. Here the scTriangulate
-suggests sub-dividing of CD14 Mono population which has been annotated in Azimuth reference:</p>
+suggests sub-dividing of CD14 Mono population which has not been annotated in Azimuth reference:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># if we run lazy_run</span>
 <span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/after_pruned_assess.p)</span>
 <span class="c1"># if we run manual step-by-step</span>
@@ -1568,7 +1565,8 @@ suggests sub-dividing of CD14 Mono population which has been annotated in Azimut
 </pre></div>
 </div>
 <a class="reference external image-reference" href="target"><img alt="_images/mono_umap.png" class="align-center" src="_images/mono_umap.png" style="width: 500px; height: 300px;" /></a>
-<p>Then by pulling out the marker genes the program detected, we reason that it was caused by at least three distinctive sub-groups:</p>
+<p>Then by pulling out the marker genes the program detected, we reason that the heterogeneity reflect at least three sub cell states, supported by
+<a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6077267/">literatures</a>:</p>
 <ol class="arabic">
 <li><p><strong>classifical CD14+ Monocyte</strong>: CLEC5A, CLEC4D, S100A9</p></li>
 <li><p><strong>intermediate CD14+ Monocyte</strong>: FCGR3A, CLEC10A, HLA-DRA</p></li>
@@ -1586,9 +1584,9 @@ suggests sub-dividing of CD14 Mono population which has been annotated in Azimut
 <div class="section" id="multi-modal-workflow">
 <span id="reference-to-multi-modal-workflow"></span><h2>Multi-modal workflow<a class="headerlink" href="#multi-modal-workflow" title="Permalink to this headline">¶</a></h2>
 <p>In this example run, we are going to use a CITE-Seq dataset from human total nucleated cells (TNCs). This dataset contains 31 ADTs and in toal 8,491 cells.
-It is normal practice to analyze and cluster each modality’s data seperately, and then try to merge them together. However, to reconcile the clustering
+It is a common practice to analyze and cluster based on each modality seperately, and then try to merge them result together. However, to reconcile the clustering
 differences are not a trivial tasks and it requires the simoutaneous consideration of both RNA gene expression and surface protein. Thankfully, scTriangulate
-can help to make the decision.</p>
+can help us make the decision.</p>
 <p>the dataset can be downloaded from the <a class="reference external" href="http://altanalyze.org/scTriangulate/CITESeq/TNC_r1-RNA-ADT.h5">website</a>.</p>
 <div class="section" id="load-data-and-preprocessing">
 <h3>Load data and preprocessing<a class="headerlink" href="#load-data-and-preprocessing" title="Permalink to this headline">¶</a></h3>
@@ -1648,7 +1646,7 @@ can help to make the decision.</p>
 <h3>Running scTriangulate<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
 <p>Just use <code class="docutils literal notranslate"><span class="pre">lazy_run()</span></code> function, I have broken it down in the single_modality section:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;output&#39;</span><span class="p">,</span><span class="n">adata</span><span class="o">=</span><span class="n">adata_combine</span><span class="p">,</span><span class="n">add_metrics</span><span class="o">=</span><span class="p">{},</span><span class="n">query</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sctri_adt_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_adt_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_adt_leiden_3&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_2&#39;</span><span class="p">,</span><span class="s1">&#39;sctri_rna_leiden_3&#39;</span><span class="p">])</span>
-<span class="n">sctri</span><span class="o">.</span><span class="n">lazy_run</span><span class="p">()</span>
+<span class="n">sctri</span><span class="o">.</span><span class="n">lazy_run</span><span class="p">(</span><span class="n">assess_pruned</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">viewer_cluster</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">viewer_heterogeneity</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>All the intermediate results would be stored at ./output folder.</p>
@@ -1677,7 +1675,8 @@ can help to make the decision.</p>
 </div>
 <a class="reference external image-reference" href="target"><img alt="_images/contributions.png" class="align-center" src="_images/contributions.png" style="width: 600px; height: 300px;" /></a>
 <a class="reference external image-reference" href="target"><img alt="_images/resolutions.png" class="align-center" src="_images/resolutions.png" style="width: 400px; height: 300px;" /></a>
-<p>scTriangulate discovers new cell state due to ADT markers, azimuth prediction can be downloaded <a class="reference external" href="http://altanalyze.org/scTriangulate/CITESeq/azimuth_pred.tsv">from here</a>:</p>
+<p>scTriangulate discovers new cell state due to ADT markers (CD56 high MAIT cell), supported by <a class="reference external" href="https://www.pnas.org/content/114/27/E5434">previous literature</a>,
+azimuth prediction can be downloaded <a class="reference external" href="http://altanalyze.org/scTriangulate/CITESeq/azimuth_pred.tsv">from here</a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span> <span class="o">=</span> <span class="n">ScTriangulate</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="s1">&#39;output/after_pruned_assess.p&#39;</span><span class="p">)</span>
 <span class="n">add_azimuth</span><span class="p">(</span><span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="p">,</span><span class="s1">&#39;azimuth_pred.tsv&#39;</span><span class="p">)</span>
 <span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;dummy_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">sctri</span><span class="o">.</span><span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;dummy_cluster&#39;</span><span class="p">)</span>

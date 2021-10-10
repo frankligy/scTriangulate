@@ -58,6 +58,26 @@ class ScTriangulate(object):
     :param dir: Output folder path on the disk
     :param adata: input adata file
     :param query: a python list contains the annotation names to query
+    :param species: string, either human (default) or mouse, it will impact how the program searches for artifact genes in the database
+    :param criterion: int, it controls what genes would be considered as artifact genes:
+
+            * `criterion1`: all will be artifact
+            * `criterion2`: all will be artifact except cellcycle  [Default]
+            * `criterion3`: all will be artifact except cellcycle, ribosome
+            * `criterion4`: all will be artifact except cellcycle, ribosome, mitochondrial
+            * `criterion5`: all will be artifact except cellcycle, ribosome, mitochondrial, antisense
+            * `criterion6`: all will be artifact except cellcycle, ribosome, mitochondrial, antisense, predict_gene
+
+    :param verbose: int, it controls how the log file will be generated. 1 means print to stdout (default), 2 means print to a file in the directory
+                    specified by dir parameter.
+    :param add_metrics: python dictionary. These allows users to add additional metrics to favor or disqualify certain cluster. By default,
+                        we add tfidf5 score {'tfidf5':tf_idf5_for_cluster}, remember the value in the dictionary should be the name of a callable, user
+                        can define the callable by themselves.
+    :param predict_doublet: boolean or string, whether to predict doublet using scrublet or not. Valid value:
+
+        * True: will predict doublet score
+        * False: will not predict doublet score
+        * (string) precomputed: will not predict doublet score but just use existing one
 
     Example::
 
@@ -289,8 +309,8 @@ class ScTriangulate(object):
             df.to_csv(os.path.join(self.dir,'sctri_metrics_and_shapley_df_{}.txt'.format(barcode)),sep='\t')
         return df
 
-    def prune_result(self,win_fraction_cutoff=0.25,reassign_abs_thresh=10,scale_sccaf=True,remove1=True):
-        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf)
+    def prune_result(self,win_fraction_cutoff=0.25,reassign_abs_thresh=10,scale_sccaf=True,remove1=True,assess_raw=False):
+        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,assess_raw=False)
         self.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
         self.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=self.reference)
         self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf)
@@ -337,7 +357,7 @@ class ScTriangulate(object):
             
 
     def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
-                 assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None):
+                 assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None):
         '''
         This is the highest level wrapper function for running every step in one goal.
 
@@ -346,6 +366,7 @@ class ScTriangulate(object):
         :param compute_shapley_parallel: boolean, whether to parallelize ``compute_parallel`` step. Default: True
         :param win_fraction_cutoff: float, between 0-1, the cutoff for function ``add_invalid_by_win_fraction``. Default: 0.25
         :param reassign_abs_thresh: int, the cutoff for minimum number of cells a valid cluster should haves. Default: 10
+        :param assess_raw: boolean, whether to run the same cluster assessment metrics on raw cluster labels. Default: False
         :param assess_pruned: boolean, whether to run same cluster assessment metrics on final pruned cluster labels. Default: True
         :param viewer_cluster: boolean, whether to build viewer html page for all clusters' diagnostic information. Default: True
         :param viewer_cluster_keys: list, clusters from what annotations we want to view on the viewer, only clusters within this annotation whose diagnostic
@@ -363,7 +384,7 @@ class ScTriangulate(object):
         self.serialize(name='after_metrics.p')
         self.compute_shapley(parallel=compute_shapley_parallel)
         self.serialize(name='after_shapley.p')
-        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf)
+        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,assess_raw=assess_raw)
         self.serialize(name='after_rank_pruning.p')
         self.uns['raw_cluster_goodness'].to_csv(os.path.join(self.dir,'raw_cluster_goodness.txt'),sep='\t')
         self.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
@@ -1005,7 +1026,7 @@ class ScTriangulate(object):
         self.adata.obs['prefixed'] = col
 
 
-    def pruning(self,method='reassign',discard=None,scale_sccaf=True,abs_thresh=10,remove1=True,reference=None,parallel=True):
+    def pruning(self,method='reassign',discard=None,scale_sccaf=True,abs_thresh=10,remove1=True,reference=None,parallel=True,assess_raw=False):
         '''
         Main function. After running ``compute_shapley``, we get **raw** cluster results. Althought the raw cluster is informative,
         there maybe some weired clusters that accidentally win out which doesn't attribute to its biological stability. For example,
@@ -1023,7 +1044,8 @@ class ScTriangulate(object):
         :param remove1: boolean. When reassign the cells in the dicarded clutsers, whether to also reassign the cells who are the only one in each 
                         ``reference`` cluster. Default: True
         :param reference: string. which annotation will serve as the reference.
-        :param parallel: boolean, whether to perform this step in parallel. (scatter and gather).
+        :param parallel: boolean, whether to perform this step in parallel. (scatter and gather).Default is True
+        :param assess_raw: boolean, whether to run the same set of cluster stability metrics on the raw cluster. Default is False
 
         Examples::
 
@@ -1042,7 +1064,7 @@ class ScTriangulate(object):
                 self.invalid = invalid
 
             elif method == 'rank':
-                obs, df = rank_pruning(self,discard=discard,scale_sccaf=scale_sccaf)
+                obs, df = rank_pruning(self,discard=discard,scale_sccaf=scale_sccaf,assess_raw=assess_raw)
                 self.adata.obs = obs
                 self.uns['raw_cluster_goodness'] = df
                 self.adata.obs['confidence'] = self.adata.obs['pruned'].map(df['win_fraction'].to_dict())
