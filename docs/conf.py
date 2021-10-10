@@ -15,7 +15,7 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 # if tested on local sphinx, but comment out if in read the doc
-autodoc_mock_imports = ['seaborn','anytree','scipy','scanpy','anndata','gseapy','scrublet','yattag']
+# autodoc_mock_imports = ['seaborn','anytree','scipy','scanpy','anndata','gseapy','scrublet','yattag']
 
 # -- Project information -----------------------------------------------------
 
