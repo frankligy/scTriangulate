@@ -5,7 +5,7 @@ clustering solutions.
 
 ## Tutorials
 
-Check our full [documentation.](https://sctriangulate.readthedocs.io/en/latest/)
+Check our full [documentation.](https://sctriangulate.readthedocs.io/en/latest/get_started.html)
 
 ## Overview
 
@@ -30,6 +30,10 @@ scTriangulate will be presented in [2021 CZI Single-Cell Biology Annual Meeting]
 
 A preprint will come out soon.
 
+## Reproducibility
+
+All the scripts for reproducing the results are available in [reproduce folder](https://github.com/frankligy/scTriangulate/tree/main/reproduce), along 
+with all the necessary input files and intermediate outputs which are avaiable in [Synapse storage](https://www.synapse.org/#!Synapse:syn26320337/files/).
 
 ## Contact
 
