@@ -1,3 +1,12 @@
+[![Documentation Status](https://readthedocs.org/projects/sctriangulate/badge/?version=latest)](https://sctriangulate.readthedocs.io/en/latest/?badge=latest)
+
+[![Pypi](https://img.shields.io/pypi/v/sctriangulate?logo=PyPI)](https://pypi.org/project/sctriangulate/)
+
+[![Pypi Downloads](https://img.shields.io/pypi/dm/sctriangulate.svg?label=Pypi%20downloads)](
+https://pypi.org/project/sctriangulate/)
+
+
+
 # scTriangulate
 
 scTriangulate is a Python package to mix-and-match conflicting clustering results in single cell analysis, and generate reconciled 
