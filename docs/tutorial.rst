@@ -26,6 +26,12 @@ First load the packages::
     from sctriangulate import *
     from sctriangulate.preprocessing import *
 
+.. warning::
+
+    If you experience difficulties downloading the files through the link we provided in this page,
+    you can try to open the "here" link on a new window, and then add "http://" as prefix (not https)
+    to the URL, the download will start. 
+
 The h5 file can be downloaded from `here <http://altanalyze.org/scTriangulate/scRNASeq/pbmc_10k_v3.h5>`_. First use scanpy and scTriangulate
 preprocessing module to conduct basic QC filtering and single cell pipeline::
 
