@@ -139,11 +139,11 @@ the result file after_pruned_assess.p will be on https://www.synapse.org/#!Synap
 
 # insights
 sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
-# features = ['AB_CD56','CLEC10A','CLEC5A','CLEC4D','HLA-DRA','S100A9','FCGR3A']
-# peaks = [item for item in adata_atac.var_names if 'CASC15' in item]
-# sc.pl.umap(sctri.adata,color=features+peaks,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
-# plt.savefig('output_one/previous_conclusions.pdf',bbox_inches='tight')
-# plt.close()
+features = ['AB_CD56','CLEC10A','CLEC5A','CLEC4D','HLA-DRA','S100A9','FCGR3A']
+peaks = [item for item in adata_atac.var_names if 'CASC15' in item]
+sc.pl.umap(sctri.adata,color=features+peaks,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
+plt.savefig('output_one/previous_conclusions.pdf',bbox_inches='tight')
+plt.close()
 
 ## modality contribution and confidence
 sctri.modality_contributions()
@@ -152,36 +152,36 @@ for col in ['adt_contribution','atac_contribution','rna_contribution']:
 sctri.plot_umap('confidence','continuous',umap_cmap='viridis')
 
 
-# for cluster in ['sctri_adt_leiden_1@0','sctri_atac_leiden_1@2','sctri_rna_leiden_3@27','sctri_rna_leiden_1@2','sctri_rna_leiden_3@25']:
-#     sctri.plot_multi_modal_feature_rank(cluster)
+for cluster in ['sctri_adt_leiden_1@0','sctri_atac_leiden_1@2','sctri_rna_leiden_3@27','sctri_rna_leiden_1@2','sctri_rna_leiden_3@25']:
+    sctri.plot_multi_modal_feature_rank(cluster)
 
-# for cluster in ['sctri_rna_leiden_2@12','sctri_rna_leiden_2@10','sctri_rna_leiden_1@1']:
-#     sctri.plot_multi_modal_feature_rank(cluster)
+for cluster in ['sctri_rna_leiden_2@12','sctri_rna_leiden_2@10','sctri_rna_leiden_1@1']:
+    sctri.plot_multi_modal_feature_rank(cluster)
 
-# genes = ['CCR7','CCL5','TSHZ2','IFIT2','IL2RA']
-# sc.pl.umap(sctri.adata,color=genes,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
-# plt.savefig('output_one/cd4_markers.pdf',bbox_inches='tight')
-# plt.close()
+genes = ['CCR7','CCL5','TSHZ2','IFIT2','IL2RA']
+sc.pl.umap(sctri.adata,color=genes,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
+plt.savefig('output_one/cd4_markers.pdf',bbox_inches='tight')
+plt.close()
 
-# subset = ['sctri_adt_leiden_1@0','sctri_atac_leiden_1@2','sctri_rna_leiden_1@2']
-# # sctri.plot_heterogeneity('azimuth','CD4 TCM','build',subset=subset)
-# for gene in ['ZBTB17','chr1_15948613_15951748_ZBTB17']:
-#     sctri.plot_heterogeneity('azimuth','CD4 TCM','single_gene',subset=subset,single_gene=gene,cmap='viridis')
-# for gene in ['STAM','ICOS','RUNX3','ROR2','AB_CD95']:
-#     sctri.plot_heterogeneity('azimuth','CD4 TCM','single_gene',subset=subset,single_gene=gene,cmap='viridis')
-# sys.exit('stop')
+subset = ['sctri_adt_leiden_1@0','sctri_atac_leiden_1@2','sctri_rna_leiden_1@2']
+sctri.plot_heterogeneity('azimuth','CD4 TCM','build',subset=subset)
+for gene in ['ZBTB17','chr1_15948613_15951748_ZBTB17']:
+    sctri.plot_heterogeneity('azimuth','CD4 TCM','single_gene',subset=subset,single_gene=gene,cmap='viridis')
+for gene in ['STAM','ICOS','RUNX3','ROR2','AB_CD95']:
+    sctri.plot_heterogeneity('azimuth','CD4 TCM','single_gene',subset=subset,single_gene=gene,cmap='viridis')
+sys.exit('stop')
 
-# adts = []
-# for feature in sctri.adata.var_names:
-#     if feature.startswith('AB_'):
-#         adts.append(feature)
-# sc.pl.umap(sctri.adata,color=adts,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
-# plt.savefig('output_one/all_adts.pdf')
-# plt.close()
+adts = []
+for feature in sctri.adata.var_names:
+    if feature.startswith('AB_'):
+        adts.append(feature)
+sc.pl.umap(sctri.adata,color=adts,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
+plt.savefig('output_one/all_adts.pdf')
+plt.close()
 
-# subset = ['sctri_adt_leiden_2@20','sctri_rna_leiden_2@17']
-# for gene in ['HLA-DRA','S100A9','CLEC4D','CLEC5A','CLEC10A','FCGR3A','CD14','AB_CD16','AB_CD14']:
-#     sctri.plot_heterogeneity('azimuth','CD16 Mono','single_gene',subset=subset,single_gene=gene,cmap='viridis')
+subset = ['sctri_adt_leiden_2@20','sctri_rna_leiden_2@17']
+for gene in ['HLA-DRA','S100A9','CLEC4D','CLEC5A','CLEC10A','FCGR3A','CD14','AB_CD16','AB_CD14']:
+    sctri.plot_heterogeneity('azimuth','CD16 Mono','single_gene',subset=subset,single_gene=gene,cmap='viridis')
 
 
 
