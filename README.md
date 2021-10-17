@@ -31,7 +31,7 @@ It can be used in an array of settings:
 
 ## Citation
 
-preprint coming soon.
+scTriangulate: Decision-level integration of multimodal single-cell data. BioRxiv. Oct 2021 (https://www.biorxiv.org/content/10.1101/2021.10.16.464640v1)
 
 ## Reproducibility
 
