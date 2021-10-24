@@ -8,9 +8,9 @@
 Get started
 ===================
 
-Hi, Welcome to scTriangulate tutorials, here are some suggestive steps to quickly get a hang of this tool:
+Welcome to scTriangulate documentation and tutorials website. Please follow the links below:
 
-1. Background: :ref:`reference_to_overview`
+1. :ref:`reference_to_overview`
 2. :ref:`reference_to_single_modality_workflow`
 3. :ref:`reference_to_multi_modal_workflow`
 4. :ref:`reference_to_visualization`

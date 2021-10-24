@@ -1,12 +1,12 @@
 Installation
 ===============
 
-scTriangulate requires python >= 3.7, conda virtual environment is highly recommended::
+scTriangulate requires python >= 3.7. This software has been extensively tested using the conda virtual environment::
 
     pip install sctriangulate
 
 
-From source::
+From source code::
 
     git clone https://github.com/frankligy/scTriangulate
     cd ./scTriangulate
@@ -30,9 +30,6 @@ From source::
     * 'numpy ==1.19.5',
     * 'pandas ==1.1.5',
     * 'leidenalg'
-
-
-
 
 A minitest is included::
 

@@ -2,6 +2,7 @@ from matplotlib import cm
 import pandas as pd
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap, to_hex, to_rgb
+from matplotlib import colors
 import copy
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -98,6 +99,10 @@ def hex2_to_rgb3(hex2):
             rgb_ = to_rgb(hex_)
             rgb3[i,j,:] = rgb_ 
     return rgb3
+
+# 256 to [0,1]
+def inter_from_256(x):
+    return np.interp(x=x,xp=[0,255],fp=[0,1])
 
 # choose colors
 def retrieve_pretty_colors(name):
@@ -214,6 +219,70 @@ def colors_for_set(setlist):  # a list without redundancy
     _colors = pick_n_colors(n=length)
     cmap = pd.Series(index=setlist,data=_colors).to_dict()
     return cmap
+
+
+def build_custom_continuous_cmap(*rgb_list):
+    '''
+    Generating any custom continuous colormap, user should supply a list of (R,G,B) color taking the value from [0,255], because this is
+    the format the adobe color will output for you. 
+
+    Examples::
+
+        test_cmap = build_custom_continuous_cmap([64,57,144],[112,198,162],[230,241,146],[253,219,127],[244,109,69],[169,23,69])
+        fig,ax = plt.subplots()
+        fig.colorbar(cm.ScalarMappable(norm=colors.Normalize(),cmap=diverge_cmap),ax=ax)
+
+    .. image:: ./_static/custom_continuous_cmap.png
+        :height: 400px
+        :width: 550px
+        :align: center
+        :target: target     
+
+    '''
+    all_red = []
+    all_green = []
+    all_blue = []
+    for rgb in rgb_list:
+        all_red.append(rgb[0])
+        all_green.append(rgb[1])
+        all_blue.append(rgb[2])
+    # build each section
+    n_section = len(all_red) - 1
+    red = tuple([(1/n_section*i,inter_from_256(v),inter_from_256(v)) for i,v in enumerate(all_red)])
+    green = tuple([(1/n_section*i,inter_from_256(v),inter_from_256(v)) for i,v in enumerate(all_green)])
+    blue = tuple([(1/n_section*i,inter_from_256(v),inter_from_256(v)) for i,v in enumerate(all_blue)])
+    cdict = {'red':red,'green':green,'blue':blue}
+    new_cmap = colors.LinearSegmentedColormap('new_cmap',segmentdata=cdict)
+    return new_cmap
+
+def build_custom_divergent_cmap(hex_left,hex_right):
+    '''
+    User supplies two arbitrary hex code for the vmin and vmax color values, then it will build a divergent cmap centers at pure white.
+
+    Examples::
+
+        diverge_cmap = build_custom_divergent_cmap('#21EBDB','#F0AA5F')
+        fig,ax = plt.subplots()
+        fig.colorbar(cm.ScalarMappable(norm=colors.Normalize(),cmap=diverge_cmap),ax=ax)
+
+    .. image:: ./_static/custom_divergent_cmap.png
+        :height: 400px
+        :width: 550px
+        :align: center
+        :target: target        
+
+    '''
+    left_rgb = colors.to_rgb(hex_left)
+    right_rgb = colors.to_rgb(hex_right)
+    # build each section
+    n_section = 2
+    red = ((0,left_rgb[0],left_rgb[0]),(0.5,1,1),(1,right_rgb[0],right_rgb[0]))
+    green = ((0,left_rgb[1],left_rgb[1]), (0.5, 1, 1), (1, right_rgb[1], right_rgb[1]))
+    blue = ((0,left_rgb[2],left_rgb[2]), (0.5, 1, 1), (1, right_rgb[2], right_rgb[2]))
+    cdict = {'red':red,'green':green,'blue':blue}
+    new_cmap = colors.LinearSegmentedColormap('new_cmap',segmentdata=cdict)
+    return new_cmap
+
 
 # zeileis_28 was taken from scanpy: https://github.com/theislab/scanpy/blob/master/scanpy/plotting/palettes.py
 # and they noted the original source as below:

@@ -248,14 +248,6 @@ reformat_peak()
 Colors Module
 ----------------------
 
-retrieve_pretty_cmap()
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: sctriangulate.colors.retrieve_pretty_cmap
-
-retrieve_pretty_colors()
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: sctriangulate.colors.retrieve_pretty_colors
-
 pick_n_colors()
 ~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.colors.pick_n_colors
@@ -267,6 +259,22 @@ colors_for_set()
 bg_greyed_cmap()
 ~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.colors.bg_greyed_cmap
+
+build_custom_continuous_cmap()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.build_custom_continuous_cmap
+
+build_custom_divergent_cmap()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.build_custom_divergent_cmap
+
+retrieve_pretty_cmap()
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.retrieve_pretty_cmap
+
+retrieve_pretty_colors()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.retrieve_pretty_colors
 
 generate_block()
 ~~~~~~~~~~~~~~~~~~~

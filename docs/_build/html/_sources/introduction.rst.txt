@@ -5,16 +5,16 @@ Introduction
 
 What is scTriangulate?
 ------------------------
-scTriangulate is a python package designed to solve ``"multi-annotation"`` problem. When analyzing single cell omics data, you may encounter situations
-where you inevitably have multiple different sets of cell annotations:
+scTriangulate is a python3 package designed to harmonize ``conflicting annotations`` in single cell genomics studies. 
+While this approach can be applied to any situation in which the same dataset has multiple conflicting annotations, common challenges includes:
 
-1. Running same unsupervised clustering (i.e. Leiden) algorithm using different ``resolutions``.
+1. Integrate results from the same or multiple unsupervised clustering algorithms (i.e. Leiden, Seurat, SnapATAC) using different ``resolutions``.
 
-2. Running unsupervised clustering using different ``algorithms``.
+2. Integrate results from both unsupervised and supervised (i.e. cellHarmony, Seurat label transfer) ``clustering algorithms``.
 
-3. Running reference mapping tools using different ``reference atlases``.
+3. Integrate results from different ``reference atlases``.
 
-4. Clustering labels from matched ``multi-modalities`` (RNA, ADT, ATAC, etc)
+4. Integrate labels from ``multi-modality`` single cell datasets (CITE-Seq, Multiome, TEA-Seq, ASAP-Seq, etc.).
 
 .. image:: ./_static/schema_chop.png
    :height: 180px
@@ -22,30 +22,30 @@ where you inevitably have multiple different sets of cell annotations:
    :align: center
    :target: target
 
-scTriangulate enable the usrs to ``mix-and-match`` the individual clustering results via leveraging customizable 
-biologically meaningful metrics to assess cluster goodness, and `Shapley Value <https://en.wikipedia.org/wiki/Shapley_value>`_ from cooperative theory 
-to attain a single stable solution.
+scTriangulate enables the user to ``mix-and-match`` individual clustering results by leveraging customizable 
+statistical measures of single cell cluster stability in combination with a cooperative game theory approach (`Shapley Value <https://en.wikipedia.org/wiki/Shapley_value>`_) 
+to obtain an single optimal solution.
 
 .. note::
-    A typical scRNA-Seq dataset (10k cells) with four provided annotation-sets can run in ~10 minutes in a laptop. For larger datasets (100k cells) or multiome 
-    (GEX + ATAC) with > 100k features (gene + peak), it is recommended to run the program in the high-performance compute environment.
+    A typical scRNA-Seq dataset (10k cells) with four provided annotation-sets can run in ~10 minutes on a laptop. For larger datasets (100k cells) or multiome 
+    (GEX + ATAC) with > 100k features (gene + peak), it is recommended to run the software in a high-performance compute environment.
 
 Inputs and Outputs
 ---------------------
-scTriangulate is designed for h5ad file, it works seemlessly with popular scanpy packages if you are familiar with it. In addtion to that, we offer 
-a myriad of preprocessing convenient functions to ease the file conversion process, currently we accept following format:
+scTriangulate works seemlessly with the popular `scanpy <https://scanpy.readthedocs.io/en/stable/>`_ package. In addtion, we offer 
+a myriad of preprocessing convenient functions to ease file conversion. Currently we accept following formats:
 
     * **Anndata** (.h5 & .h5ad), the annotations are the columns in adata.obs
-    * **mtx**, annotations information should be supplied as addtional txt file (see below example and :ref:`reference_to_add_annotation`)
-    * **dense matrix**, txt expression matrix, annotations should be aupplied as addtional txt file (see below example and :ref:`reference_to_add_annotation`).
+    * **mtx**, annotation information should be supplied as an addtional txt file (see below example and :ref:`reference_to_add_annotation`)
+    * **dense matrix**, txt expression matrix, annotations should be supplied as an addtional txt file (see below example and :ref:`reference_to_add_annotation`).
 
     .. csv-table:: annotation txt file
         :file: ./_static/annotation_txt.csv
         :widths: 10,10
         :header-rows: 1
 
-Optionally, users can supply their own umap embeddings, Please refer to :ref:`reference_to_add_umap` function for the details.
+Optionally, users can supply their own UMAP embeddings, Please refer to :ref:`reference_to_add_umap` function for details.
 
-All the intermediate outputs and final clustering results, plus interactive visualizations, will be automatically named and saved to the user-defined
-repository. Each function provide `save` argument which allows the users to modify this default behaviour. 
+All of the intermediate outputs and final clustering results, plus interactive visualization, will be automatically named and saved to the user-defined
+directory. Each function provides a `save` argument, which allows the users to modify this default behaviour. 
 

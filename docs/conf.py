@@ -24,7 +24,7 @@ copyright = '2021, Guangyuan(Frank) Li'
 author = 'Guangyuan(Frank) Li'
 
 # The full version, including alpha/beta/rc tags
-release = '0.9.1'
+release = '0.9.2'
 
 
 # -- General configuration ---------------------------------------------------

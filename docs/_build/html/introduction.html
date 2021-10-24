@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Introduction &mdash; scTriangulate 0.9.0 documentation</title>
+  <title>Introduction &mdash; scTriangulate 0.9.1 documentation</title>
   
 
   
@@ -88,6 +88,7 @@
             
             
               <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="get_started.html">Get Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#what-is-sctriangulate">What is scTriangulate?</a></li>
@@ -97,6 +98,8 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="principle.html">Principle</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="change_log.html">Change Log</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
 </ul>
 
@@ -169,33 +172,33 @@
 <h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="what-is-sctriangulate">
 <span id="reference-to-overview"></span><h2>What is scTriangulate?<a class="headerlink" href="#what-is-sctriangulate" title="Permalink to this headline">¶</a></h2>
-<p>scTriangulate is a python package designed to solve <code class="docutils literal notranslate"><span class="pre">&quot;multi-annotation&quot;</span></code> problem. When analyzing single cell omics data, you may encounter situations
-where you inevitably have multiple different sets of cell annotations:</p>
+<p>scTriangulate is a python3 package designed to harmonize <code class="docutils literal notranslate"><span class="pre">conflicting</span> <span class="pre">annotations</span></code> in single cell genomics studies.
+While this approach can be applied to any situation in which the same dataset has multiple conflicting annotations, common challenges includes:</p>
 <ol class="arabic simple">
-<li><p>Running same unsupervised clustering (i.e. Leiden) algorithm using different <code class="docutils literal notranslate"><span class="pre">resolutions</span></code>.</p></li>
-<li><p>Running unsupervised clustering using different <code class="docutils literal notranslate"><span class="pre">algorithms</span></code>.</p></li>
-<li><p>Running reference mapping tools using different <code class="docutils literal notranslate"><span class="pre">reference</span> <span class="pre">atlases</span></code>.</p></li>
-<li><p>Clustering labels from matched <code class="docutils literal notranslate"><span class="pre">multi-modalities</span></code> (RNA, ADT, ATAC, etc)</p></li>
+<li><p>Integrate results from the same or multiple unsupervised clustering algorithms (i.e. Leiden, Seurat, SnapATAC) using different <code class="docutils literal notranslate"><span class="pre">resolutions</span></code>.</p></li>
+<li><p>Integrate results from both unsupervised and supervised (i.e. cellHarmony, Seurat label transfer) <code class="docutils literal notranslate"><span class="pre">clustering</span> <span class="pre">algorithms</span></code>.</p></li>
+<li><p>Integrate results from different <code class="docutils literal notranslate"><span class="pre">reference</span> <span class="pre">atlases</span></code>.</p></li>
+<li><p>Integrate labels from <code class="docutils literal notranslate"><span class="pre">multi-modality</span></code> single cell datasets (CITE-Seq, Multiome, TEA-Seq, ASAP-Seq, etc.).</p></li>
 </ol>
 <a class="reference external image-reference" href="target"><img alt="_images/schema_chop.png" class="align-center" src="_images/schema_chop.png" style="width: 800px; height: 180px;" /></a>
-<p>scTriangulate enable the usrs to <code class="docutils literal notranslate"><span class="pre">mix-and-match</span></code> the individual clustering results via leveraging customizable
-biologically meaningful metrics to assess cluster goodness, and <a class="reference external" href="https://en.wikipedia.org/wiki/Shapley_value">Shapley Value</a> from cooperative theory
-to attain a single stable solution.</p>
+<p>scTriangulate enables the user to <code class="docutils literal notranslate"><span class="pre">mix-and-match</span></code> individual clustering results by leveraging customizable
+statistical measures of single cell cluster stability in combination with a cooperative game theory approach (<a class="reference external" href="https://en.wikipedia.org/wiki/Shapley_value">Shapley Value</a>)
+to obtain an single optimal solution.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>A typical scRNA-Seq dataset (10k cells) with four provided annotation-sets can run in ~10 minutes in a laptop. For larger datasets (100k cells) or multiome
-(GEX + ATAC) with &gt; 100k features (gene + peak), it is recommended to run the program in the high-performance compute environment.</p>
+<p>A typical scRNA-Seq dataset (10k cells) with four provided annotation-sets can run in ~10 minutes on a laptop. For larger datasets (100k cells) or multiome
+(GEX + ATAC) with &gt; 100k features (gene + peak), it is recommended to run the software in a high-performance compute environment.</p>
 </div>
 </div>
 <div class="section" id="inputs-and-outputs">
 <h2>Inputs and Outputs<a class="headerlink" href="#inputs-and-outputs" title="Permalink to this headline">¶</a></h2>
-<p>scTriangulate is designed for h5ad file, it works seemlessly with popular scanpy packages if you are familiar with it. In addtion to that, we offer
-a myriad of preprocessing convenient functions to ease the file conversion process, currently we accept following format:</p>
+<p>scTriangulate works seemlessly with the popular <a class="reference external" href="https://scanpy.readthedocs.io/en/stable/">scanpy</a> package. In addtion, we offer
+a myriad of preprocessing convenient functions to ease file conversion. Currently we accept following formats:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p><strong>Anndata</strong> (.h5 &amp; .h5ad), the annotations are the columns in adata.obs</p></li>
-<li><p><strong>mtx</strong>, annotations information should be supplied as addtional txt file (see below example and <a class="reference internal" href="api.html#reference-to-add-annotation"><span class="std std-ref">add_annotations()</span></a>)</p></li>
-<li><p><strong>dense matrix</strong>, txt expression matrix, annotations should be aupplied as addtional txt file (see below example and <a class="reference internal" href="api.html#reference-to-add-annotation"><span class="std std-ref">add_annotations()</span></a>).</p></li>
+<li><p><strong>mtx</strong>, annotation information should be supplied as an addtional txt file (see below example and <a class="reference internal" href="api.html#reference-to-add-annotation"><span class="std std-ref">add_annotations()</span></a>)</p></li>
+<li><p><strong>dense matrix</strong>, txt expression matrix, annotations should be supplied as an addtional txt file (see below example and <a class="reference internal" href="api.html#reference-to-add-annotation"><span class="std std-ref">add_annotations()</span></a>).</p></li>
 </ul>
 <table class="colwidths-given docutils align-default" id="id1">
 <caption><span class="caption-text">annotation txt file</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
@@ -236,9 +239,9 @@ a myriad of preprocessing convenient functions to ease the file conversion proce
 </tbody>
 </table>
 </div></blockquote>
-<p>Optionally, users can supply their own umap embeddings, Please refer to <a class="reference internal" href="api.html#reference-to-add-umap"><span class="std std-ref">add_umap()</span></a> function for the details.</p>
-<p>All the intermediate outputs and final clustering results, plus interactive visualizations, will be automatically named and saved to the user-defined
-repository. Each function provide <cite>save</cite> argument which allows the users to modify this default behaviour.</p>
+<p>Optionally, users can supply their own UMAP embeddings, Please refer to <a class="reference internal" href="api.html#reference-to-add-umap"><span class="std std-ref">add_umap()</span></a> function for details.</p>
+<p>All of the intermediate outputs and final clustering results, plus interactive visualization, will be automatically named and saved to the user-defined
+directory. Each function provides a <cite>save</cite> argument, which allows the users to modify this default behaviour.</p>
 </div>
 </div>
 

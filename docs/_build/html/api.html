@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>API &mdash; scTriangulate 0.9.0 documentation</title>
+  <title>API &mdash; scTriangulate 0.9.1 documentation</title>
   
 
   
@@ -41,7 +41,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Contact" href="contact.html" />
+    <link rel="next" title="Troubleshooting" href="troubleshooting.html" />
     <link rel="prev" title="Principle" href="principle.html" /> 
 </head>
 
@@ -88,6 +88,7 @@
             
             
               <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="get_started.html">Get Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
@@ -154,17 +155,21 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#colors-module">Colors Module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#retrieve-pretty-cmap">retrieve_pretty_cmap()</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#retrieve-pretty-colors">retrieve_pretty_colors()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#pick-n-colors">pick_n_colors()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#colors-for-set">colors_for_set()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#bg-greyed-cmap">bg_greyed_cmap()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-custom-continuous-cmap">build_custom_continuous_cmap()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-custom-divergent-cmap">build_custom_divergent_cmap()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#retrieve-pretty-cmap">retrieve_pretty_cmap()</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#retrieve-pretty-colors">retrieve_pretty_colors()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#generate-block">generate_block()</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#generate-gradient">generate_gradient()</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="change_log.html">Change Log</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contact.html">Contact</a></li>
 </ul>
 
@@ -1649,53 +1654,6 @@ find_gene format “chr1_10109_10357”</p>
 </div>
 <div class="section" id="colors-module">
 <h2>Colors Module<a class="headerlink" href="#colors-module" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="retrieve-pretty-cmap">
-<h3>retrieve_pretty_cmap()<a class="headerlink" href="#retrieve-pretty-cmap" title="Permalink to this headline">¶</a></h3>
-<dl class="py function">
-<dt class="sig sig-object py" id="sctriangulate.colors.retrieve_pretty_cmap">
-<span class="sig-prename descclassname"><span class="pre">sctriangulate.colors.</span></span><span class="sig-name descname"><span class="pre">retrieve_pretty_cmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.colors.retrieve_pretty_cmap" title="Permalink to this definition">¶</a></dt>
-<dd><p>retrieve pretty customized colormap</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>name</strong> – string, valid value ‘altanalyze’, ‘shap’, ‘scphere’</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>cmap object</p>
-</dd>
-</dl>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">generate_gradient</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="n">retrieve_pretty_cmap</span><span class="p">(</span><span class="s1">&#39;shap&#39;</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;shap&#39;</span><span class="p">)</span>
-<span class="n">generate_gradient</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="n">retrieve_pretty_cmap</span><span class="p">(</span><span class="s1">&#39;altanalyze&#39;</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;altanalyze&#39;</span><span class="p">)</span>
-<span class="n">generate_gradient</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="n">retrieve_pretty_cmap</span><span class="p">(</span><span class="s1">&#39;scphere&#39;</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;scphere&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference external image-reference" href="target"><img alt="_images/cmap.png" class="align-center" src="_images/cmap.png" style="width: 550px; height: 250px;" /></a>
-</dd></dl>
-
-</div>
-<div class="section" id="retrieve-pretty-colors">
-<h3>retrieve_pretty_colors()<a class="headerlink" href="#retrieve-pretty-colors" title="Permalink to this headline">¶</a></h3>
-<dl class="py function">
-<dt class="sig sig-object py" id="sctriangulate.colors.retrieve_pretty_colors">
-<span class="sig-prename descclassname"><span class="pre">sctriangulate.colors.</span></span><span class="sig-name descname"><span class="pre">retrieve_pretty_colors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.colors.retrieve_pretty_colors" title="Permalink to this definition">¶</a></dt>
-<dd><p>retrieve pretty customized colors (discrete)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>name</strong> – string, valid value ‘icgs2’, ‘shap’</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>list, each item is hex code</p>
-</dd>
-</dl>
-<p>Examples:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">generate_block</span><span class="p">(</span><span class="n">color_list</span> <span class="o">=</span> <span class="n">retrieve_pretty_colors</span><span class="p">(</span><span class="s1">&#39;icgs2&#39;</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;icgs2&#39;</span><span class="p">)</span>
-<span class="n">generate_block</span><span class="p">(</span><span class="n">color_list</span> <span class="o">=</span> <span class="n">retrieve_pretty_colors</span><span class="p">(</span><span class="s1">&#39;shap&#39;</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;shap&#39;</span><span class="p">)</span>
-</pre></div>
-</div>
-<a class="reference external image-reference" href="target"><img alt="_images/colors.png" class="align-center" src="_images/colors.png" style="width: 550px; height: 100px;" /></a>
-</dd></dl>
-
-</div>
 <div class="section" id="pick-n-colors">
 <h3>pick_n_colors()<a class="headerlink" href="#pick-n-colors" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
@@ -1782,6 +1740,86 @@ find_gene format “chr1_10109_10357”</p>
 </dd></dl>
 
 </div>
+<div class="section" id="build-custom-continuous-cmap">
+<h3>build_custom_continuous_cmap()<a class="headerlink" href="#build-custom-continuous-cmap" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.colors.build_custom_continuous_cmap">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.colors.</span></span><span class="sig-name descname"><span class="pre">build_custom_continuous_cmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">rgb_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.colors.build_custom_continuous_cmap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generating any custom continuous colormap, user should supply a list of (R,G,B) color taking the value from [0,255], because this is
+the format the adobe color will output for you.</p>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">test_cmap</span> <span class="o">=</span> <span class="n">build_custom_continuous_cmap</span><span class="p">([</span><span class="mi">64</span><span class="p">,</span><span class="mi">57</span><span class="p">,</span><span class="mi">144</span><span class="p">],[</span><span class="mi">112</span><span class="p">,</span><span class="mi">198</span><span class="p">,</span><span class="mi">162</span><span class="p">],[</span><span class="mi">230</span><span class="p">,</span><span class="mi">241</span><span class="p">,</span><span class="mi">146</span><span class="p">],[</span><span class="mi">253</span><span class="p">,</span><span class="mi">219</span><span class="p">,</span><span class="mi">127</span><span class="p">],[</span><span class="mi">244</span><span class="p">,</span><span class="mi">109</span><span class="p">,</span><span class="mi">69</span><span class="p">],[</span><span class="mi">169</span><span class="p">,</span><span class="mi">23</span><span class="p">,</span><span class="mi">69</span><span class="p">])</span>
+<span class="n">fig</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">ScalarMappable</span><span class="p">(</span><span class="n">norm</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(),</span><span class="n">cmap</span><span class="o">=</span><span class="n">diverge_cmap</span><span class="p">),</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/custom_continuous_cmap.png" class="align-center" src="_images/custom_continuous_cmap.png" style="width: 550px; height: 400px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="build-custom-divergent-cmap">
+<h3>build_custom_divergent_cmap()<a class="headerlink" href="#build-custom-divergent-cmap" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.colors.build_custom_divergent_cmap">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.colors.</span></span><span class="sig-name descname"><span class="pre">build_custom_divergent_cmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hex_left</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hex_right</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.colors.build_custom_divergent_cmap" title="Permalink to this definition">¶</a></dt>
+<dd><p>User supplies two hex code for the vim and vmax color values, then it will build a divergent cmap centered at pure white.</p>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">diverge_cmap</span> <span class="o">=</span> <span class="n">build_custom_divergent_cmap</span><span class="p">(</span><span class="s1">&#39;#21EBDB&#39;</span><span class="p">,</span><span class="s1">&#39;#F0AA5F&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span><span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">ScalarMappable</span><span class="p">(</span><span class="n">norm</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(),</span><span class="n">cmap</span><span class="o">=</span><span class="n">diverge_cmap</span><span class="p">),</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/custom_divergent_cmap.png" class="align-center" src="_images/custom_divergent_cmap.png" style="width: 550px; height: 400px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="retrieve-pretty-cmap">
+<h3>retrieve_pretty_cmap()<a class="headerlink" href="#retrieve-pretty-cmap" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.colors.retrieve_pretty_cmap">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.colors.</span></span><span class="sig-name descname"><span class="pre">retrieve_pretty_cmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.colors.retrieve_pretty_cmap" title="Permalink to this definition">¶</a></dt>
+<dd><p>retrieve pretty customized colormap</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – string, valid value ‘altanalyze’, ‘shap’, ‘scphere’</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>cmap object</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">generate_gradient</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="n">retrieve_pretty_cmap</span><span class="p">(</span><span class="s1">&#39;shap&#39;</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;shap&#39;</span><span class="p">)</span>
+<span class="n">generate_gradient</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="n">retrieve_pretty_cmap</span><span class="p">(</span><span class="s1">&#39;altanalyze&#39;</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;altanalyze&#39;</span><span class="p">)</span>
+<span class="n">generate_gradient</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="n">retrieve_pretty_cmap</span><span class="p">(</span><span class="s1">&#39;scphere&#39;</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;scphere&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/cmap.png" class="align-center" src="_images/cmap.png" style="width: 550px; height: 250px;" /></a>
+</dd></dl>
+
+</div>
+<div class="section" id="retrieve-pretty-colors">
+<h3>retrieve_pretty_colors()<a class="headerlink" href="#retrieve-pretty-colors" title="Permalink to this headline">¶</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="sctriangulate.colors.retrieve_pretty_colors">
+<span class="sig-prename descclassname"><span class="pre">sctriangulate.colors.</span></span><span class="sig-name descname"><span class="pre">retrieve_pretty_colors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sctriangulate.colors.retrieve_pretty_colors" title="Permalink to this definition">¶</a></dt>
+<dd><p>retrieve pretty customized colors (discrete)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>name</strong> – string, valid value ‘icgs2’, ‘shap’</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list, each item is hex code</p>
+</dd>
+</dl>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">generate_block</span><span class="p">(</span><span class="n">color_list</span> <span class="o">=</span> <span class="n">retrieve_pretty_colors</span><span class="p">(</span><span class="s1">&#39;icgs2&#39;</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;icgs2&#39;</span><span class="p">)</span>
+<span class="n">generate_block</span><span class="p">(</span><span class="n">color_list</span> <span class="o">=</span> <span class="n">retrieve_pretty_colors</span><span class="p">(</span><span class="s1">&#39;shap&#39;</span><span class="p">),</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;shap&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/colors.png" class="align-center" src="_images/colors.png" style="width: 550px; height: 100px;" /></a>
+</dd></dl>
+
+</div>
 <div class="section" id="generate-block">
 <h3>generate_block()<a class="headerlink" href="#generate-block" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
@@ -1809,7 +1847,7 @@ find_gene format “chr1_10109_10357”</p>
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="contact.html" class="btn btn-neutral float-right" title="Contact" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="troubleshooting.html" class="btn btn-neutral float-right" title="Troubleshooting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
         <a href="principle.html" class="btn btn-neutral float-left" title="Principle" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
