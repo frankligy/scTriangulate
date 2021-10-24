@@ -1,6 +1,11 @@
 Change Log
 ============
 
+Version 0.9.2 2021/10/23
+
+1. ``Feature Enhancement`` Add Build_custom_continous_cmap() and Build_custom_divergent_cmap() function
+2. Polish the documentation and fix and typos
+
 Version 0.9.1 2021/10/10
 -------------------------
 
