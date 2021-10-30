@@ -1,5 +1,4 @@
-[![Documentation Status](https://readthedocs.org/projects/sctriangulate/badge/?version=latest)](https://sctriangulate.readthedocs.io/en/latest/?badge=latest)  [![Pypi](https://img.shields.io/pypi/v/sctriangulate?logo=PyPI)](https://pypi.org/project/sctriangulate/)  [![Pypi Downloads](https://img.shields.io/pypi/dm/sctriangulate.svg?label=Pypi%20downloads)](
-https://pypi.org/project/sctriangulate/)  [![Stars](https://img.shields.io/github/stars/frankligy/scTriangulate)](https://github.com/frankligy/scTriangulate/stargazers)
+[![Documentation Status](https://readthedocs.org/projects/sctriangulate/badge/?version=latest)](https://sctriangulate.readthedocs.io/en/latest/?badge=latest)  [![Pypi](https://img.shields.io/pypi/v/sctriangulate?logo=PyPI)](https://pypi.org/project/sctriangulate/)  [![Downloads](https://pepy.tech/badge/sctriangulate)](https://pypi.org/project/sctriangulate/)  [![Stars](https://img.shields.io/github/stars/frankligy/scTriangulate)](https://github.com/frankligy/scTriangulate/stargazers)
 
 
 
