@@ -666,6 +666,56 @@ class ScTriangulate(object):
             self.uns[name] = {}
             self.uns[name][key] = collect[name]
 
+    def cluster_performance(self,cluster,competitors,reference,show_cluster_number=False,metrics=None,save=True,format='pdf'):
+        from sklearn.preprocessing import LabelEncoder
+        from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, homogeneity_completeness_v_measure
+        result = self.adata.obs
+        # label encoder
+        reference_encoded = LabelEncoder().fit_transform(result[reference].values)
+        competitors_encoded = [LabelEncoder().fit_transform(result[anno].values) for anno in competitors]
+        cluster_encoded = LabelEncoder().fit_transform(result[cluster].values)
+        # compute metrics for competitors
+        ari = []
+        nmi = []
+        homogeneity = []
+        completeness = []
+        vmeasure = []
+        for anno_encoded in competitors_encoded:
+            ari.append(adjusted_rand_score(reference_encoded,anno_encoded))
+            nmi.append(normalized_mutual_info_score(reference_encoded,anno_encoded))
+            h,c,v = homogeneity_completeness_v_measure(reference_encoded,anno_encoded)
+            homogeneity.append(h)
+            completeness.append(c)
+            vmeasure.append(v)
+        # compute metrics for cluster
+        ari.append(adjusted_rand_score(reference_encoded,cluster_encoded))
+        nmi.append(normalized_mutual_info_score(reference_encoded,cluster_encoded))
+        h,c,v = homogeneity_completeness_v_measure(reference_encoded,cluster_encoded)
+        homogeneity.append(h)
+        completeness.append(c)
+        vmeasure.append(v)
+        # now plot
+        fig,ax = plt.subplots()
+        ax.plot(np.arange(len(competitors)+1),homogeneity,label='Homogeneity',marker='o',linestyle='--')
+        ax.plot(np.arange(len(competitors)+1),completeness,label='Completeness',marker='o',linestyle='--')
+        ax.plot(np.arange(len(competitors)+1),vmeasure,label='VMeasure',marker='o',linestyle='--')
+        if metrics is not None:
+            ax.plot(np.arange(len(competitors)+1),ari,label='ARI',marker='o',linestyle='--')
+            ax.plot(np.arange(len(competitors)+1),nmi,label='NMI',marker='o',linestyle='--')
+        ax.legend(frameon=False,loc='upper left',bbox_to_anchor=(1,1))
+        ax.set_xticks(np.arange(len(competitors)+1))
+        ax.set_xticklabels(competitors+[cluster],fontsize=3)
+        ax.set_ylabel('Agreement with {}'.format(reference))
+        if show_cluster_number:  # show how many clusters in each annotation
+            number = []
+            for anno in competitors + [cluster]:
+                number.append(len(result[anno].value_counts()))
+            for i,num in enumerate(number):
+                ax.text(x=i,y=vmeasure[i]+0.01,s=num,fontsize=6)
+
+        if save:
+            plt.savefig(os.path.join(self.dir,'cluster_performance_plot.{}'.format(format)),bbox_inches='tight')
+            plt.close()
 
 
     def compute_metrics(self,parallel=True,scale_sccaf=True):
