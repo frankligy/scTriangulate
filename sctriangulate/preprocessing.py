@@ -167,7 +167,7 @@ def add_azimuth(adata,result,name='predicted.celltype.l2'):
     adata.obs['prediction_score'] = adata.obs_names.map(azimuth_prediction).values
     adata.obs['mapping_score'] = adata.obs_names.map(azimuth_mapping).values
 
-def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None):
+def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None,kind='disk'):
     '''
     Adding annotations from external sources to the adata
 
@@ -184,7 +184,10 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None):
 
     '''
     # means a single file such that one column is barcodes, annotations are within other columns
-    annotations = pd.read_csv(inputs,sep='\t',index_col=index_col).loc[:,cols_input]
+    if kind == 'disk':
+        annotations = pd.read_csv(inputs,sep='\t',index_col=index_col).loc[:,cols_input]
+    elif kind == 'memory':   # index_col will be ignored
+        annotations = inputs.loc[:,cols_input]
     mappings = []
     for col in cols_input:
         mapping = annotations[col].to_dict()
@@ -192,9 +195,11 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None):
     if cols_output is None:
         for i,col in enumerate(cols_input):
             adata.obs[col] = adata.obs_names.map(mappings[i]).fillna('Unknown').values
+            adata.obs[col] = adata.obs[col].astype('str').astype('category')
     else:
         for i in range(len(cols_input)):
             adata.obs[cols_output[i]] = adata.obs_names.map(mappings[i]).fillna('Unknown').values
+            adata.obs[cols_output[i]] = adata.obs[cols_output[i]].astype('str').astype('category')
 
 
 def add_umap(adata,inputs,mode,cols=None,index_col=0):
@@ -507,7 +512,33 @@ def concat_rna_and_other(adata_rna,adata_other,umap,name,prefix):
     return adata_combine
 
 
-
+def nca_embedding(adata,n_top_genes,nca_n_components,label,method,plot=True,save=True,format='pdf',legend_loc='on data'):
+    from sklearn.neighbors import NeighborhoodComponentsAnalysis
+    adata = adata
+    sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=n_top_genes)
+    adata.raw = adata
+    adata = adata[:,adata.var['highly_variable']]
+    #sc.pp.subsample(adata,0.1)
+    X = make_sure_mat_dense(adata.X)
+    y = adata.obs[label].values
+    nca = NeighborhoodComponentsAnalysis(n_components=nca_n_components)
+    embed = nca.fit_transform(X,y)  # (n_cells,n_components)
+    adata.obsm['X_nca'] = embed
+    adata = adata.raw.to_adata()
+    if method == 'umap':
+        sc.pp.neighbors(adata,use_rep='X_nca')
+        sc.tl.umap(adata)
+        sc.pl.umap(adata,color=label,frameon=False,legend_loc=legend_loc)
+        if save:
+            plt.savefig(os.path.join('.','nca_embedding_{}_{}.{}'.format(label,method,format)),bbox_inches='tight')
+            plt.close()
+    elif method == 'tsne':
+        sc.tl.tsne(adata,use_rep='X_nca')
+        sc.pl.tsne(adata,color=label,frameon=False,legend_loc=legend_loc)
+        if save:
+            plt.savefig(os.path.join('.','nca_embedding_{}_{}.{}'.format(label,method,format)),bbox_inches='tight')
+            plt.close()
+    return adata
 
 
 

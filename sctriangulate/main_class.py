@@ -309,16 +309,16 @@ class ScTriangulate(object):
             df.to_csv(os.path.join(self.dir,'sctri_metrics_and_shapley_df_{}.txt'.format(barcode)),sep='\t')
         return df
 
-    def prune_result(self,win_fraction_cutoff=0.25,reassign_abs_thresh=10,scale_sccaf=True,remove1=True,assess_raw=False):
-        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,assess_raw=False)
+    def prune_result(self,win_fraction_cutoff=0.25,reassign_abs_thresh=10,scale_sccaf=True,layer=None,remove1=True,assess_raw=False):
+        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,layer=layer,assess_raw=False)
         self.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
         self.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=self.reference)
-        self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf)
+        self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer)
 
 
     @staticmethod
-    def salvage_run(step_to_start,last_step_file,compute_metrics_parallel=True,scale_sccaf=True,compute_shapley_parallel=True,win_fraction_cutoff=0.25,
-                    reassign_abs_thresh=10,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
+    def salvage_run(step_to_start,last_step_file,compute_metrics_parallel=True,scale_sccaf=True,layer=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,
+                    reassign_abs_thresh=10,assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
                     viewer_heterogeneity_keys=None):
         '''
         This is a static method, which allows to user to resume running scTriangulate from certain point, instead of running from very 
@@ -342,7 +342,7 @@ class ScTriangulate(object):
             sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=sctri.reference)
             sctri.plot_umap('pruned','category')
             if assess_pruned:
-                sctri.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf)
+                sctri.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer)
                 sctri.serialize(name='after_pruned_assess.p')
             if viewer_cluster:
                 sctri.viewer_cluster_feature_html()
@@ -356,7 +356,7 @@ class ScTriangulate(object):
                     sctri.viewer_heterogeneity_figure(key=key)
             
 
-    def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
+    def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,layer=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
                  assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None):
         '''
         This is the highest level wrapper function for running every step in one goal.
@@ -380,11 +380,11 @@ class ScTriangulate(object):
 
             sctri.lazy_run(viewer_heterogeneity_keys=['annotation1','annotation2'])
         '''
-        self.compute_metrics(parallel=compute_metrics_parallel,scale_sccaf=scale_sccaf)
+        self.compute_metrics(parallel=compute_metrics_parallel,scale_sccaf=scale_sccaf,layer=layer)
         self.serialize(name='after_metrics.p')
         self.compute_shapley(parallel=compute_shapley_parallel)
         self.serialize(name='after_shapley.p')
-        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,assess_raw=assess_raw)
+        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,layer=layer,assess_raw=assess_raw)
         self.serialize(name='after_rank_pruning.p')
         self.uns['raw_cluster_goodness'].to_csv(os.path.join(self.dir,'raw_cluster_goodness.txt'),sep='\t')
         self.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
@@ -392,7 +392,7 @@ class ScTriangulate(object):
         for col in ['final_annotation','raw','pruned']:
             self.plot_umap(col,'category')
         if assess_pruned:
-            self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf)
+            self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer)
             self.serialize(name='after_pruned_assess.p')
         if viewer_cluster:
             self.viewer_cluster_feature_html()
@@ -718,7 +718,7 @@ class ScTriangulate(object):
             plt.close()
 
 
-    def compute_metrics(self,parallel=True,scale_sccaf=True):
+    def compute_metrics(self,parallel=True,scale_sccaf=True,layer=None):
         '''
         main function for computing the metrics (defined by self.metrics) of each clusters in each annotation.
         After the run, q (# query) * m (# metrics) columns will be added to the adata.obs, the column like will be like
@@ -747,7 +747,7 @@ class ScTriangulate(object):
             logger_sctriangulate.info('Spawn to {} processes'.format(cores))
             pool = mp.Pool(processes=cores)
             self._to_sparse()
-            raw_results = [pool.apply_async(each_key_run,args=(self,key,scale_sccaf,)) for key in self.query]
+            raw_results = [pool.apply_async(each_key_run,args=(self,key,scale_sccaf,layer)) for key in self.query]
             pool.close()
             pool.join()
             for collect in raw_results:
@@ -767,7 +767,7 @@ class ScTriangulate(object):
         else:
             logger_sctriangulate.info('choosing to compute metrics sequentially')
             for key in self.query:
-                collect = each_key_run(self,key,scale_sccaf)
+                collect = each_key_run(self,key,scale_sccaf,layer)
                 key = collect['key']
                 for metric in self.metrics + list(self.add_metrics.keys()):
                     self.adata.obs['{}@{}'.format(metric,key)] = collect['col_{}'.format(metric)]
@@ -780,7 +780,7 @@ class ScTriangulate(object):
             subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr/'))])
             self._to_sparse()
 
-    def run_single_key_assessment(self,key,scale_sccaf):
+    def run_single_key_assessment(self,key,scale_sccaf,layer):
         '''
         this is a very handy function, given a set of annotation, this function allows you to assess the biogical robustness
         based on the metrics we define. The obtained score and cluster information will be automatically saved to self.cluster
@@ -795,7 +795,7 @@ class ScTriangulate(object):
             sctri.run_single_key_assessment(key='azimuth',scale_sccaf=True)
 
         '''
-        collect = each_key_run(self,key,scale_sccaf)
+        collect = each_key_run(self,key,scale_sccaf,layer)
         self._to_sparse()
         self.process_collect_object(collect)
 
@@ -1076,7 +1076,7 @@ class ScTriangulate(object):
         self.adata.obs['prefixed'] = col
 
 
-    def pruning(self,method='reassign',discard=None,scale_sccaf=True,abs_thresh=10,remove1=True,reference=None,parallel=True,assess_raw=False):
+    def pruning(self,method='reassign',discard=None,scale_sccaf=True,layer=None,abs_thresh=10,remove1=True,reference=None,parallel=True,assess_raw=False):
         '''
         Main function. After running ``compute_shapley``, we get **raw** cluster results. Althought the raw cluster is informative,
         there maybe some weired clusters that accidentally win out which doesn't attribute to its biological stability. For example,
@@ -1114,7 +1114,7 @@ class ScTriangulate(object):
                 self.invalid = invalid
 
             elif method == 'rank':
-                obs, df = rank_pruning(self,discard=discard,scale_sccaf=scale_sccaf,assess_raw=assess_raw)
+                obs, df = rank_pruning(self,discard=discard,scale_sccaf=scale_sccaf,layer=layer,assess_raw=assess_raw)
                 self.adata.obs = obs
                 self.uns['raw_cluster_goodness'] = df
                 self.adata.obs['confidence'] = self.adata.obs['pruned'].map(df['win_fraction'].to_dict())
@@ -2159,10 +2159,6 @@ class ScTriangulate(object):
         return export
 
 
-        
-
-
-
     def _atomic_viewer_figure(self,key):
         for cluster in self.adata.obs[key].unique():
             try:
@@ -2321,7 +2317,7 @@ def penalize_artifact_void(obs,query,stamps,metrics):
 
 
 
-def each_key_run(sctri,key,scale_sccaf):
+def each_key_run(sctri,key,scale_sccaf,layer):
     folder = sctri.dir
     adata = sctri.adata
     species = sctri.species
@@ -2347,7 +2343,7 @@ def each_key_run(sctri,key,scale_sccaf):
     cluster_to_metric['cluster_to_reassign'], confusion_reassign = reassign_score(adata_to_compute,key,marker_genes)
     logger_sctriangulate.info('Process {}, for {}, finished reassign score computing'.format(os.getpid(),key))
     '''tfidf10 score'''
-    cluster_to_metric['cluster_to_tfidf10'], exclusive_genes = tf_idf10_for_cluster(adata_to_compute,key,species,criterion)
+    cluster_to_metric['cluster_to_tfidf10'], exclusive_genes = tf_idf10_for_cluster(adata_to_compute,key,species,criterion,layer=layer)
     logger_sctriangulate.info('Process {}, for {}, finished tfidf score computing'.format(os.getpid(),key))
     '''SCCAF score'''
     cluster_to_metric['cluster_to_SCCAF'], confusion_sccaf = SCCAF_score(adata_to_compute,key, species, criterion,scale_sccaf)
@@ -2357,7 +2353,7 @@ def each_key_run(sctri,key,scale_sccaf):
     logger_sctriangulate.info('Process {}, for {}, finished doublet score assigning'.format(os.getpid(),key))
     '''added other scores'''
     for metric,func in add_metrics.items():
-        cluster_to_metric['cluster_to_{}'.format(metric)] = func(adata_to_compute,key,species,criterion)
+        cluster_to_metric['cluster_to_{}'.format(metric)] = func(adata_to_compute,key,species,criterion,layer=layer)
         logger_sctriangulate.info('Process {}, for {}, finished {} score computing'.format(os.getpid(),key,metric))
 
 

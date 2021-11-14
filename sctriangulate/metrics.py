@@ -9,6 +9,8 @@ import gseapy as gp
 import math
 import os
 
+from .preprocessing import *
+
 def check_filter_single_cluster(adata,key):
     vc = adata.obs[key].value_counts()
     exclude_clusters= vc.loc[vc==1].index
@@ -388,8 +390,11 @@ def get_size_in_metrics(obs,key):
         key_size_dict[cluster] = size
     return key_size_dict
 
-def tf_idf10_for_cluster(adata,key,species,criterion,regress_size=False):
-    df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+def tf_idf10_for_cluster(adata,key,species,criterion,regress_size=False,layer=None):
+    if layer is None:
+        df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+    else:
+        df = pd.DataFrame(data=make_sure_mat_dense(adata.layers[layer]), index=adata.obs_names, columns=adata.var_names) 
     df['cluster'] = adata.obs[key].astype('str').values
     cluster_to_tfidf10 = {} # store tfidf10 score
     cluster_to_exclusive = {}   # store exclusivly expressed genes
@@ -416,8 +421,11 @@ def tf_idf10_for_cluster(adata,key,species,criterion,regress_size=False):
     return cluster_to_tfidf10, exclusive_genes
 
 
-def tf_idf5_for_cluster(adata,key,species,criterion,regress_size=False):
-    df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+def tf_idf5_for_cluster(adata,key,species,criterion,regress_size=False,layer=None):
+    if layer is None:
+        df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+    else:
+        df = pd.DataFrame(data=make_sure_mat_dense(adata.layers[layer]), index=adata.obs_names, columns=adata.var_names) 
     df['cluster'] = adata.obs[key].astype('str').values
     cluster_to_tfidf5 = {} # store tfidf1 score
     for item in adata.obs[key].cat.categories:
@@ -440,8 +448,11 @@ def tf_idf5_for_cluster(adata,key,species,criterion,regress_size=False):
         cluster_to_tfidf5 = regress_size(df_inspect,regressor='GLM',to_dict=True)
     return cluster_to_tfidf5
 
-def tf_idf1_for_cluster(adata,key,species,criterion,regress_size=False):
-    df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+def tf_idf1_for_cluster(adata,key,species,criterion,regress_size=False,layer=None):
+    if layer is None:
+        df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+    else:
+        df = pd.DataFrame(data=make_sure_mat_dense(adata.layers[layer]), index=adata.obs_names, columns=adata.var_names) 
     df['cluster'] = adata.obs[key].astype('str').values
     cluster_to_tfidf1 = {} # store tfidf1 score
     for item in adata.obs[key].cat.categories:
