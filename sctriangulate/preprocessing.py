@@ -467,6 +467,19 @@ def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=Tru
                 resolutions = '_'.join([str(item) for item in resolutions])
                 adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
 
+    elif modality == 'binary':  # mutation 
+        sc.tl.pca(adata,n_comps=pca_n_comps)
+        sc.pp.neighbors(adata,metric='jaccard')
+        for resolution in resolutions:
+            sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
+        if umap:
+            sc.tl.umap(adata)
+        if not issparse(adata.X):
+            adata.X = csr_matrix(adata.X)
+        if save:
+            resolutions = '_'.join([str(item) for item in resolutions])
+            adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
+
     return adata
     
 
@@ -512,7 +525,7 @@ def concat_rna_and_other(adata_rna,adata_other,umap,name,prefix):
     return adata_combine
 
 
-def nca_embedding(adata,n_top_genes,nca_n_components,label,method,plot=True,save=True,format='pdf',legend_loc='on data'):
+def nca_embedding(adata,n_top_genes,nca_n_components,label,method,max_iter=50,plot=False,save=True,format='pdf',legend_loc='on data'):
     from sklearn.neighbors import NeighborhoodComponentsAnalysis
     adata = adata
     sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=n_top_genes)
@@ -521,7 +534,7 @@ def nca_embedding(adata,n_top_genes,nca_n_components,label,method,plot=True,save
     #sc.pp.subsample(adata,0.1)
     X = make_sure_mat_dense(adata.X)
     y = adata.obs[label].values
-    nca = NeighborhoodComponentsAnalysis(n_components=nca_n_components)
+    nca = NeighborhoodComponentsAnalysis(n_components=nca_n_components,max_iter=max_iter)
     embed = nca.fit_transform(X,y)  # (n_cells,n_components)
     adata.obsm['X_nca'] = embed
     adata = adata.raw.to_adata()
@@ -538,6 +551,7 @@ def nca_embedding(adata,n_top_genes,nca_n_components,label,method,plot=True,save
         if save:
             plt.savefig(os.path.join('.','nca_embedding_{}_{}.{}'.format(label,method,format)),bbox_inches='tight')
             plt.close()
+    adata.X = make_sure_mat_sparse(adata.X)
     return adata
 
 

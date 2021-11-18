@@ -114,6 +114,9 @@ def reassign_pruning(sctri,abs_thresh=10,remove1=True,reference=None): #if you w
     
     invalid = list(set(invalid))
 
+    if len(invalid) == 0:     # no invalid clusters, so no need to do reassign anymore
+        return obs,invalid
+
     # seperate valid and invalid, only operate on invalid
     valid_obs = obs.loc[~obs['raw'].isin(invalid),:]
     invalid_obs = obs.loc[obs['raw'].isin(invalid),:]
