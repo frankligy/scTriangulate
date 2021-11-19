@@ -319,7 +319,7 @@ class ScTriangulate(object):
     @staticmethod
     def salvage_run(step_to_start,last_step_file,compute_metrics_parallel=True,scale_sccaf=True,layer=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,
                     reassign_abs_thresh=10,assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
-                    viewer_heterogeneity_keys=None,nca_embed=True):
+                    viewer_heterogeneity_keys=None,nca_embed=True,addition_features=None,other_umap=None):
         '''
         This is a static method, which allows to user to resume running scTriangulate from certain point, instead of running from very 
         beginning if the intermediate files are present and intact.
@@ -349,20 +349,34 @@ class ScTriangulate(object):
                 sctri.serialize(name='after_pruned_assess.p')
             if viewer_cluster:
                 sctri.viewer_cluster_feature_html()
-                sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys)
+                sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
             if viewer_heterogeneity:
                 if viewer_heterogeneity_keys is None:
                     viewer_heterogeneity_keys = [sctri.reference]
                 for key in viewer_heterogeneity_keys:
                     sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
                     sctri.viewer_heterogeneity_html(key=key)
-                    sctri.viewer_heterogeneity_figure(key=key)
+                    sctri.viewer_heterogeneity_figure(key=key,other_umap=other_umap)
+        elif step_to_start == 'build_all_viewers':
+            sctri = ScTriangulate.deserialize(last_step_file)
+            if viewer_cluster:
+                sctri.viewer_cluster_feature_html()
+                sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
+            if viewer_heterogeneity:
+                if viewer_heterogeneity_keys is None:
+                    viewer_heterogeneity_keys = [sctri.reference]
+                for key in viewer_heterogeneity_keys:
+                    sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
+                    sctri.viewer_heterogeneity_html(key=key)
+                    sctri.viewer_heterogeneity_figure(key=key,other_umap=other_umap)
+
+
 
             
 
     def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,layer=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
                  assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None,
-                 nca_embed=True):
+                 nca_embed=True,addition_features=None,other_umap=None):
         '''
         This is the highest level wrapper function for running every step in one goal.
 
@@ -397,21 +411,22 @@ class ScTriangulate(object):
         for col in ['final_annotation','raw','pruned']:
             self.plot_umap(col,'category')
         if nca_embed:
-            adata = nca_embedding(self.adata,3000,10,'pruned','umap')
+            logger_sctriangulate.info('starting to do nca embedding')
+            adata = nca_embedding(self.adata,3000,10,'pruned','umap',addition_features=addition_features)
             adata.write(os.path.join(self.dir,'adata_nca.h5ad'))
         if assess_pruned:
             self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer)
             self.serialize(name='after_pruned_assess.p')
         if viewer_cluster:
             self.viewer_cluster_feature_html()
-            self.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys)
+            self.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
         if viewer_heterogeneity:
             if viewer_heterogeneity_keys is None:
                 viewer_heterogeneity_keys = [self.reference]
             for key in viewer_heterogeneity_keys:
                 self.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
                 self.viewer_heterogeneity_html(key=key)
-                self.viewer_heterogeneity_figure(key=key)
+                self.viewer_heterogeneity_figure(key=key,other_umap=other_umap)
 
 
             
