@@ -525,14 +525,18 @@ def concat_rna_and_other(adata_rna,adata_other,umap,name,prefix):
     return adata_combine
 
 
-def nca_embedding(adata,n_top_genes,nca_n_components,label,method,max_iter=50,plot=False,save=False,format='pdf',legend_loc='on data',addition_features=None):
+def nca_embedding(adata,nca_n_components,label,method,max_iter=50,plot=False,save=False,format='pdf',legend_loc='on data',n_top_genes=None,hv_features=None,add_features=None):
     from sklearn.neighbors import NeighborhoodComponentsAnalysis
     adata = adata
-    sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=n_top_genes)
-    if addition_features is not None:
-        tmp = copy.deepcopy(adata.var['highly_variable'])
-        tmp.loc[addition_features] = True
-        adata.var['highly_variable'] = tmp.values
+    if n_top_genes is not None:
+        sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=n_top_genes)
+    else:
+        if add_features is not None:  # first add the features, input should be anndata
+            adata = concat_rna_and_other(adata,add_features,umap=None,name='add_features',prefix='add_features_')
+        if hv_features is not None:    # custom hv
+            tmp = pd.Series(index=adata.var_names,data=np.full(len(adata.var_names),fill_value=False))
+            tmp.loc[hv_features] = True
+            adata.var['highly_variable'] = tmp.values
     adata.raw = adata
     adata = adata[:,adata.var['highly_variable']]
     X = make_sure_mat_dense(adata.X)

@@ -166,6 +166,21 @@ class ScTriangulate(object):
         for key in all_keys:
             for ichar in invalid_chars:
                 self.adata.obs.rename(columns={key:key.replace(ichar,'_')},inplace=True)   
+
+        ## replace query as well
+        tmp = []
+        for item in self.query:
+            for ichar in invalid_chars:
+                item = item.replace(ichar,'_')
+            tmp.append(item)
+        self.query = tmp
+
+        ## replace reference as well
+        new = self.reference
+        for ichar in invalid_chars:
+            new = new.replace(ichar,'_')
+        self.reference = new
+
         # step3: remove index name for smooth h5ad writing
         self.adata.obs.index.name = None
         self.adata.var.index.name = None
@@ -319,7 +334,7 @@ class ScTriangulate(object):
     @staticmethod
     def salvage_run(step_to_start,last_step_file,compute_metrics_parallel=True,scale_sccaf=True,layer=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,
                     reassign_abs_thresh=10,assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
-                    viewer_heterogeneity_keys=None,nca_embed=True,addition_features=None,other_umap=None):
+                    viewer_heterogeneity_keys=None,nca_embed=True,n_top_genes=3000,other_umap=None):
         '''
         This is a static method, which allows to user to resume running scTriangulate from certain point, instead of running from very 
         beginning if the intermediate files are present and intact.
@@ -342,7 +357,7 @@ class ScTriangulate(object):
             sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=sctri.reference)
             sctri.plot_umap('pruned','category')
             if nca_embed:
-                adata = nca_embedding(sctri.adata,3000,10,'pruned','umap')
+                adata = nca_embedding(sctri.adata,10,'pruned','umap',n_top_genes=n_top_genes)
                 adata.write(os.path.join(sctri.dir,'adata_nca.h5ad'))
             if assess_pruned:
                 sctri.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer)
@@ -376,7 +391,7 @@ class ScTriangulate(object):
 
     def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,layer=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
                  assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None,
-                 nca_embed=True,addition_features=None,other_umap=None):
+                 nca_embed=True,n_top_genes=3000,other_umap=None):
         '''
         This is the highest level wrapper function for running every step in one goal.
 
@@ -412,7 +427,7 @@ class ScTriangulate(object):
             self.plot_umap(col,'category')
         if nca_embed:
             logger_sctriangulate.info('starting to do nca embedding')
-            adata = nca_embedding(self.adata,3000,10,'pruned','umap',addition_features=addition_features)
+            adata = nca_embedding(self.adata,10,'pruned','umap',n_top_genes=3000)
             adata.write(os.path.join(self.dir,'adata_nca.h5ad'))
         if assess_pruned:
             self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer)
