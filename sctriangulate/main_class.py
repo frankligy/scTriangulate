@@ -1824,7 +1824,7 @@ class ScTriangulate(object):
                     fig.write_image(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)))
 
 
-    def plot_two_column_sankey(self,left_annotation,right_annotation,opacity=0.6,save=True):
+    def plot_two_column_sankey(self,left_annotation,right_annotation,opacity=0.6,pad=3,thickness=10,margin=300,text=False,save=True):
         import plotly.graph_objects as go
         import kaleido
         df = self.adata.obs.loc[:,[left_annotation,right_annotation]]
@@ -1840,13 +1840,17 @@ class ScTriangulate(object):
         link_target = [node_label.index(item) for item in link_info[1]]
         link_value = link_info[2]
         link_color = ['rgba{}'.format(tuple([infer_to_256(item) for item in to_rgb(node_color[i])] + [opacity])) for i in link_source]
-        print(node_label,node_color,link_source,link_target,link_value,link_color)
-        node_plotly = dict(pad = 15, thickness = 15,line = dict(color = "black", width = 0.5),label = node_label,color = node_color)
+        node_plotly = dict(pad = pad, thickness = thickness,line = dict(color = "grey", width = 0.1),label = node_label,color = node_color)
         link_plotly = dict(source=link_source,target=link_target,value=link_value,color=link_color)
-        fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
-        fig.update_layout(title_text='sankey_{}_{}'.format(left_annotation,right_annotation), font_size=6)
+        if not text:
+            fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly, textfont=dict(color='rgba(0,0,0,0)',size=1))])
+        else:
+            fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
+        fig.update_layout(title_text='sankey_{}_{}'.format(left_annotation,right_annotation), font_size=6, margin=dict(l=margin,r=margin))
         if save:
-            fig.write_image(os.path.join(self.dir,'two_column_sankey_{}_{}.pdf'.format(left_annotation,right_annotation)))   
+            fig.write_image(os.path.join(self.dir,'two_column_sankey_{}_{}_text_{}.pdf'.format(left_annotation,right_annotation,text)))   
+
+
 
 
     def plot_circular_barplot(self,key,col,save=True,format='pdf'):
