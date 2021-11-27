@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from matplotlib.colors import to_rgba
 import matplotlib as mpl
 import seaborn as sns
 from anytree import Node, RenderTree
@@ -1797,7 +1798,6 @@ class ScTriangulate(object):
 
                 # get node label and node color
                 node_label = unique_ref + unique_query + unique_cluster
-                from matplotlib import cm,colors
                 node_color = pick_n_colors(len(node_label))
 
                 # get link information [(source,target,value),(),()]    
@@ -1812,18 +1812,41 @@ class ScTriangulate(object):
                 link_source = [node_label.index(item) for item in link_info[0]]
                 link_target = [node_label.index(item) for item in link_info[1]]
                 link_value = link_info[2]
-                link_color = [node_color[i] for i in link_source]
+                link_color = ['rgba{}'.format(tuple([infer_to_256(item) for item in to_rgb(node_color[i])] + [0.4])) for i in link_source]
 
-                print(node_label,node_color,link_source,link_target,link_value,link_color)
-
+            
                 # start to draw using plotly and save using kaleido
-                node_plotly = dict(pad = 15, thickness = 20,line = dict(color = "black", width = 0.5),label = node_label,color = node_color)
+                node_plotly = dict(pad = 15, thickness = 15,line = dict(color = "black", width = 0.5),label = node_label,color = node_color)
                 link_plotly = dict(source=link_source,target=link_target,value=link_value,color=link_color)
                 fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
-                fig.update_layout(title_text='{}_{}_heterogeneity_{}_{}'.format(key,cluster,col,style), font_size=10)
-                fig.show()
+                fig.update_layout(title_text='{}_{}_heterogeneity_{}_{}'.format(key,cluster,col,style), font_size=6)
                 if save:
                     fig.write_image(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)))
+
+
+    def plot_two_column_sankey(self,left_annotation,right_annotation,opacity=0.6,save=True):
+        import plotly.graph_objects as go
+        import kaleido
+        df = self.adata.obs.loc[:,[left_annotation,right_annotation]]
+        node_label = df[left_annotation].unique().tolist() + df[right_annotation].unique().tolist()
+        node_color = pick_n_colors(len(node_label))
+        link = []
+        for source,sub in df.groupby(by=left_annotation):
+            for target,subsub in sub.groupby(by=right_annotation):
+                if subsub.shape[0] > 0:
+                    link.append((source,target,subsub.shape[0]))
+        link_info = list(zip(*link))
+        link_source = [node_label.index(item) for item in link_info[0]]
+        link_target = [node_label.index(item) for item in link_info[1]]
+        link_value = link_info[2]
+        link_color = ['rgba{}'.format(tuple([infer_to_256(item) for item in to_rgb(node_color[i])] + [opacity])) for i in link_source]
+        print(node_label,node_color,link_source,link_target,link_value,link_color)
+        node_plotly = dict(pad = 15, thickness = 15,line = dict(color = "black", width = 0.5),label = node_label,color = node_color)
+        link_plotly = dict(source=link_source,target=link_target,value=link_value,color=link_color)
+        fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
+        fig.update_layout(title_text='sankey_{}_{}'.format(left_annotation,right_annotation), font_size=6)
+        if save:
+            fig.write_image(os.path.join(self.dir,'two_column_sankey_{}_{}.pdf'.format(left_annotation,right_annotation)))   
 
 
     def plot_circular_barplot(self,key,col,save=True,format='pdf'):

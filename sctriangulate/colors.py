@@ -1,7 +1,7 @@
 from matplotlib import cm
 import pandas as pd
 import numpy as np
-from matplotlib.colors import LinearSegmentedColormap, to_hex, to_rgb
+from matplotlib.colors import LinearSegmentedColormap, to_hex, to_rgb, to_rgba
 from matplotlib import colors
 import copy
 import matplotlib.pyplot as plt
@@ -100,9 +100,16 @@ def hex2_to_rgb3(hex2):
             rgb3[i,j,:] = rgb_ 
     return rgb3
 
+
+
 # 256 to [0,1]
 def inter_from_256(x):
     return np.interp(x=x,xp=[0,255],fp=[0,1])
+
+# [0,1] to 256
+def infer_to_256(x):
+    return int(np.interp(x=x,xp=[0,1],fp=[0,255]))
+
 
 # choose colors
 def retrieve_pretty_colors(name):
