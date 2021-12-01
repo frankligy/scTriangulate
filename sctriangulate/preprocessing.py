@@ -318,11 +318,12 @@ def make_sure_adata_writable(adata,delete=False):
     return adata
 
 
-def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=True,save=True,pca_n_comps=None,n_top_genes=3000):
+def scanpy_recipe(adata,species='human',is_log=False,resolutions=[1,2,3],modality='rna',umap=True,umap_min_dist=0.5,save=True,pca_n_comps=None,n_top_genes=3000):
     '''
     Main preprocessing function. Run Scanpy normal pipeline to achieve Leiden clustering with various resolutions across multiple modalities.
 
     :param adata: Anndata
+    :param species: string, valid values: 'human', 'mouse', used for recognizing mitochondrial reads
     :param is_log: boolean, whether the adata.X is count or normalized data.
     :param resolutions: list, what leiden resolutions the users want to obtain.
     :param modality: string, valid values: 'rna','adt','atac'
@@ -348,7 +349,10 @@ def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=Tru
     # normal analysis
     if modality == 'rna':
         if not is_log:   # count data
-            adata.var['mt'] = adata.var_names.str.startswith('MT-')
+            if species == 'human':
+                adata.var['mt'] = adata.var_names.str.startswith('MT-')
+            elif species == 'mouse':
+                adata.var['mt'] = adata.var_names.str.startswith('mt-')
             sc.pp.calculate_qc_metrics(adata,qc_vars=['mt'],percent_top=None,inplace=True,log1p=False)
             sc.pp.normalize_total(adata,target_sum=1e4)
             sc.pp.log1p(adata)
@@ -362,7 +366,7 @@ def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=Tru
             for resolution in resolutions:
                 sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
             if umap:
-                sc.tl.umap(adata)
+                sc.tl.umap(adata, min_dist=umap_min_dist)
             # put raw back to X, and make sure it is sparse matrix
             adata = adata.raw.to_adata()
             if not issparse(adata.X):
@@ -373,7 +377,10 @@ def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=Tru
  
 
         else:   # log(1+x) and depth normalized data
-            adata.var['mt'] = adata.var_names.str.startswith('MT-')
+            if species == 'human':
+                adata.var['mt'] = adata.var_names.str.startswith('MT-')
+            elif species == 'mouse':
+                adata.var['mt'] = adata.var_names.str.startswith('mt-')
             sc.pp.calculate_qc_metrics(adata,qc_vars=['mt'],percent_top=None,inplace=True,log1p=False)
             sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=n_top_genes)
             adata.raw = adata
