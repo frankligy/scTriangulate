@@ -1553,7 +1553,11 @@ class ScTriangulate(object):
                 else:
                     genes_to_pick = heatmap_n_genes
                 if heatmap_cbar_scale is None:
-                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=cmap)
+                    v = make_sure_mat_dense(adata_s.X)
+                    max_v = v.max()
+                    min_v = v.min()                    
+                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=cmap,
+                                                    vmin=min_v,vmax=max_v)
                 else:
                     if isinstance(heatmap_cbar_scale,tuple):
                         min_now = heatmap_cbar_scale[0]
