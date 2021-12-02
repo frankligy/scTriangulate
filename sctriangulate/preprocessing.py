@@ -15,6 +15,8 @@ from scipy.io import mmread,mmwrite
 from scipy.sparse import csr_matrix,issparse
 import matplotlib as mpl
 
+from sctriangulate.colors import *
+
 
 
 # for publication ready figure
@@ -1128,6 +1130,94 @@ def reformat_peak(adata,canonical_chr_only=True):
     return adata
 
 
+def plot_coexpression(adata,gene1,gene2,kind,hist2d_bins=50,hist2d_cmap=bg_greyed_cmap('viridis'),hist2d_vmin=1e-5,hist2d_vmax=None,
+                      scatter_dot_color='blue',contour_cmap='viridis',contour_levels=None,contour_scatter=True,contour_train_kde='valid',
+                      contourf_levels=None,contourf_cmap='coolwarm',contourf_vmin=None,contourf_vmax=None,save=True,outdir='.'):
+    x = np.squeeze(make_sure_mat_dense(adata[:,gene1].X))
+    y = np.squeeze(make_sure_mat_dense(adata[:,gene2].X))
+    if kind == 'scatter':
+        fig,ax = plt.subplots()
+        ax.scatter(x,y,color=scatter_dot_color)
+        ax.set_xlabel('{}'.format(gene1))
+        ax.set_ylabel('{}'.format(gene2))
+    elif kind == 'hist2d':
+        fig,ax = plt.subplots()
+        hist2d = ax.hist2d(x,y,bins=hist2d_bins,cmap=hist2d_cmap,vmin=hist2d_vmin,vmax=hist2d_vmax)
+        fig.colorbar(mappable=hist2d[3],ax=ax)
+        ax.set_xlabel('{}'.format(gene1))
+        ax.set_ylabel('{}'.format(gene2))
+    elif kind == 'contour':
+        from scipy.stats import gaussian_kde
+        fig,ax = plt.subplots()
+        X,Y = np.meshgrid(np.linspace(x.min(),x.max(),100),np.linspace(y.min(),y.max(),100))
+        positions = np.vstack([X.ravel(),Y.ravel()])  # (2, 10000)
+        values = np.vstack([x,y])   # (2, 2700)
+        if contour_train_kde == 'valid':  # data points that are non-zero for both gene1 and gen2
+            values_to_kde = values[:,np.logical_not(np.any(values==0,axis=0))]
+        elif contour_train_kde == 'semi_valid':  # data points that are non-zero for at least one of the gene
+            values_to_kde = values[:,np.logical_not(np.all(values==0,axis=0))]
+        elif contour_train_kde == 'full':   # all data points will be used for kde estimation
+            values_to_kde == values
+        kernel = gaussian_kde(values_to_kde)  
+        density = kernel(positions) # (10000,)
+        density = density.reshape(X.shape)  # (100,100)
+        cset = ax.contour(X,Y,density,levels=contour_levels,cmap=contour_cmap)
+        if contour_scatter:
+            dot_density = kernel(values)
+            dot_density_color = [cm.viridis(round(np.interp(x=item,xp=[dot_density.min(),dot_density.max()],fp=[0,255]))) for item in dot_density]
+            ax.scatter(x,y,c=dot_density_color)
+        from matplotlib.colors import Normalize
+        fig.colorbar(mappable=cm.ScalarMappable(norm=Normalize(),cmap=contour_cmap),ax=ax)
+        ax.set_xlabel('{}'.format(gene1))
+        ax.set_ylabel('{}'.format(gene2))
+
+    elif kind == 'contourf':
+        from scipy.stats import gaussian_kde
+        fig,ax = plt.subplots()
+        X,Y = np.meshgrid(np.linspace(x.min(),x.max(),100),np.linspace(y.min(),y.max(),100))
+        positions = np.vstack([X.ravel(),Y.ravel()])  # (2, 10000)
+        values = np.vstack([x,y])   # (2, 2700)
+        if contour_train_kde == 'valid':  # data points that are non-zero for both gene1 and gen2
+            values_to_kde = values[:,np.logical_not(np.any(values==0,axis=0))]
+        elif contour_train_kde == 'semi_valid':  # data points that are non-zero for at least one of the gene
+            values_to_kde = values[:,np.logical_not(np.all(values==0,axis=0))]
+        elif contour_train_kde == 'full':   # all data points will be used for kde estimation
+            values_to_kde == values
+        kernel = gaussian_kde(values_to_kde)  
+        density = kernel(positions) # (10000,)
+        density = density.reshape(X.shape)  # (100,100)
+        cfset = ax.contourf(X,Y,density,levels=contourf_levels,cmap=contourf_cmap,vmin=contourf_vmin,vmax=contourf_vmax) 
+        cset = ax.contour(X,Y,density,levels=contourf_levels,colors='k')  
+        clable = ax.clabel(cset,inline=True,fontsize=10)
+        from matplotlib.colors import Normalize
+        fig.colorbar(mappable=cm.ScalarMappable(norm=Normalize(),cmap=contourf_cmap),ax=ax)
+        ax.set_xlabel('{}'.format(gene1))
+        ax.set_ylabel('{}'.format(gene2))
+
+    elif kind == 'surface3d':
+        fig = plt.figure()
+        from scipy.stats import gaussian_kde
+        X,Y = np.meshgrid(np.linspace(x.min(),x.max(),100),np.linspace(y.min(),y.max(),100))
+        positions = np.vstack([X.ravel(),Y.ravel()])  # (2, 10000)
+        values = np.vstack([x,y])   # (2, 2700)
+        if contour_train_kde == 'valid':  # data points that are non-zero for both gene1 and gen2
+            values_to_kde = values[:,np.logical_not(np.any(values==0,axis=0))]
+        elif contour_train_kde == 'semi_valid':  # data points that are non-zero for at least one of the gene
+            values_to_kde = values[:,np.logical_not(np.all(values==0,axis=0))]
+        elif contour_train_kde == 'full':   # all data points will be used for kde estimation
+            values_to_kde == values
+        kernel = gaussian_kde(values_to_kde)  
+        density = kernel(positions) # (10000,)
+        density = density.reshape(X.shape)  # (100,100)
+        ax = plt.axes(projection='3d')
+        surf = ax.plot_surface(X,Y,density,cmap='coolwarm')
+        ax.set_xlabel('{}'.format(gene1))
+        ax.set_ylabel('{}'.format(gene2))  
+        ax.set_zlabel('PDF for KDE')      
+        fig.colorbar(mappable=surf,ax=ax)
+    if save:
+        plt.savefig(os.path.join(outdir,'coexpression_{}_{}_{}_plot.pdf'.format(kind,gene1,gene2)),bbox_inches='tight')
+        plt.close()
 
 
 
