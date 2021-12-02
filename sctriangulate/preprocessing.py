@@ -1131,8 +1131,8 @@ def reformat_peak(adata,canonical_chr_only=True):
 
 
 def plot_coexpression(adata,gene1,gene2,kind,hist2d_bins=50,hist2d_cmap=bg_greyed_cmap('viridis'),hist2d_vmin=1e-5,hist2d_vmax=None,
-                      scatter_dot_color='blue',contour_cmap='viridis',contour_levels=None,contour_scatter=True,contour_train_kde='valid',
-                      contourf_levels=None,contourf_cmap='coolwarm',contourf_vmin=None,contourf_vmax=None,save=True,outdir='.'):
+                      scatter_dot_color='blue',contour_cmap='viridis',contour_levels=None,contour_scatter=True,contour_scatter_dot_size=5,
+                      contour_train_kde='valid',surface3d_cmap='coolwarm',save=True,outdir='.',name=None):
     x = np.squeeze(make_sure_mat_dense(adata[:,gene1].X))
     y = np.squeeze(make_sure_mat_dense(adata[:,gene2].X))
     if kind == 'scatter':
@@ -1165,7 +1165,7 @@ def plot_coexpression(adata,gene1,gene2,kind,hist2d_bins=50,hist2d_cmap=bg_greye
         if contour_scatter:
             dot_density = kernel(values)
             dot_density_color = [cm.viridis(round(np.interp(x=item,xp=[dot_density.min(),dot_density.max()],fp=[0,255]))) for item in dot_density]
-            ax.scatter(x,y,c=dot_density_color)
+            ax.scatter(x,y,c=dot_density_color,s=contour_scatter_dot_size)
         from matplotlib.colors import Normalize
         fig.colorbar(mappable=cm.ScalarMappable(norm=Normalize(),cmap=contour_cmap),ax=ax)
         ax.set_xlabel('{}'.format(gene1))
@@ -1186,11 +1186,11 @@ def plot_coexpression(adata,gene1,gene2,kind,hist2d_bins=50,hist2d_cmap=bg_greye
         kernel = gaussian_kde(values_to_kde)  
         density = kernel(positions) # (10000,)
         density = density.reshape(X.shape)  # (100,100)
-        cfset = ax.contourf(X,Y,density,levels=contourf_levels,cmap=contourf_cmap,vmin=contourf_vmin,vmax=contourf_vmax) 
-        cset = ax.contour(X,Y,density,levels=contourf_levels,colors='k')  
-        clable = ax.clabel(cset,inline=True,fontsize=10)
+        cfset = ax.contourf(X,Y,density,levels=contour_levels,cmap=contour_cmap) 
+        cset = ax.contour(X,Y,density,levels=contour_levels,colors='k')  
+        clable = ax.clabel(cset,inline=True,fontsize=5)
         from matplotlib.colors import Normalize
-        fig.colorbar(mappable=cm.ScalarMappable(norm=Normalize(),cmap=contourf_cmap),ax=ax)
+        fig.colorbar(mappable=cm.ScalarMappable(norm=Normalize(),cmap=contour_cmap),ax=ax)
         ax.set_xlabel('{}'.format(gene1))
         ax.set_ylabel('{}'.format(gene2))
 
@@ -1210,14 +1210,20 @@ def plot_coexpression(adata,gene1,gene2,kind,hist2d_bins=50,hist2d_cmap=bg_greye
         density = kernel(positions) # (10000,)
         density = density.reshape(X.shape)  # (100,100)
         ax = plt.axes(projection='3d')
-        surf = ax.plot_surface(X,Y,density,cmap='coolwarm')
+        surf = ax.plot_surface(X,Y,density,cmap=surface3d_cmap)
         ax.set_xlabel('{}'.format(gene1))
         ax.set_ylabel('{}'.format(gene2))  
         ax.set_zlabel('PDF for KDE')      
         fig.colorbar(mappable=surf,ax=ax)
     if save:
-        plt.savefig(os.path.join(outdir,'coexpression_{}_{}_{}_plot.pdf'.format(kind,gene1,gene2)),bbox_inches='tight')
-        plt.close()
+        if name is None:
+            plt.savefig(os.path.join(outdir,'coexpression_{}_{}_{}_plot.pdf'.format(kind,gene1,gene2)),bbox_inches='tight')
+            plt.close()
+        else:
+            plt.savefig(os.path.join(outdir,name),bbox_inches='tight')
+            plt.close()            
+
+    return ax
 
 
 

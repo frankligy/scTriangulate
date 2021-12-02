@@ -336,7 +336,7 @@ class ScTriangulate(object):
     def salvage_run(step_to_start,last_step_file,compute_metrics_parallel=True,scale_sccaf=True,layer=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,
                     reassign_abs_thresh=10,assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
                     viewer_heterogeneity_keys=None,nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,cmap='viridis',heatmap_regex=None,
-                    heatmap_direction='include',heatmap_n_genes=None):
+                    heatmap_direction='include',heatmap_n_genes=None,heatmap_cbar_scale=None):
         '''
         This is a static method, which allows to user to resume running scTriangulate from certain point, instead of running from very 
         beginning if the intermediate files are present and intact.
@@ -374,7 +374,7 @@ class ScTriangulate(object):
                     sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
                     sctri.viewer_heterogeneity_html(key=key)
                     sctri.viewer_heterogeneity_figure(key=key,other_umap=other_umap,heatmap_scale=heatmap_scale,cmap=cmap,heatmap_regex=heatmap_regex,
-                                                      heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes)
+                                                      heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
         elif step_to_start == 'build_all_viewers':
             sctri = ScTriangulate.deserialize(last_step_file)
             if viewer_cluster:
@@ -387,7 +387,7 @@ class ScTriangulate(object):
                     sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
                     sctri.viewer_heterogeneity_html(key=key)
                     sctri.viewer_heterogeneity_figure(key=key,other_umap=other_umap,heatmap_scale=heatmap_scale,cmap=cmap,heatmap_regex=heatmap_regex,
-                                                      heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes)
+                                                      heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
 
 
 
@@ -395,7 +395,8 @@ class ScTriangulate(object):
 
     def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,layer=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
                  assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None,
-                 nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,cmap='viridis',heatmap_regex=None,heatmap_direction='include',heatmap_n_genes=None):
+                 nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,cmap='viridis',heatmap_regex=None,heatmap_direction='include',heatmap_n_genes=None,
+                 heatmap_cbar_scale=None):
         '''
         This is the highest level wrapper function for running every step in one goal.
 
@@ -446,7 +447,7 @@ class ScTriangulate(object):
                 self.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
                 self.viewer_heterogeneity_html(key=key)
                 self.viewer_heterogeneity_figure(key=key,other_umap=other_umap,heatmap_scale=heatmap_scale,cmap=cmap,heatmap_regex=heatmap_regex,
-                                                 heatmap_direction='include',heatmap_n_genes=heatmap_n_genes)
+                                                 heatmap_direction='include',heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
 
 
             
@@ -1432,7 +1433,9 @@ class ScTriangulate(object):
     def plot_heterogeneity(self,key,cluster,style,col='pruned',save=True,format='pdf',genes=None,umap_zoom_out=True,umap_dot_size=None,
                            subset=None,marker_gene_dict=None,jitter=True,rotation=60,single_gene=None,dual_gene=None,multi_gene=None,merge=None,
                            to_sinto=False,to_samtools=False,cmap='YlOrRd',heatmap_scale=None,heatmap_regex=None,heatmap_direction='include',
-                           heatmap_n_genes=None,**kwarg): 
+                           heatmap_n_genes=None,heatmap_cbar_scale=None,gene1=None,gene2=None,kind=None,hist2d_bins=50,hist2d_cmap=bg_greyed_cmap('viridis'),
+                           hist2d_vmin=1e-5,hist2d_vmax=None,scatter_dot_color='blue',contour_cmap='viridis',contour_levels=None,contour_scatter=True,
+                           contour_scatter_dot_size=5,contour_train_kde='valid',surface3d_cmap='coolwarm',**kwarg): 
         '''
         Core plotting function in scTriangulate.
 
@@ -1549,7 +1552,23 @@ class ScTriangulate(object):
                     genes_to_pick = 50 // number_of_groups
                 else:
                     genes_to_pick = heatmap_n_genes
-                sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=cmap)
+                if heatmap_cbar_scale is None:
+                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=cmap)
+                else:
+                    if isinstance(heatmap_cbar_scale,tuple):
+                        min_now = heatmap_cbar_scale[0]
+                        max_now = heatmap_cbar_scale[1]
+                    else:
+                        v = make_sure_mat_dense(adata_s.X)
+                        max_v = v.max()
+                        min_v = v.min()
+                        center_v = (max_v+min_v)/2
+                        dist = max_v - center_v
+                        max_now = center_v + dist * heatmap_cbar_scale
+                        min_now = center_v - dist * heatmap_cbar_scale
+                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=cmap,
+                                                    vmin=min_now,vmax=max_now)
+                    
                 if save:
                     plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,'heatmap',format)),bbox_inches='tight')
                     plt.close()
@@ -1693,7 +1712,22 @@ class ScTriangulate(object):
                     genes_to_pick = 50 // number_of_groups
                 else:
                     genes_to_pick = heatmap_n_genes
-                sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered')
+                if heatmap_cbar_scale is None:
+                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=cmap)
+                else:
+                    if isinstance(heatmap_cbar_scale,tuple):
+                        min_now = heatmap_cbar_scale[0]
+                        max_now = heatmap_cbar_scale[1]
+                    else:
+                        v = make_sure_mat_dense(adata_s.X)
+                        max_v = v.max()
+                        min_v = v.min()
+                        center_v = (max_v+min_v)/2
+                        dist = max_v - center_v
+                        max_now = center_v + dist * heatmap_cbar_scale
+                        min_now = center_v - dist * heatmap_cbar_scale
+                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=cmap,
+                                                    vmin=min_now,vmax=max_now)
                 if save:
                     plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),bbox_inches='tight')
                     plt.close()
@@ -1711,6 +1745,13 @@ class ScTriangulate(object):
                     df.set_index(keys='names',inplace=True)
                     sc_marker_dict[group] = df
                 return sc_marker_dict
+
+        elif style == 'coexpression':
+            plot_coexpression(adata_s,gene1=gene1,gene2=gene2,kind=kind,hist2d_bins=hist2d_bins,hist2d_cmap=hist2d_cmap,
+                           hist2d_vmin=hist2d_vmin,hist2d_vmax=hist2d_vmax,scatter_dot_color=scatter_dot_color,contour_cmap=contour_cmap,
+                           contour_levels=contour_levels,contour_scatter=contour_scatter,contour_scatter_dot_size=contour_scatter_dot_size,
+                           contour_train_kde=contour_train_kde,surface3d_cmap=surface3d_cmap,save=True,outdir=self.dir,
+                           name='{}_{}_heterogeneity_{}_{}_{}_{}_{}.{}'.format(key,cluster,col,gene1,gene2,style,kind,format))
 
         elif style == 'heatmap_custom_gene':
             sc.pl.heatmap(adata_s,marker_gene_dict,groupby=col,swap_axes=True,dendrogram=True)
@@ -2269,10 +2310,11 @@ class ScTriangulate(object):
                 continue
 
 
-    def _atomic_viewer_hetero(self,key,format='png',heatmap_scale=False,cmap='viridis',heatmap_regex=None,heatmap_direction='include',heatmap_n_genes=None):
+    def _atomic_viewer_hetero(self,key,format='png',heatmap_scale=False,cmap='viridis',heatmap_regex=None,heatmap_direction='include',
+                              heatmap_n_genes=None,heatmap_cbar_scale=None):
         for cluster in self.adata.obs[key].unique():
             self.plot_heterogeneity(key,cluster,'build',format=format,heatmap_scale=heatmap_scale,cmap=cmap,heatmap_regex=heatmap_regex,
-                                    heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes)
+                                    heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
 
 
     def viewer_cluster_feature_figure(self,parallel=False,select_keys=None,other_umap=None):
@@ -2342,7 +2384,7 @@ class ScTriangulate(object):
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.css'),os.path.join(self.dir,'figure4viewer')))
 
     def viewer_heterogeneity_figure(self,key,other_umap=None,format='png',heatmap_scale=False,cmap='viridis',heatmap_regex=None,heatmap_direction='include',
-                                    heatmap_n_genes=None):
+                                    heatmap_n_genes=None,heatmap_cbar_scale=None):
         '''
         Generating the figures for the viewer heterogeneity page
 
@@ -2366,9 +2408,8 @@ class ScTriangulate(object):
         ori_dir = self.dir
         new_dir = os.path.join(self.dir,'figure4viewer')
         self.dir = new_dir
-        
         self._atomic_viewer_hetero(key,format=format,heatmap_scale=heatmap_scale,cmap=cmap,heatmap_regex=heatmap_regex,heatmap_direction=heatmap_direction,
-                                   heatmap_n_genes=heatmap_n_genes)
+                                   heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
         # dial back
         self.dir = ori_dir
         if other_umap is not None:
