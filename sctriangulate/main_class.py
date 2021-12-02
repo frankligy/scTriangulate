@@ -335,7 +335,7 @@ class ScTriangulate(object):
     @staticmethod
     def salvage_run(step_to_start,last_step_file,compute_metrics_parallel=True,scale_sccaf=True,layer=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,
                     reassign_abs_thresh=10,assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
-                    viewer_heterogeneity_keys=None,nca_embed=True,n_top_genes=3000,other_umap=None,heatmap_scale=None,cmap='viridis',heatmap_regex=None,
+                    viewer_heterogeneity_keys=None,nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,cmap='viridis',heatmap_regex=None,
                     heatmap_direction='include',heatmap_n_genes=None):
         '''
         This is a static method, which allows to user to resume running scTriangulate from certain point, instead of running from very 
@@ -395,7 +395,7 @@ class ScTriangulate(object):
 
     def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,layer=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
                  assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None,
-                 nca_embed=True,n_top_genes=3000,other_umap=None,heatmap_scale=None,cmap='viridis',heatmap_regex=None,heatmap_direction='include',heatmap_n_genes=None):
+                 nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,cmap='viridis',heatmap_regex=None,heatmap_direction='include',heatmap_n_genes=None):
         '''
         This is the highest level wrapper function for running every step in one goal.
 

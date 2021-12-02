@@ -323,7 +323,7 @@ def make_sure_adata_writable(adata,delete=False):
     return adata
 
 
-def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=True,save=True,pca_n_comps=None,n_top_genes=3000):
+def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=True,save=True,pca_n_comps=None,n_top_genes=3000,species='human'):
     '''
     Main preprocessing function. Run Scanpy normal pipeline to achieve Leiden clustering with various resolutions across multiple modalities.
 
@@ -353,7 +353,10 @@ def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=Tru
     # normal analysis
     if modality == 'rna':
         if not is_log:   # count data
-            adata.var['mt'] = adata.var_names.str.startswith('MT-')
+            if species == 'human':
+                adata.var['mt'] = adata.var_names.str.startswith('MT-')
+            elif species == 'mouse':
+                adata.var['mt'] = adata.var_names.str.startswith('mt-')
             sc.pp.calculate_qc_metrics(adata,qc_vars=['mt'],percent_top=None,inplace=True,log1p=False)
             sc.pp.normalize_total(adata,target_sum=1e4)
             sc.pp.log1p(adata)
@@ -378,7 +381,10 @@ def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=Tru
  
 
         else:   # log(1+x) and depth normalized data
-            adata.var['mt'] = adata.var_names.str.startswith('MT-')
+            if species == 'human':
+                adata.var['mt'] = adata.var_names.str.startswith('MT-')
+            elif species == 'mouse':
+                adata.var['mt'] = adata.var_names.str.startswith('mt-')
             sc.pp.calculate_qc_metrics(adata,qc_vars=['mt'],percent_top=None,inplace=True,log1p=False)
             sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=n_top_genes)
             adata.raw = adata
