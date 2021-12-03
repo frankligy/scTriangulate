@@ -711,7 +711,7 @@ class ScTriangulate(object):
             self.uns[name] = {}
             self.uns[name][key] = collect[name]
 
-    def cluster_performance(self,cluster,competitors,reference,show_cluster_number=False,metrics=None,save=True,format='pdf'):
+    def cluster_performance(self,cluster,competitors,reference,show_cluster_number=False,metrics=None,ylim=None,save=True,format='pdf'):
         from sklearn.preprocessing import LabelEncoder
         from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, homogeneity_completeness_v_measure
         result = self.adata.obs
@@ -751,6 +751,8 @@ class ScTriangulate(object):
         ax.set_xticks(np.arange(len(competitors)+1))
         ax.set_xticklabels(competitors+[cluster],fontsize=3)
         ax.set_ylabel('Agreement with {}'.format(reference))
+        if ylim is not None:
+            ax.set_ylim(ylim)
         if show_cluster_number:  # show how many clusters in each annotation
             number = []
             for anno in competitors + [cluster]:
