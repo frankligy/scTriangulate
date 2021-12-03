@@ -1555,7 +1555,7 @@ class ScTriangulate(object):
                 if heatmap_cbar_scale is None:
                     v = make_sure_mat_dense(adata_s.X)
                     max_v = v.max()
-                    min_v = v.min()                    
+                    min_v = v.min()             
                     sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=cmap,
                                                     vmin=min_v,vmax=max_v)
                 else:
@@ -1566,6 +1566,8 @@ class ScTriangulate(object):
                         v = make_sure_mat_dense(adata_s.X)
                         max_v = v.max()
                         min_v = v.min()
+                        max_v = max([max_v,abs(min_v)])     # make them symmetrical 
+                        min_v = max_v * (-1)   
                         center_v = (max_v+min_v)/2
                         dist = max_v - center_v
                         max_now = center_v + dist * heatmap_cbar_scale
