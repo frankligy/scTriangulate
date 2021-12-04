@@ -1434,7 +1434,7 @@ class ScTriangulate(object):
 
     def plot_heterogeneity(self,key,cluster,style,col='pruned',save=True,format='pdf',genes=None,umap_zoom_out=True,umap_dot_size=None,
                            subset=None,marker_gene_dict=None,jitter=True,rotation=60,single_gene=None,dual_gene=None,multi_gene=None,merge=None,
-                           to_sinto=False,to_samtools=False,cmap='YlOrRd',heatmap_scale=None,heatmap_regex=None,heatmap_direction='include',
+                           to_sinto=False,to_samtools=False,cmap='YlOrRd',heatmap_cmap='viridis',heatmap_scale=None,heatmap_regex=None,heatmap_direction='include',
                            heatmap_n_genes=None,heatmap_cbar_scale=None,gene1=None,gene2=None,kind=None,hist2d_bins=50,hist2d_cmap=bg_greyed_cmap('viridis'),
                            hist2d_vmin=1e-5,hist2d_vmax=None,scatter_dot_color='blue',contour_cmap='viridis',contour_levels=None,contour_scatter=True,
                            contour_scatter_dot_size=5,contour_train_kde='valid',surface3d_cmap='coolwarm',**kwarg): 
@@ -1542,6 +1542,13 @@ class ScTriangulate(object):
                 elif heatmap_scale == 'median':
                     scaled_X = make_sure_mat_dense(adata_s.X) - np.median(make_sure_mat_dense(adata_s.X),axis=0)[np.newaxis,:]
                     adata_s.X = scaled_X
+                elif heatmap_scale == 'mean':
+                    scaled_X = make_sure_mat_dense(adata_s.X) - np.mean(make_sure_mat_dense(adata_s.X),axis=0)[np.newaxis,:]
+                    adata_s.X = scaled_X       
+                elif heatmap_scale == 'z_score':
+                    from sklearn.preprocessing import scale
+                    scaled_X = scale(X=make_sure_mat_dense(adata_s.X),axis=0)
+                    adata_s.X = scaled_X   
 
             if len(adata_s.obs[col].unique()) == 1: # it is already unique
                 logger_sctriangulate.info('{0} entirely being assigned to one type, no need to do DE'.format(cluster))
@@ -1558,7 +1565,7 @@ class ScTriangulate(object):
                     v = make_sure_mat_dense(adata_s.X)
                     max_v = v.max()
                     min_v = v.min()             
-                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=cmap,
+                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=heatmap_cmap,
                                                     vmin=min_v,vmax=max_v)
                 else:
                     if isinstance(heatmap_cbar_scale,tuple):
@@ -1574,7 +1581,7 @@ class ScTriangulate(object):
                         dist = max_v - center_v
                         max_now = center_v + dist * heatmap_cbar_scale
                         min_now = center_v - dist * heatmap_cbar_scale
-                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=cmap,
+                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=heatmap_cmap,
                                                     vmin=min_now,vmax=max_now)
                     
                 if save:
@@ -1708,6 +1715,13 @@ class ScTriangulate(object):
                 elif heatmap_scale == 'median':
                     scaled_X = make_sure_mat_dense(adata_s.X) - np.median(make_sure_mat_dense(adata_s.X),axis=0)[np.newaxis,:]
                     adata_s.X = scaled_X
+                elif heatmap_scale == 'mean':
+                    scaled_X = make_sure_mat_dense(adata_s.X) - np.mean(make_sure_mat_dense(adata_s.X),axis=0)[np.newaxis,:]
+                    adata_s.X = scaled_X       
+                elif heatmap_scale == 'z_score':
+                    from sklearn.preprocessing import scale
+                    scaled_X = scale(X=make_sure_mat_dense(adata_s.X),axis=0)
+                    adata_s.X = scaled_X   
 
             if len(adata_s.obs[col].unique()) == 1: # it is already unique
                 logger_sctriangulate.info('{0} entirely being assigned to one type, no need to do DE'.format(cluster))
@@ -1721,7 +1735,11 @@ class ScTriangulate(object):
                 else:
                     genes_to_pick = heatmap_n_genes
                 if heatmap_cbar_scale is None:
-                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=cmap)
+                    v = make_sure_mat_dense(adata_s.X)
+                    max_v = v.max()
+                    min_v = v.min()             
+                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=heatmap_cmap,
+                                                    vmin=min_v,vmax=max_v)
                 else:
                     if isinstance(heatmap_cbar_scale,tuple):
                         min_now = heatmap_cbar_scale[0]
@@ -1730,11 +1748,13 @@ class ScTriangulate(object):
                         v = make_sure_mat_dense(adata_s.X)
                         max_v = v.max()
                         min_v = v.min()
+                        max_v = max([max_v,abs(min_v)])     # make them symmetrical 
+                        min_v = max_v * (-1)   
                         center_v = (max_v+min_v)/2
                         dist = max_v - center_v
                         max_now = center_v + dist * heatmap_cbar_scale
                         min_now = center_v - dist * heatmap_cbar_scale
-                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=cmap,
+                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=heatmap_cmap,
                                                     vmin=min_now,vmax=max_now)
                 if save:
                     plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),bbox_inches='tight')
@@ -2321,7 +2341,7 @@ class ScTriangulate(object):
     def _atomic_viewer_hetero(self,key,format='png',heatmap_scale=False,cmap='viridis',heatmap_regex=None,heatmap_direction='include',
                               heatmap_n_genes=None,heatmap_cbar_scale=None):
         for cluster in self.adata.obs[key].unique():
-            self.plot_heterogeneity(key,cluster,'build',format=format,heatmap_scale=heatmap_scale,cmap=cmap,heatmap_regex=heatmap_regex,
+            self.plot_heterogeneity(key,cluster,'build',format=format,heatmap_scale=heatmap_scale,heatmap_cmap=cmap,heatmap_regex=heatmap_regex,
                                     heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
 
 
