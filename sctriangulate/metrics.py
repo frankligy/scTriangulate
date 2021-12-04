@@ -57,7 +57,7 @@ def compute_combo_score(rank_uns,cluster):
 
 def run_enrichr(gene_list,key,name,folder,species,criterion):
     # run enrichr
-    artifact = read_artifact_genes(species,criterion)
+    artifact = read_artifact_genes(species,criterion).reset_index()
     artifact_dict = artifact.groupby(by='class')['genes'].apply(lambda x:x.tolist()).to_dict()
     enr2 = gp.enrichr(gene_list=gene_list,
                     description=name,
@@ -81,7 +81,7 @@ def run_enrichr(gene_list,key,name,folder,species,criterion):
     return enrichr_dict
 
 def run_gsea(gene_list,key,name,folder,species,criterion):
-    artifact = read_artifact_genes(species,criterion)
+    artifact = read_artifact_genes(species,criterion).reset_index()
     artifact_dict = artifact.groupby(by='class')['genes'].apply(lambda x:x.tolist()).to_dict()
     artifact_dict_keys = list(artifact_dict.keys())
     df = pd.DataFrame({0: gene_list, 1: 1/(np.arange(len(gene_list))+1)}) # col 1 is for descending rank of gene
