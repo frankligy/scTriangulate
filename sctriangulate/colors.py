@@ -6,6 +6,7 @@ from matplotlib import colors
 import copy
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import os,sys
 
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
