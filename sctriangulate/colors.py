@@ -205,7 +205,8 @@ def pick_n_colors(n):
     elif n > 28 and n <= 102:
         _colors = _godsnot_102[:n]
     elif n > 102:
-        _colors = [to_hex(cm.jet(round(i))) for i in np.linspace(0,255,n)]
+        # _colors = [to_hex(cm.jet(round(i))) for i in np.linspace(0,255,n)]   # old way
+        _colors = np.random.choice(r433,size=n,replace=False)
     return _colors
 
 def colors_for_set(setlist):  # a list without redundancy
@@ -438,6 +439,23 @@ _godsnot_102 = [
     "#A4E804",
     "#324E72",
 ]
+
+# r433 is generated in R using the code below
+'''
+color = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
+library('gplots')
+hex_vector = c()
+for (c in color) {
+  h = col2hex(c)
+  hex_vector = append(hex_vector,h)
+}
+
+hex_matrix = t(as.matrix(hex_vector))
+write.table(hex_matrix,'433colorhex.txt',sep='\t',row.names=F,col.names=F)
+'''
+r433 = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)),'433colorhex.txt'),sep='\t',header=None).iloc[0,:].tolist()
+
+
 
 _pub_icgs2 = [
     '#F26D6D',  # red
