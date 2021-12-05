@@ -1226,5 +1226,19 @@ def plot_coexpression(adata,gene1,gene2,kind,hist2d_bins=50,hist2d_cmap=bg_greye
     return ax
 
 
+def umap_color_exceed_102(adata,key,dot_size=None,legend_fontsize=6,outdir='.',name=None):
+    fig,ax = plt.subplots()
+    mapping = colors_for_set(adata.obs[key].unique().tolist())
+    color = adata.obs[key].map(mapping).values
+    if dot_size is None:
+        dot_size = 120000/adata.shape[0]
+    ax.scatter(adata.obsm['X_umap'][:,0],adata.obsm['X_umap'][:,1],c=color,s=dot_size)
+    import matplotlib.lines as mlines
+    ax.legend(handles=[mlines.Line2D([],[],marker='o',linestyle='',color=i) for i in mapping.values()],
+            labels=[i for i in mapping.keys()],loc='upper left',bbox_to_anchor=(1,1),ncol=3,frameon=False,prop={'size':6})
+    if name is None:
+        name = 'umap_{}_exceed_102.pdf'.format(key)
+    plt.savefig(os.path.join(outdir,name),bbox_inches='tight')
+    plt.close()
 
 
