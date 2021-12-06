@@ -667,14 +667,18 @@ class ScTriangulate(object):
         root = Node(ref_col)
         hold_ref_var = {}
         for ref,grouped_df in obs.groupby(by=ref_col):
-            hold_ref_var[ref] = Node(ref,parent=root)
-            unique = grouped_df[query_col].unique()
+            ref_display = '{}[#:{}]'.format(ref,grouped_df.shape[0])
+            hold_ref_var[ref] = Node(ref_display,parent=root)
+            vf = grouped_df[query_col].value_counts()
+            unique = vf.index.tolist()
             if len(unique) == 1: # no sub-clusters
                 continue
             else:
                 hold_cluster_var = {}
                 for item in unique:
-                    hold_cluster_var[item] = Node(item,parent=hold_ref_var[ref])
+                    if vf[item] > 0:
+                        item_display = '{}[#:{};prop:{}]'.format(item,vf[item],round(vf[item]/grouped_df.shape[0],2))
+                        hold_cluster_var[item] = Node(item_display,parent=hold_ref_var[ref])
         if save:
             with open(os.path.join(self.dir,'display_hierarchy_{}_{}.txt'.format(ref_col,query_col)),'a') as f:
                 for pre, fill, node in RenderTree(root):

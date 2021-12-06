@@ -1242,3 +1242,30 @@ def umap_color_exceed_102(adata,key,dot_size=None,legend_fontsize=6,outdir='.',n
     plt.close()
 
 
+def custom_two_column_sankey(adata,left_annotation,right_annotation,opacity=0.6,pad=3,thickness=10,margin=300,text=False,save=True,outdir='.'):
+    import plotly.graph_objects as go
+    import kaleido
+    df = adata.obs.loc[:,[left_annotation,right_annotation]]
+    node_label = df[left_annotation].unique().tolist() + df[right_annotation].unique().tolist()
+    node_color = pick_n_colors(len(node_label))
+    link = []
+    for source,sub in df.groupby(by=left_annotation):
+        for target,subsub in sub.groupby(by=right_annotation):
+            if subsub.shape[0] > 0:
+                link.append((source,target,subsub.shape[0],subsub.shape[0]/sub.shape[0]))
+    link_info = list(zip(*link))
+    link_source = [node_label.index(item) for item in link_info[0]]
+    link_target = [node_label.index(item) for item in link_info[1]]
+    link_value = link_info[2]
+    link_pert = link_info[3]
+    
+    link_color = ['rgba{}'.format(tuple([infer_to_256(item) for item in to_rgb(node_color[i])] + [opacity])) for i in link_source]
+    node_plotly = dict(pad = pad, thickness = thickness,line = dict(color = "grey", width = 0.1),label = node_label,color = node_color)
+    link_plotly = dict(source=link_source,target=link_target,value=link_value,color=link_color)
+    if not text:
+        fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly, textfont=dict(color='rgba(0,0,0,0)',size=1))])
+    else:
+        fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
+    fig.update_layout(title_text='sankey_{}_{}'.format(left_annotation,right_annotation), font_size=6, margin=dict(l=margin,r=margin))
+    if save:
+        fig.write_image(os.path.join(outdir,'two_column_sankey_{}_{}_text_{}.pdf'.format(left_annotation,right_annotation,text)))  
