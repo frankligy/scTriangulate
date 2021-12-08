@@ -663,6 +663,8 @@ class ScTriangulate(object):
             :target: target        
 
         '''
+        print(prRed('hello')+'world')
+        sys.exit('stop')
         obs = self.adata.obs
         root = Node(ref_col)
         hold_ref_var = {}
