@@ -2210,7 +2210,7 @@ class ScTriangulate(object):
 
 
     def plot_long_heatmap(self,clusters=None,key='pruned',n_features=5,mode='marker_genes',cmap='viridis',save=True,format='pdf',figsize=(6,4.8),
-                          feature_fontsize=3,cluster_fontsize=5):
+                          feature_fontsize=3,cluster_fontsize=5,heatmap_regex=None,heatmap_direction='include'):
 
         '''
         the default scanpy heatmap is not able to support the display of arbitrary number of marker genes for each clusters, the max feature is 50.
@@ -2239,15 +2239,46 @@ class ScTriangulate(object):
 
         '''
         df = self.uns[mode][key]
+        # if heatmap_regex and heatmap_direction are present, try to filter the marker genes first
+        if heatmap_regex is not None:
+            if heatmap_direction == 'include':
+                new_purify_col = []
+                for lis in df['purify']:
+                    new_lis = []
+                    for item in lis:
+                        pat = re.compile(heatmap_regex)
+                        if re.search(pat,item):
+                            new_lis.append(item)
+                    new_purify_col.append(new_lis)
+            elif heatmap_direction == 'exclude':
+                new_purify_col = []
+                for lis in df['purify']:
+                    new_lis = []
+                    for item in lis:
+                        pat = re.compile(heatmap_regex)
+                        if not re.search(pat,item):
+                            new_lis.append(item)
+                    new_purify_col.append(new_lis) 
+            df['purify'] = new_purify_col
         # get feature pool
+        ignore_clusters = []
         feature_pool = []
         for i in range(df.shape[0]):
             cluster = df.index[i]
-            features = df.iloc[i]['purify'][:n_features]
+            if len(df.iloc[i]['purify']) == 0:
+                ignore_clusters.append(cluster)
+                print(prRed('{} only has {} markers with the regex specified, this cluster will not be plotted'.format(cluster,len(df.iloc[i]['purify']))))
+                continue
+            elif n_features > len(df.iloc[i]['purify']):
+                features = df.iloc[i]['purify']
+                print('{} only has {} markers with the regex specified, only these markers will be plotted'.format(cluster,len(df.iloc[i]['purify'])))
+                continue
+            else:
+                features = df.iloc[i]['purify'][:n_features]
             feature_pool.extend(features)
         # determine cluster order
         if clusters is None:
-            clusters = df.index
+            clusters = list(set(df.index).difference(set(ignore_clusters)))
         core_adata = self.adata[self.adata.obs[key].isin(clusters),feature_pool]
         core_df = pd.DataFrame(data=make_sure_mat_dense(core_adata.copy().X),
                                index=core_adata.obs_names,
@@ -2262,7 +2293,12 @@ class ScTriangulate(object):
         feature_cluster_df = pd.DataFrame({'feature':[],'cluster':[]})
         for i in range(df.shape[0]):
             cluster = df.index[i]
-            features = df.iloc[i]['purify'][:n_features]   
+            if cluster in ignore_clusters:
+                continue
+            if n_features > len(df.iloc[i]['purify']):
+                features = df.iloc[i]['purify']
+            else:
+                features = df.iloc[i]['purify'][:n_features]   
             chunk = pd.DataFrame({'feature':features,'cluster':np.full(len(features),fill_value=cluster)})
             feature_cluster_df = pd.concat([feature_cluster_df,chunk],axis=0) 
         feature_to_cluster = feature_cluster_df.groupby(by='feature')['cluster'].apply(lambda x:x.values[0]).to_dict()
@@ -2314,7 +2350,7 @@ class ScTriangulate(object):
         vline_coords = tmp_cum * (e-s) + s
         print(vline_coords)
         for x in vline_coords:
-            ax1.axvline(x,ymin=0,ymax=1,color='white',linewidth=0.03) 
+            ax1.axvline(x,ymin=0,ymax=1,color='white',linewidth=0.01) 
         # colorbar
         gs.update(right=0.8)
         gs_cbar = mpl.gridspec.GridSpec(nrows=1,ncols=1,left=0.85,top=0.3)
