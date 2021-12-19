@@ -1736,14 +1736,11 @@ class ScTriangulate(object):
                     genes_to_pick = 50 // number_of_groups
                 else:
                     genes_to_pick = heatmap_n_genes
-                if heatmap_cbar_scale is None:
-                    v = make_sure_mat_dense(adata_s.X)
-                    max_v = v.max()
-                    min_v = v.min()             
-                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=heatmap_cmap,
-                                                    vmin=min_v,vmax=max_v)
+                if heatmap_cbar_scale is None:   # let scanpy default norm figure that out for you, seems the max and min are not the same as the max/min from the data
+                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=heatmap_cmap)
                 else:
                     if isinstance(heatmap_cbar_scale,tuple):
+                        v = make_sure_mat_dense(adata_s.X)
                         min_now = heatmap_cbar_scale[0]
                         max_now = heatmap_cbar_scale[1]
                     else:
@@ -1752,11 +1749,10 @@ class ScTriangulate(object):
                         min_v = v.min()
                         max_v = max([max_v,abs(min_v)])     # make them symmetrical 
                         min_v = max_v * (-1)   
-                        center_v = (max_v+min_v)/2
-                        dist = max_v - center_v
-                        max_now = center_v + dist * heatmap_cbar_scale
-                        min_now = center_v - dist * heatmap_cbar_scale
-                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=heatmap_cmap,
+                        max_now = max_v * heatmap_cbar_scale
+                        min_now = min_v * heatmap_cbar_scale
+                    adata_s.layers['to_plot'] = v                   # very weired fix, have to set a new layer....    
+                    sc.pl.rank_genes_groups_heatmap(adata_s,layer='to_plot',n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=heatmap_cmap,
                                                     vmin=min_now,vmax=max_now)
                 if save:
                     plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),bbox_inches='tight')
