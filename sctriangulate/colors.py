@@ -13,14 +13,32 @@ mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'Arial'
 
 # ASCI escape codes
-def prRed(skk): return "\033[91m {}\033[00m" .format(skk)
-def prGreen(skk): return "\033[92m {}\033[00m" .format(skk)
-def prYellow(skk): return "\033[93m {}\033[00m" .format(skk)
-def prLightPurple(skk): return "\033[94m {}\033[00m" .format(skk)
-def prPurple(skk): return "\033[95m {}\033[00m" .format(skk)
-def prCyan(skk): return "\033[96m {}\033[00m" .format(skk)
-def prLightGray(skk): return "\033[97m {}\033[00m" .format(skk)
-def prBlack(skk): return "\033[98m {}\033[00m" .format(skk)
+def color_stdout(skk,c):
+    '''
+    color your output to the terminal
+    :param skk: the string you want to color
+    :param c: the name of the color 'red','green','yellow','lightpurple','cyan','lightgrey','black'
+
+    Example::
+
+        from color import color_stdout
+        # when print to terminal, it will be red
+        print(color_stdout('hello','red'))
+    '''
+    if c == 'red':
+        return "\033[91m {}\033[00m" .format(skk)
+    elif c == 'green':
+        return "\033[92m {}\033[00m" .format(skk)
+    elif c == 'yellow':
+        return "\033[93m {}\033[00m" .format(skk)
+    elif c == 'lightpurple':
+        return "\033[94m {}\033[00m" .format(skk)
+    elif c == 'cyan':
+        return "\033[95m {}\033[00m" .format(skk)
+    elif c == 'lightgrey':
+        return "\033[97m {}\033[00m" .format(skk)
+    elif c == 'black':
+        return "\033[98m {}\033[00m" .format(skk)
 
 # test_discrete_look
 def generate_block(color_list,name):
@@ -197,7 +215,7 @@ def pick_n_colors(n):
         generate_block(color_list = pick_n_colors(20),name='tab20')
         generate_block(color_list = pick_n_colors(28),name='zeileis')
         generate_block(color_list = pick_n_colors(102),name='godsnot')
-        generate_block(color_list = pick_n_colors(120),name='jet')
+        generate_block(color_list = pick_n_colors(200),name='433')
 
     .. image:: ./_static/pick_n_colors.png
         :height: 300px

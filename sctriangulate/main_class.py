@@ -663,8 +663,6 @@ class ScTriangulate(object):
             :target: target        
 
         '''
-        print(prRed('hello')+'world')
-        sys.exit('stop')
         obs = self.adata.obs
         root = Node(ref_col)
         hold_ref_var = {}
@@ -1451,17 +1449,18 @@ class ScTriangulate(object):
         :param cluster: string, the name of the cluster.
         :param stype: string, valid values are as below:
 
-                      * **umap**: plot the umap of this cluster (including its location and its suggestive heterogeneity)
-                      * **heatmap**: plot the heatmap of the differentially expressed features across all sub-populations within this cluster.
-                      * **build**: plot both the umap and heatmap, benefit is the column and raw colorbar of the heatmap is consistent with the umap color
-                      * **heatmap_custom_gene**, plot the heatmap, but with user-defined gene dictionary.
-                      * **heatmap+umap**, it is the umap + heatmap_custom_gene, and the colorbars are matching
-                      * **violin**: plot the violin plot of the specified genes across sub populations.
-                      * **single_gene**: plot the gradient of single genes across the cluster.
-                      * **dual_gene**: plot the dual-gene plot of two genes across the cluster, usually these two genes should correspond to the marker genes in two of the sub-populations.
-                      * **multi_gene**: plot the multi-gene plot of multiple genes across the cluster.
-                      * **cellxgene**: output the h5ad object which are readily transferrable to cellxgene. It also support atac pseudobuld analysis with ``to_sinto`` or ``to_samtools`` arguments.
-                      * **sankey**: plot the sankey plot showing fraction/percentage of cells that flow into each sub population
+            * **umap**: plot the umap of this cluster (including its location and its suggestive heterogeneity)
+            * **heatmap**: plot the heatmap of the differentially expressed features across all sub-populations within this cluster.
+            * **build**: plot both the umap and heatmap, benefit is the column and raw colorbar of the heatmap is consistent with the umap color
+            * **heatmap_custom_gene**, plot the heatmap, but with user-defined gene dictionary.
+            * **heatmap+umap**, it is the umap + heatmap_custom_gene, and the colorbars are matching
+            * **violin**: plot the violin plot of the specified genes across sub populations.
+            * **single_gene**: plot the gradient of single genes across the cluster.
+            * **dual_gene**: plot the dual-gene plot of two genes across the cluster, usually these two genes should correspond to the marker genes in two of the sub-populations.
+            * **multi_gene**: plot the multi-gene plot of multiple genes across the cluster.
+            * **cellxgene**: output the h5ad object which are readily transferrable to cellxgene. It also support atac pseudobuld analysis with ``to_sinto`` or ``to_samtools`` arguments.
+            * **sankey**: plot the sankey plot showing fraction/percentage of cells that flow into each sub population, requiring plotly if you only need html, and kaleido if you need static plot, otherwise, a less pretty matplotlib sankey will be plotted
+            * **coexpression**: visualize the coexpression pattern of two features, using contour plot or hist2d
 
         :param col: string, either 'raw' or 'pruned'.
         :param save: boolean, whether to save or not.
@@ -1479,6 +1478,46 @@ class ScTriangulate(object):
         :param merge: nested list, the sub-populations that we want to merge. [('sub-c1','sub-c2'),('sub-c3','sub-c4')]
         :param to_sinto: boolean, for cellxgene mode, output the txt files for running sinto to generate pseudobulk bam files.
         :param to_samtools: boolean,for cellxgene mode, output the txt files for running samtools to generate the pseudobulk bam files.
+        :param cmap: a valid string for matplotlib cmap or scTriangulate color module retrieve_pretty_cmap function return object, default is 'YlOrRd', will be used for umap
+
+        The following will be used for heatmap only:
+
+        :param heatmap_cmap: a valid string for matplotlib cmap or scTriangulate color module retrieve_pretty_cmap function return object, default is 'viridis'.
+        :param heatmap_scale: None, minmax, median, mean, z_score, default is None, useful when very large or small values exist in the adata.X, scaling can yield better visual effects
+
+            * ``None`` means no scale will be performed, the raw valus shown in adata.X will be plotted in the heatmap
+            * ``minmax`` means the raw values will be row-scaled to [0,1] using a MinMaxScaler
+            * ``median`` means the raw values will be row-scaled via substracting by the median per row
+            * ``mean`` means the raw values will be row-scaled via substracting by the mean per row
+            * ``z_score`` means the raw values will be row-scaled via Scaling (mean-centered and variance normalized)
+
+        :param heatmap_regex: None or a raw string for example r'^AB_' (meaning selecing all ADT features as scTriangulate by default prefix ADT features will AB_), the usage of that is to only display certain features from certain modlaities. The underlying implementation is just a regular expression selection. 
+        :param heatmap_direction: string, 'include' or 'exclude', it is along with the heatmap_regex parameter, include means doing positive selection, exclude means to exclude the features that match with the heatmap_regex
+        :param heatmap_n_genes: an integer, by default, program display 50//n_cluster genes for each cluster, this will overwrite the default.
+        :param heatmap_cbar_scale: None or a tuple or a fraction. A tuple for example (-0.5,0.5) will clip the colorbar within -0.5 to 0.5, a fraction number for instance 0.25, will shrink the default colorbar range say -1 to 1 to -0.25 to 0.25
+
+        The following will be used for coexpression plot only:
+
+        :param gene1: the first gene/features to inspect, the gene name, a string.
+        :param gene2: the second gene/features to inspect, the gene name, a string.
+        :param kind: a string, 'scatter' or 'hist2d' or 'contour' or 'contourf' or 'surface3d', those are all supported figure types to represent the coexpression pattern of two features.
+        :param hist2d_bins: integer, default is 50, only used is the kind is hist2d, it will determine the number of the bins
+        :param hist2d_cmap: a valid matplotlib cmap string, default is bg_greyed_cmap('viridis'), only used for hist2d
+        :param hist2d_vmin: the min value for hist2d graph, default is 1e-5, useful if you want to make the low expressin region lightgrey.
+        :param hist2d_vmax: the max value for hist2d graph, default is None
+        :param scatter_dot_color: the color of the scatter plot dot, default is 'blue'
+        :param contour_cmap: the valid matplotlib camp string, default is 'viridis'
+        :param contour_levels: an integer, the levels of contours to show, default is None
+        :param contour_scatter: boolean and default is True, whether or not to show the scatter plot on top of the contour plot
+        :param contour_scatter_dot_size: float or integer, the dot size of the scatter plot on top of contour plot, default is 5.
+        :param contour_train_kde: a string, either 'valid', 'semi-vaid' or 'full', it determines what subset of dots will be used for inferring the kernel
+
+            * ``valid``: only data points that are non-zero for both gene1 and gene2
+            * ``semi_valid``: only data points that are non-zero for at least one of the gene
+            * ``full``: all data points will be used for kde estimation
+
+        :param surface_3d_cmap: a valid matplotlib cmap string, for surface 3d plot, the default would be 'coolwarm'
+
 
         Example::
         
@@ -1489,6 +1528,7 @@ class ScTriangulate(object):
             sctri.plot_heterogeneity('leiden1','0','cellxgene')
             sctri.plot_heterogeneity('leiden1','0','heatmap+umap',subset=['leiden1@0','leiden3@10'],marker_gene_dict=marker_gene_dict)
             sctri.plot_heterogeneity('leiden1','0','dual_gene',dual_gene=['MAPK14','CD52'])
+            sctri.plot_heterogeneity('leiden1','0','coexpression',gene1='MAPK14',genes='CD52',kind='contour')
    
         '''
         adata_s = self.adata[self.adata.obs[key]==cluster,:].copy()
@@ -1833,7 +1873,6 @@ class ScTriangulate(object):
         elif style == 'sankey':
             try:
                 import plotly.graph_objects as go
-                import kaleido
             except:
                 logger_sctriangulate.warning('no plotly or kaleido library, fall back to matplotlib sankey plot')
                 # processing the obs
@@ -1914,10 +1953,37 @@ class ScTriangulate(object):
                 fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
                 fig.update_layout(title_text='{}_{}_heterogeneity_{}_{}'.format(key,cluster,col,style), font_size=6)
                 if save:
-                    fig.write_image(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)))
+                    try:
+                        fig.write_image(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)))
+                    except:
+                        fig.write_html(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),include_plotlyjs='cdn')
 
 
-    def plot_two_column_sankey(self,left_annotation,right_annotation,opacity=0.6,pad=3,thickness=10,margin=300,text=False,save=True):
+    def plot_two_column_sankey(self,left_annotation,right_annotation,opacity=0.6,pad=3,thickness=10,margin=300,text=True,save=True):
+        '''
+        sankey plot to show the correpondance between two annotation, for example, annotation1 and annotation2, how many cells from each cluster in
+        annotation1 will flow to each cluster in annotation2.
+
+        :param left_annotation: a string, the name of the annotation1
+        :param right_annotation: a string, the name of the annotation2
+        :param opacity: float number, default is 0.6, the opacity of the sankey strips
+        :param pad: float number, default is 3, the gap between blocks vertically
+        :param thickness: float number, default is 10, the width of each block
+        :param margin: the white margin of the sankey plot, large value means the sankey plot will not consume the whole horizontal space (shrinkaged), default is 300
+        :param text: whether to show the text or not, default is True, only set to False if you want to have publication quality static figure, because plotly will add a weired background shady effect on the text, not good for publication, so you can fisrt remove text, then add it back youself manually
+        :param save: wheter to save or not, default is True.
+
+        Example::
+
+            sctri.plot_two_column_sankey('leiden1','leiden2',margin=5)
+
+        .. image:: ./_static/two_column_sankey.png
+            :height: 300px
+            :width: 400px
+            :align: center
+            :target: target
+
+        '''
         import plotly.graph_objects as go
         import kaleido
         df = self.adata.obs.loc[:,[left_annotation,right_annotation]]
@@ -1941,7 +2007,10 @@ class ScTriangulate(object):
             fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
         fig.update_layout(title_text='sankey_{}_{}'.format(left_annotation,right_annotation), font_size=6, margin=dict(l=margin,r=margin))
         if save:
-            fig.write_image(os.path.join(self.dir,'two_column_sankey_{}_{}_text_{}.pdf'.format(left_annotation,right_annotation,text)))   
+            try:
+                fig.write_image(os.path.join(self.dir,'two_column_sankey_{}_{}_text_{}.pdf'.format(left_annotation,right_annotation,text))) 
+            except:
+                fig.write_html(os.path.join(self.dir,'two_column_sankey_{}_{}_text_{}.pdf'.format(left_annotation,right_annotation,text)),include_plotlyjs='cdn')  
 
 
 
@@ -2222,6 +2291,8 @@ class ScTriangulate(object):
         :param figsize: tuple, the width and the height of the plot.
         :param feature_fontsize: int/float. the fontsize for the feature.
         :param cluster_fontsize: int/float, the fontsize for the cluster.
+        :param heatmap_regex: None or a raw string for example r’^AB_’ (meaning selecing all ADT features as scTriangulate by default prefix ADT features will AB_), the usage of that is to only display certain features from certain modlaities. The underlying implementation is just a regular expression selection.
+        :param heatmap_direction: string, ‘include’ or ‘exclude’, it is along with the heatmap_regex parameter, include means doing positive selection, exclude means to exclude the features that match with the heatmap_regex
 
         Examples::
 

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Principle &mdash; scTriangulate 0.9.1 documentation</title>
+  <title>Principle &mdash; scTriangulate 0.10.0 documentation</title>
   
 
   
@@ -96,6 +96,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#sctriangulate-object">ScTriangulate Object</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#visualization">Visualization</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#plot-heterogeneity">plot_heterogeneity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#plot-two-column-sankey">plot_two_column_sankey</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-concordance">plot_concordance</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-clusterability">plot_clusterability</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#plot-long-heatmap">plot_long_heatmap</a></li>
@@ -262,20 +263,33 @@ the viewpoint. As you can see, <strong>annoatation&#64;c1</strong> has been sugg
 </ol>
 <p>Let’s show some of the functionalities:</p>
 <p><strong>1. UMAP</strong>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;umap&#39;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;umap&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <a class="reference external image-reference" href="target"><img alt="_images/ph_umap.png" class="align-center" src="_images/ph_umap.png" style="width: 500px; height: 300px;" /></a>
 <p><strong>2. Heatmap</strong>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;heatmap&#39;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;heatmap&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <a class="reference external image-reference" href="target"><img alt="_images/ph_heatmap.png" class="align-center" src="_images/ph_heatmap.png" style="width: 500px; height: 400px;" /></a>
 <p><strong>3. dual_gene_plot</strong>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;dual_gene&#39;</span><span class="p">,</span><span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;TRDC&#39;</span><span class="p">,</span><span class="s1">&#39;SLC4A10&#39;</span><span class="p">])</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;sctri_rna_leiden_1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;dual_gene&#39;</span><span class="p">,</span><span class="n">genes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;TRDC&#39;</span><span class="p">,</span><span class="s1">&#39;SLC4A10&#39;</span><span class="p">])</span>
 </pre></div>
 </div>
 <a class="reference external image-reference" href="target"><img alt="_images/ph_dual_gene.png" class="align-center" src="_images/ph_dual_gene.png" style="width: 500px; height: 350px;" /></a>
+<p><strong>4. coexpression_plot</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_heterogeneity</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;lenden1&#39;</span><span class="p">,</span><span class="n">cluster</span><span class="o">=</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="s1">&#39;coexpression&#39;</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;contourf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/coexpression.png" class="align-center" src="_images/coexpression.png" style="width: 500px; height: 350px;" /></a>
+</div>
+<div class="section" id="plot-two-column-sankey">
+<h3>plot_two_column_sankey<a class="headerlink" href="#plot-two-column-sankey" title="Permalink to this headline">¶</a></h3>
+<p>To visualize the correspondence of two annotations:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sctri</span><span class="o">.</span><span class="n">plot_two_column_sankey</span><span class="p">(</span><span class="s1">&#39;leiden1&#39;</span><span class="p">,</span><span class="s1">&#39;leiden2&#39;</span><span class="p">,</span><span class="n">margin</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+<a class="reference external image-reference" href="target"><img alt="_images/two_column_sankey.png" class="align-center" src="_images/two_column_sankey.png" style="width: 500px; height: 350px;" /></a>
 </div>
 <div class="section" id="plot-concordance">
 <h3>plot_concordance<a class="headerlink" href="#plot-concordance" title="Permalink to this headline">¶</a></h3>

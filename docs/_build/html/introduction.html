@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Introduction &mdash; scTriangulate 0.9.1 documentation</title>
+  <title>Introduction &mdash; scTriangulate 0.10.0 documentation</title>
   
 
   
@@ -192,13 +192,17 @@ to obtain an single optimal solution.</p>
 </div>
 <div class="section" id="inputs-and-outputs">
 <h2>Inputs and Outputs<a class="headerlink" href="#inputs-and-outputs" title="Permalink to this headline">¶</a></h2>
+<p>scTriangulate has no limitations on the modalities you are working with, so far we have provided supports for <code class="docutils literal notranslate"><span class="pre">RNA</span></code>, <code class="docutils literal notranslate"><span class="pre">ADT</span></code>, <code class="docutils literal notranslate"><span class="pre">ATAC</span></code>, <code class="docutils literal notranslate"><span class="pre">Splicing</span></code>, <code class="docutils literal notranslate"><span class="pre">DNA</span> <span class="pre">mutation</span></code>,
+All you need to do is to construct an <code class="docutils literal notranslate"><span class="pre">anndata</span></code> that has the features expression values associated with each modality (i.e. gene for RNA, surface
+protein for ADT, peak or bins or kmers or motifs for ATAC, PSI values for splicing, a binary matrix indicating whether a cell has mutation or not for mutation data, etc).
+Furthermore, we are planning to support TCR/BCR and spatial data in the future, the key is still how to select informative features from these new modalities.</p>
 <p>scTriangulate works seemlessly with the popular <a class="reference external" href="https://scanpy.readthedocs.io/en/stable/">scanpy</a> package. In addtion, we offer
 a myriad of preprocessing convenient functions to ease file conversion. Currently we accept following formats:</p>
 <blockquote>
 <div><ul class="simple">
 <li><p><strong>Anndata</strong> (.h5 &amp; .h5ad), the annotations are the columns in adata.obs</p></li>
-<li><p><strong>mtx</strong>, annotation information should be supplied as an addtional txt file (see below example and <a class="reference internal" href="api.html#reference-to-add-annotation"><span class="std std-ref">add_annotations()</span></a>)</p></li>
-<li><p><strong>dense matrix</strong>, txt expression matrix, annotations should be supplied as an addtional txt file (see below example and <a class="reference internal" href="api.html#reference-to-add-annotation"><span class="std std-ref">add_annotations()</span></a>).</p></li>
+<li><p><strong>mtx</strong>, and the annotation information should be supplied as an addtional txt file (see below example and <a class="reference internal" href="api.html#reference-to-add-annotation"><span class="std std-ref">add_annotations()</span></a>)</p></li>
+<li><p><strong>dense matrix</strong>, txt expression matrix, and the annotations should be supplied as an addtional txt file (see below example and <a class="reference internal" href="api.html#reference-to-add-annotation"><span class="std std-ref">add_annotations()</span></a>).</p></li>
 </ul>
 <table class="colwidths-given docutils align-default" id="id1">
 <caption><span class="caption-text">annotation txt file</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
@@ -242,6 +246,7 @@ a myriad of preprocessing convenient functions to ease file conversion. Currentl
 <p>Optionally, users can supply their own UMAP embeddings, Please refer to <a class="reference internal" href="api.html#reference-to-add-umap"><span class="std std-ref">add_umap()</span></a> function for details.</p>
 <p>All of the intermediate outputs and final clustering results, plus interactive visualization, will be automatically named and saved to the user-defined
 directory. Each function provides a <cite>save</cite> argument, which allows the users to modify this default behaviour.</p>
+<p>With that, feel free to jump to the <a class="reference internal" href="tutorial.html#tutorials"><span class="std std-ref">Tutorial</span></a> to get a sense about how to run the program (super easy)!</p>
 </div>
 </div>
 

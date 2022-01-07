@@ -32,12 +32,17 @@ to obtain an single optimal solution.
 
 Inputs and Outputs
 ---------------------
+scTriangulate has no limitations on the modalities you are working with, so far we have provided supports for ``RNA``, ``ADT``, ``ATAC``, ``Splicing``, ``DNA mutation``,
+All you need to do is to construct an ``anndata`` that has the features expression values associated with each modality (i.e. gene for RNA, surface 
+protein for ADT, peak or bins or kmers or motifs for ATAC, PSI values for splicing, a binary matrix indicating whether a cell has mutation or not for mutation data, etc).
+Furthermore, we are planning to support TCR/BCR and spatial data in the future, the key is still how to select informative features from these new modalities.
+
 scTriangulate works seemlessly with the popular `scanpy <https://scanpy.readthedocs.io/en/stable/>`_ package. In addtion, we offer 
 a myriad of preprocessing convenient functions to ease file conversion. Currently we accept following formats:
 
     * **Anndata** (.h5 & .h5ad), the annotations are the columns in adata.obs
-    * **mtx**, annotation information should be supplied as an addtional txt file (see below example and :ref:`reference_to_add_annotation`)
-    * **dense matrix**, txt expression matrix, annotations should be supplied as an addtional txt file (see below example and :ref:`reference_to_add_annotation`).
+    * **mtx**, and the annotation information should be supplied as an addtional txt file (see below example and :ref:`reference_to_add_annotation`)
+    * **dense matrix**, txt expression matrix, and the annotations should be supplied as an addtional txt file (see below example and :ref:`reference_to_add_annotation`).
 
     .. csv-table:: annotation txt file
         :file: ./_static/annotation_txt.csv
@@ -48,4 +53,6 @@ Optionally, users can supply their own UMAP embeddings, Please refer to :ref:`re
 
 All of the intermediate outputs and final clustering results, plus interactive visualization, will be automatically named and saved to the user-defined
 directory. Each function provides a `save` argument, which allows the users to modify this default behaviour. 
+
+With that, feel free to jump to the :ref:`tutorials` to get a sense about how to run the program (super easy)!
 

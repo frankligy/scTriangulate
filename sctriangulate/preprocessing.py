@@ -178,11 +178,14 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None,kind='d
     :param cols_input: list, what columns the users want to transfer to the adata.
     :param index_col: int, for the input, which column will serve as the index column
     :param cols_output: list, corresponding to the cols_input, how these columns will be named in the adata.obs columns
+    :param kind: a string, either 'disk', or 'memory', disk means the input is the path to the text file, 'memory' means the input is the
+                variable name in the RAM that represents the dataframe
 
     Examples::
 
         from sctriangulate.preprocessing import add_annotations
         add_annotations(adata,input='./annotation.txt',cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'])
+        add_annotations(adata,input=df,cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'])
 
     '''
     # means a single file such that one column is barcodes, annotations are within other columns
@@ -332,7 +335,7 @@ def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=Tru
     :param adata: Anndata
     :param is_log: boolean, whether the adata.X is count or normalized data.
     :param resolutions: list, what leiden resolutions the users want to obtain.
-    :param modality: string, valid values: 'rna','adt','atac'
+    :param modality: string, valid values: 'rna','adt','atac', 'binary'[mutation data, TCR data, etc]
     :param umap: boolean, whether to compute umap embedding.
     :param save: boolean, whether to save the obtained adata object with cluster label information in it.
     :param pca_n_comps: int, how many PCs to keep when running PCA. Suggestion: RNA (30-50), ADT (15), ATAC (100)
@@ -349,6 +352,8 @@ def scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='rna',umap=Tru
         adata = scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='adt',pca_n_comps=15)
         # atac
         adata = scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='atac',pca_n_comps=100,n_top_genes=100000)
+        # binary
+        adata = scanpy_recipe(adata,resolutions=[1,2,3],modality='binary')
 
     '''
     adata.var_names_make_unique()
@@ -533,7 +538,33 @@ def concat_rna_and_other(adata_rna,adata_other,umap,name,prefix):
     return adata_combine
 
 
-def nca_embedding(adata,nca_n_components,label,method,max_iter=50,plot=False,save=False,format='pdf',legend_loc='on data',n_top_genes=None,hv_features=None,add_features=None):
+def nca_embedding(adata,nca_n_components,label,method,max_iter=50,plot=True,save=True,format='pdf',legend_loc='on data',n_top_genes=None,hv_features=None,add_features=None):
+    '''
+    Doing Neighborhood component ananlysis (NCA), so it is a supervised PCA that takes the label from the annotation, and try to generate a UMAP 
+    embedding that perfectly separate the labelled clusters.
+
+    :param adata: the Anndata
+    :param nca_n_components: recommend to be 10 based on `Ref <https://www.nature.com/articles/s41586-021-03969-3>`_
+    :param label: string, the column name which contains the label information
+    :param method: either 'umap' or 'tsne'
+    :param max_iter: for the NCA, default is 50, it is generally good enough
+    :param plot: whether to plot the umap/tsne or not
+    :param save: whether to save the plot or not
+    :param format: the saved format, default is 'pdf'
+    :param legend_loc: 'on data' or 'right margin'
+    :param n_top_genes: how many hypervariable genes to choose for NCA, recommended 3000 or 5000, default is None, means there will be other features to add, multimodal setting
+    :param hv_features: a list contains the user-supplied hypervariable genes/features, in multimodal setting, this can be [rna genes] + [ADT protein]
+    :param add_features: this should be another adata contains features from other modalities, or None means just for RNA
+
+    Example::
+
+        from sctriangulate.preprocessing import nca_embedding
+        # only RNA
+        nca_embedding(adata,nca_n_components=10,label='annotation1',method='umap',n_top_genes=3000)
+        # RNA + ADT
+        # list1 contains [gene features that are variable] and [ADT features that are variable]
+        nca_embedding(adata_rna,nca_n_components=10,label='annotation1',method='umap',n_top_genes=3000,hv_features=list1, add_features=adata_adt)
+    '''
     from sklearn.neighbors import NeighborhoodComponentsAnalysis
     adata = adata
     if n_top_genes is not None:
@@ -1227,6 +1258,26 @@ def plot_coexpression(adata,gene1,gene2,kind,hist2d_bins=50,hist2d_cmap=bg_greye
 
 
 def umap_color_exceed_102(adata,key,dot_size=None,legend_fontsize=6,outdir='.',name=None):
+    '''
+    draw a umap that bypass the scanpy 102 color upper bound, this can generate as many as 433 clusters.
+    :param adata: Anndata
+    :param key: the categorical column in adata.obs, which will be plotted
+    :param dot_size: None or number
+    :param legend_fontsize: defualt is 6
+    :param outdir: output directory, default is '.'
+    :param name: name of the plot, default is None
+
+    Exmaple::
+
+        from sctriangulate.preprocessing import umap_color_exceed_102
+        umap_color_exceed_102(adata,key='leiden6')  # more than 130 clusters
+
+    .. image:: ./_static/more_than102.png
+        :height: 550px
+        :width: 550px
+        :align: center
+        :target: target       
+    '''
     fig,ax = plt.subplots()
     mapping = colors_for_set(adata.obs[key].unique().tolist())
     color = adata.obs[key].map(mapping).values

@@ -16,11 +16,8 @@ __init__()
                       display_hierarchy, doublet_predict, compute_metrics, run_single_key_assessment, penalize_artifact,
                       regress_out_size_effect, compute_shapley, pruning, plot_umap, plot_confusion, plot_cluster_feature,
                       modality_contributions, plot_multi_modal_feature_rank, plot_long_heatmap, viewer_cluster_feature_figure,
-                      viewer_cluster_feature_html, viewer_heterogeneity_figure, viewer_heterogeneity_html, plot_concordance
-
-(static) salvage_run()
-~~~~~~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: sctriangulate.main_class.ScTriangulate.salvage_run
+                      viewer_cluster_feature_html, viewer_heterogeneity_figure, viewer_heterogeneity_html, plot_concordance,
+                      plot_two_column_sankey
 
 (statis) deserialize()
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -70,7 +67,6 @@ get_metrics_and_shapley()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.main_class.ScTriangulate.get_metrics_and_shapley
 
-
 lazy_run()
 ~~~~~~~~~~~~
 .. autofunction:: sctriangulate.main_class.ScTriangulate.lazy_run
@@ -111,6 +107,10 @@ plot_long_heatmap()
 plot_multi_modal_feature_rank()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.main_class.ScTriangulate.plot_multi_modal_feature_rank
+
+plot_two_column_sankey()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.main_class.ScTriangulate.plot_two_column_sankey
 
 plot_umap()
 ~~~~~~~~~~~~~~
@@ -216,9 +216,17 @@ concat_rna_and_other()
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.concat_rna_and_other
 
+nca_embedding()
+~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.nca_embedding
+
 umap_dual_view_save()
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.umap_dual_view_save
+
+umap_color_exceed_102()
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.umap_color_exceed_102
 
 make_sure_mat_dense()
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -247,6 +255,10 @@ reformat_peak()
 
 Colors Module
 ----------------------
+
+color_stdout()
+~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.color_stdout
 
 pick_n_colors()
 ~~~~~~~~~~~~~~~~~~~
