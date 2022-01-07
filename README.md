@@ -8,6 +8,8 @@ scTriangulate is a Python package to mix-and-match conflicting clustering result
 
 scTriangulate leverages cooperative game theory (Shapley Value) in conjunction with complimentary stability metrics (i.e. reassign score, TFIDF score and SCCAF score) to intelligently integrate clustering solutions from nearly unlimited sources. Applied to multimodal datasets, this approach highlights new cell populations and mechanisms underlying lineage diversity.
 
+Please don't hesitate to reach out to me if you have any questions (contact down the page), I will be responsive.
+
 ## Tutorials and Installation
 
 Check our [full documentation and step-by-step tutorials.](https://sctriangulate.readthedocs.io/en/latest/get_started.html)
