@@ -9,6 +9,8 @@ import gseapy as gp
 import math
 import os
 
+from .preprocessing import *
+
 def check_filter_single_cluster(adata,key):
     vc = adata.obs[key].value_counts()
     exclude_clusters= vc.loc[vc==1].index
@@ -53,9 +55,9 @@ def compute_combo_score(rank_uns,cluster):
     df.set_index(keys=pd.Index(np.arange(df.shape[0])), inplace=True)
     return df
 
-def run_enrichr(gene_list,key,name,folder):
+def run_enrichr(gene_list,key,name,folder,species,criterion):
     # run enrichr
-    artifact = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)),'artifact_genes.txt'),sep='\t')
+    artifact = read_artifact_genes(species,criterion=1).reset_index()
     artifact_dict = artifact.groupby(by='class')['genes'].apply(lambda x:x.tolist()).to_dict()
     enr2 = gp.enrichr(gene_list=gene_list,
                     description=name,
@@ -78,8 +80,8 @@ def run_enrichr(gene_list,key,name,folder):
                 enrichr_dict[metric] = enrichr_score
     return enrichr_dict
 
-def run_gsea(gene_list,key,name,folder):
-    artifact = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)),'artifact_genes.txt'),sep='\t')
+def run_gsea(gene_list,key,name,folder,species,criterion):
+    artifact = read_artifact_genes(species,criterion=1).reset_index()
     artifact_dict = artifact.groupby(by='class')['genes'].apply(lambda x:x.tolist()).to_dict()
     artifact_dict_keys = list(artifact_dict.keys())
     df = pd.DataFrame({0: gene_list, 1: 1/(np.arange(len(gene_list))+1)}) # col 1 is for descending rank of gene
@@ -194,8 +196,8 @@ def marker_gene(adata, key, species, criterion, folder):
     col_gsea = []
     col_purify = []   # genelist that have artifact genes removed
     for cluster in result.index:
-        enrichr_dict = run_enrichr(result.loc[cluster,:].to_list()[0],key=key,name=cluster,folder=folder)  # [0] because it is a [[gene_list]],we only need [gene_list]
-        gsea_dict = run_gsea(result.loc[cluster,:].to_list()[0],key=key,name=cluster,folder=folder)
+        enrichr_dict = run_enrichr(result.loc[cluster,:].to_list()[0],key=key,name=cluster,folder=folder,species=species,criterion=criterion)  # [0] because it is a [[gene_list]],we only need [gene_list]
+        gsea_dict = run_gsea(result.loc[cluster,:].to_list()[0],key=key,name=cluster,folder=folder,species=species,criterion=criterion)
         purified = purify_gene(result.loc[cluster,:].to_list()[0],species,criterion) # the [0] is explained last line
         col_enrichr.append(enrichr_dict)
         col_gsea.append(gsea_dict)
@@ -388,8 +390,11 @@ def get_size_in_metrics(obs,key):
         key_size_dict[cluster] = size
     return key_size_dict
 
-def tf_idf10_for_cluster(adata,key,species,criterion,regress_size=False):
-    df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+def tf_idf10_for_cluster(adata,key,species,criterion,regress_size=False,layer=None):
+    if layer is None:
+        df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+    else:
+        df = pd.DataFrame(data=make_sure_mat_dense(adata.layers[layer]), index=adata.obs_names, columns=adata.var_names) 
     df['cluster'] = adata.obs[key].astype('str').values
     cluster_to_tfidf10 = {} # store tfidf10 score
     cluster_to_exclusive = {}   # store exclusivly expressed genes
@@ -416,8 +421,11 @@ def tf_idf10_for_cluster(adata,key,species,criterion,regress_size=False):
     return cluster_to_tfidf10, exclusive_genes
 
 
-def tf_idf5_for_cluster(adata,key,species,criterion,regress_size=False):
-    df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+def tf_idf5_for_cluster(adata,key,species,criterion,regress_size=False,layer=None):
+    if layer is None:
+        df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+    else:
+        df = pd.DataFrame(data=make_sure_mat_dense(adata.layers[layer]), index=adata.obs_names, columns=adata.var_names) 
     df['cluster'] = adata.obs[key].astype('str').values
     cluster_to_tfidf5 = {} # store tfidf1 score
     for item in adata.obs[key].cat.categories:
@@ -440,8 +448,11 @@ def tf_idf5_for_cluster(adata,key,species,criterion,regress_size=False):
         cluster_to_tfidf5 = regress_size(df_inspect,regressor='GLM',to_dict=True)
     return cluster_to_tfidf5
 
-def tf_idf1_for_cluster(adata,key,species,criterion,regress_size=False):
-    df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+def tf_idf1_for_cluster(adata,key,species,criterion,regress_size=False,layer=None):
+    if layer is None:
+        df = pd.DataFrame(data=adata.X, index=adata.obs_names, columns=adata.var_names)  
+    else:
+        df = pd.DataFrame(data=make_sure_mat_dense(adata.layers[layer]), index=adata.obs_names, columns=adata.var_names) 
     df['cluster'] = adata.obs[key].astype('str').values
     cluster_to_tfidf1 = {} # store tfidf1 score
     for item in adata.obs[key].cat.categories:

@@ -15,11 +15,16 @@ Welcome to scTriangulate documentation and tutorials website. Please follow the 
 3. :ref:`reference_to_multi_modal_workflow`
 4. :ref:`reference_to_visualization`
 
+.. note::
+   Please feel free to reach out to me [:ref:`contact`] or create an `issue <https://github.com/frankligy/scTriangulate/issues>`_ if you encounter any questions, I will be responsive!
+
 .. image:: ./_static/schema_2.png
    :height: 500px
    :width: 600px
    :align: center
    :target: target
+
+
 
 
 Contents

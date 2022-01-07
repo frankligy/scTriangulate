@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Tutorial &mdash; scTriangulate 0.9.1 documentation</title>
+  <title>Tutorial &mdash; scTriangulate 0.10.0 documentation</title>
   
 
   
@@ -187,13 +187,18 @@
            <div itemprop="articleBody">
             
   <div class="section" id="tutorial">
-<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<span id="tutorials"></span><h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="single-modality-scrna-seq-workflow">
 <span id="reference-to-single-modality-workflow"></span><h2>Single-Modality (scRNA-Seq) workflow<a class="headerlink" href="#single-modality-scrna-seq-workflow" title="Permalink to this headline">¶</a></h2>
 <p>In this example, we are going to analyze the pbmc10k scRNA dataset downloaded from
 <a class="reference external" href="https://support.10xgenomics.com/single-cell-gene-expression/datasets/3.0.0/pbmc_10k_v3">10x official website</a> (chemistry v3.1). This dataset
 has also been used as the demo query data in <a class="reference external" href="https://azimuth.hubmapconsortium.org/references/#Human%20-%20PBMC">Azimuth</a>. It contains 11,769 single
 cells before filtering.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Please makse sure you have internet connection while running the tutorials, currently the program conduct gene enrichment annalysis which requires
+internet connection, we may remove this feature in the future.</p>
+</div>
 <p>Here we first conduct basic single cell analysis to obtain Leiden clustering results, however, at various resolutions (r=1,2,3). Smaller resolutions lead to
 broader clusters, and larger resolution value will result in more granular clustering. We leverage scTriangulate to take the three resolutions as the query
 annotation-sets, and automatically mix-and-match cluster boundary from different resolutions, which at the end, yield scTriangulate reconciled cluster solutions.</p>
@@ -210,7 +215,7 @@ annotation-sets, and automatically mix-and-match cluster boundary from different
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>If you experience difficulties downloading the files through the link we provided in this page,
-you can try to open the “here” link on a new window, and then add “<a class="reference external" href="http://">http://</a>” as prefix (not https)
+you can try to paste the link to the browser, and then add “<a class="reference external" href="http://">http://</a>” as prefix (not https)
 to the URL, the download will start.</p>
 </div>
 <p>The h5 file can be downloaded from <a class="reference external" href="http://altanalyze.org/scTriangulate/scRNASeq/pbmc_10k_v3.h5">http://altanalyze.org/scTriangulate/scRNASeq/pbmc_10k_v3.h5</a>. First use the scanpy and scTriangulate

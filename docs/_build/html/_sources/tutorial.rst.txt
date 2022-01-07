@@ -1,3 +1,5 @@
+.. _tutorials:
+
 Tutorial
 ==========
 
@@ -10,6 +12,11 @@ In this example, we are going to analyze the pbmc10k scRNA dataset downloaded fr
 `10x official website <https://support.10xgenomics.com/single-cell-gene-expression/datasets/3.0.0/pbmc_10k_v3>`_ (chemistry v3.1). This dataset
 has also been used as the demo query data in `Azimuth <https://azimuth.hubmapconsortium.org/references/#Human%20-%20PBMC>`_. It contains 11,769 single 
 cells before filtering.
+
+.. note::
+
+    Please makse sure you have internet connection while running the tutorials, currently the program conduct gene enrichment annalysis which requires
+    internet connection, we may remove this feature in the future.
 
 Here we first conduct basic single cell analysis to obtain Leiden clustering results, however, at various resolutions (r=1,2,3). Smaller resolutions lead to
 broader clusters, and larger resolution value will result in more granular clustering. We leverage scTriangulate to take the three resolutions as the query 
@@ -29,7 +36,7 @@ First load the packages::
 .. warning::
 
     If you experience difficulties downloading the files through the link we provided in this page,
-    you can try to open the "here" link on a new window, and then add "http://" as prefix (not https)
+    you can try to paste the link to the browser, and then add "http://" as prefix (not https)
     to the URL, the download will start. 
 
 The h5 file can be downloaded from http://altanalyze.org/scTriangulate/scRNASeq/pbmc_10k_v3.h5. First use the scanpy and scTriangulate

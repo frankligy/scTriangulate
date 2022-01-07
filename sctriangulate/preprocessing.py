@@ -15,6 +15,8 @@ from scipy.io import mmread,mmwrite
 from scipy.sparse import csr_matrix,issparse
 import matplotlib as mpl
 
+from sctriangulate.colors import *
+
 
 
 # for publication ready figure
@@ -167,7 +169,7 @@ def add_azimuth(adata,result,name='predicted.celltype.l2'):
     adata.obs['prediction_score'] = adata.obs_names.map(azimuth_prediction).values
     adata.obs['mapping_score'] = adata.obs_names.map(azimuth_mapping).values
 
-def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None):
+def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None,kind='disk'):
     '''
     Adding annotations from external sources to the adata
 
@@ -176,15 +178,21 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None):
     :param cols_input: list, what columns the users want to transfer to the adata.
     :param index_col: int, for the input, which column will serve as the index column
     :param cols_output: list, corresponding to the cols_input, how these columns will be named in the adata.obs columns
+    :param kind: a string, either 'disk', or 'memory', disk means the input is the path to the text file, 'memory' means the input is the
+                variable name in the RAM that represents the dataframe
 
     Examples::
 
         from sctriangulate.preprocessing import add_annotations
         add_annotations(adata,input='./annotation.txt',cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'])
+        add_annotations(adata,input=df,cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'])
 
     '''
     # means a single file such that one column is barcodes, annotations are within other columns
-    annotations = pd.read_csv(inputs,sep='\t',index_col=index_col).loc[:,cols_input]
+    if kind == 'disk':
+        annotations = pd.read_csv(inputs,sep='\t',index_col=index_col).loc[:,cols_input]
+    elif kind == 'memory':   # index_col will be ignored
+        annotations = inputs.loc[:,cols_input]
     mappings = []
     for col in cols_input:
         mapping = annotations[col].to_dict()
@@ -192,9 +200,11 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None):
     if cols_output is None:
         for i,col in enumerate(cols_input):
             adata.obs[col] = adata.obs_names.map(mappings[i]).fillna('Unknown').values
+            adata.obs[col] = adata.obs[col].astype('str').astype('category')
     else:
         for i in range(len(cols_input)):
             adata.obs[cols_output[i]] = adata.obs_names.map(mappings[i]).fillna('Unknown').values
+            adata.obs[cols_output[i]] = adata.obs[cols_output[i]].astype('str').astype('category')
 
 
 def add_umap(adata,inputs,mode,cols=None,index_col=0):
@@ -528,7 +538,67 @@ def concat_rna_and_other(adata_rna,adata_other,umap,name,prefix):
     return adata_combine
 
 
+def nca_embedding(adata,nca_n_components,label,method,max_iter=50,plot=True,save=True,format='pdf',legend_loc='on data',n_top_genes=None,hv_features=None,add_features=None):
+    '''
+    Doing Neighborhood component ananlysis (NCA), so it is a supervised PCA that takes the label from the annotation, and try to generate a UMAP 
+    embedding that perfectly separate the labelled clusters.
 
+    :param adata: the Anndata
+    :param nca_n_components: recommend to be 10 based on `Ref <https://www.nature.com/articles/s41586-021-03969-3>`_
+    :param label: string, the column name which contains the label information
+    :param method: either 'umap' or 'tsne'
+    :param max_iter: for the NCA, default is 50, it is generally good enough
+    :param plot: whether to plot the umap/tsne or not
+    :param save: whether to save the plot or not
+    :param format: the saved format, default is 'pdf'
+    :param legend_loc: 'on data' or 'right margin'
+    :param n_top_genes: how many hypervariable genes to choose for NCA, recommended 3000 or 5000, default is None, means there will be other features to add, multimodal setting
+    :param hv_features: a list contains the user-supplied hypervariable genes/features, in multimodal setting, this can be [rna genes] + [ADT protein]
+    :param add_features: this should be another adata contains features from other modalities, or None means just for RNA
+
+    Example::
+
+        from sctriangulate.preprocessing import nca_embedding
+        # only RNA
+        nca_embedding(adata,nca_n_components=10,label='annotation1',method='umap',n_top_genes=3000)
+        # RNA + ADT
+        # list1 contains [gene features that are variable] and [ADT features that are variable]
+        nca_embedding(adata_rna,nca_n_components=10,label='annotation1',method='umap',n_top_genes=3000,hv_features=list1, add_features=adata_adt)
+    '''
+    from sklearn.neighbors import NeighborhoodComponentsAnalysis
+    adata = adata
+    if n_top_genes is not None:
+        sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=n_top_genes)
+    else:
+        if add_features is not None:  # first add the features, input should be anndata
+            adata = concat_rna_and_other(adata,add_features,umap=None,name='add_features',prefix='add_features_')
+        if hv_features is not None:    # custom hv
+            tmp = pd.Series(index=adata.var_names,data=np.full(len(adata.var_names),fill_value=False))
+            tmp.loc[hv_features] = True
+            adata.var['highly_variable'] = tmp.values
+    adata.raw = adata
+    adata = adata[:,adata.var['highly_variable']]
+    X = make_sure_mat_dense(adata.X)
+    y = adata.obs[label].values
+    nca = NeighborhoodComponentsAnalysis(n_components=nca_n_components,max_iter=max_iter)
+    embed = nca.fit_transform(X,y)  # (n_cells,n_components)
+    adata.obsm['X_nca'] = embed
+    adata = adata.raw.to_adata()
+    if method == 'umap':
+        sc.pp.neighbors(adata,use_rep='X_nca')
+        sc.tl.umap(adata)
+        sc.pl.umap(adata,color=label,frameon=False,legend_loc=legend_loc)
+        if save:
+            plt.savefig(os.path.join('.','nca_embedding_{}_{}.{}'.format(label,method,format)),bbox_inches='tight')
+            plt.close()
+    elif method == 'tsne':
+        sc.tl.tsne(adata,use_rep='X_nca')
+        sc.pl.tsne(adata,color=label,frameon=False,legend_loc=legend_loc)
+        if save:
+            plt.savefig(os.path.join('.','nca_embedding_{}_{}.{}'.format(label,method,format)),bbox_inches='tight')
+            plt.close()
+    adata.X = make_sure_mat_sparse(adata.X)
+    return adata
 
 
 
@@ -1091,7 +1161,166 @@ def reformat_peak(adata,canonical_chr_only=True):
     return adata
 
 
+def plot_coexpression(adata,gene1,gene2,kind,hist2d_bins=50,hist2d_cmap=bg_greyed_cmap('viridis'),hist2d_vmin=1e-5,hist2d_vmax=None,
+                      scatter_dot_color='blue',contour_cmap='viridis',contour_levels=None,contour_scatter=True,contour_scatter_dot_size=5,
+                      contour_train_kde='valid',surface3d_cmap='coolwarm',save=True,outdir='.',name=None):
+    x = np.squeeze(make_sure_mat_dense(adata[:,gene1].X))
+    y = np.squeeze(make_sure_mat_dense(adata[:,gene2].X))
+    if kind == 'scatter':
+        fig,ax = plt.subplots()
+        ax.scatter(x,y,color=scatter_dot_color)
+        ax.set_xlabel('{}'.format(gene1))
+        ax.set_ylabel('{}'.format(gene2))
+    elif kind == 'hist2d':
+        fig,ax = plt.subplots()
+        hist2d = ax.hist2d(x,y,bins=hist2d_bins,cmap=hist2d_cmap,vmin=hist2d_vmin,vmax=hist2d_vmax)
+        fig.colorbar(mappable=hist2d[3],ax=ax)
+        ax.set_xlabel('{}'.format(gene1))
+        ax.set_ylabel('{}'.format(gene2))
+    elif kind == 'contour':
+        from scipy.stats import gaussian_kde
+        fig,ax = plt.subplots()
+        X,Y = np.meshgrid(np.linspace(x.min(),x.max(),100),np.linspace(y.min(),y.max(),100))
+        positions = np.vstack([X.ravel(),Y.ravel()])  # (2, 10000)
+        values = np.vstack([x,y])   # (2, 2700)
+        if contour_train_kde == 'valid':  # data points that are non-zero for both gene1 and gen2
+            values_to_kde = values[:,np.logical_not(np.any(values==0,axis=0))]
+        elif contour_train_kde == 'semi_valid':  # data points that are non-zero for at least one of the gene
+            values_to_kde = values[:,np.logical_not(np.all(values==0,axis=0))]
+        elif contour_train_kde == 'full':   # all data points will be used for kde estimation
+            values_to_kde == values
+        kernel = gaussian_kde(values_to_kde)  
+        density = kernel(positions) # (10000,)
+        density = density.reshape(X.shape)  # (100,100)
+        cset = ax.contour(X,Y,density,levels=contour_levels,cmap=contour_cmap)
+        if contour_scatter:
+            dot_density = kernel(values)
+            dot_density_color = [cm.viridis(round(np.interp(x=item,xp=[dot_density.min(),dot_density.max()],fp=[0,255]))) for item in dot_density]
+            ax.scatter(x,y,c=dot_density_color,s=contour_scatter_dot_size)
+        from matplotlib.colors import Normalize
+        fig.colorbar(mappable=cm.ScalarMappable(norm=Normalize(),cmap=contour_cmap),ax=ax)
+        ax.set_xlabel('{}'.format(gene1))
+        ax.set_ylabel('{}'.format(gene2))
+
+    elif kind == 'contourf':
+        from scipy.stats import gaussian_kde
+        fig,ax = plt.subplots()
+        X,Y = np.meshgrid(np.linspace(x.min(),x.max(),100),np.linspace(y.min(),y.max(),100))
+        positions = np.vstack([X.ravel(),Y.ravel()])  # (2, 10000)
+        values = np.vstack([x,y])   # (2, 2700)
+        if contour_train_kde == 'valid':  # data points that are non-zero for both gene1 and gen2
+            values_to_kde = values[:,np.logical_not(np.any(values==0,axis=0))]
+        elif contour_train_kde == 'semi_valid':  # data points that are non-zero for at least one of the gene
+            values_to_kde = values[:,np.logical_not(np.all(values==0,axis=0))]
+        elif contour_train_kde == 'full':   # all data points will be used for kde estimation
+            values_to_kde == values
+        kernel = gaussian_kde(values_to_kde)  
+        density = kernel(positions) # (10000,)
+        density = density.reshape(X.shape)  # (100,100)
+        cfset = ax.contourf(X,Y,density,levels=contour_levels,cmap=contour_cmap) 
+        cset = ax.contour(X,Y,density,levels=contour_levels,colors='k')  
+        clable = ax.clabel(cset,inline=True,fontsize=5)
+        from matplotlib.colors import Normalize
+        fig.colorbar(mappable=cm.ScalarMappable(norm=Normalize(),cmap=contour_cmap),ax=ax)
+        ax.set_xlabel('{}'.format(gene1))
+        ax.set_ylabel('{}'.format(gene2))
+
+    elif kind == 'surface3d':
+        fig = plt.figure()
+        from scipy.stats import gaussian_kde
+        X,Y = np.meshgrid(np.linspace(x.min(),x.max(),100),np.linspace(y.min(),y.max(),100))
+        positions = np.vstack([X.ravel(),Y.ravel()])  # (2, 10000)
+        values = np.vstack([x,y])   # (2, 2700)
+        if contour_train_kde == 'valid':  # data points that are non-zero for both gene1 and gen2
+            values_to_kde = values[:,np.logical_not(np.any(values==0,axis=0))]
+        elif contour_train_kde == 'semi_valid':  # data points that are non-zero for at least one of the gene
+            values_to_kde = values[:,np.logical_not(np.all(values==0,axis=0))]
+        elif contour_train_kde == 'full':   # all data points will be used for kde estimation
+            values_to_kde == values
+        kernel = gaussian_kde(values_to_kde)  
+        density = kernel(positions) # (10000,)
+        density = density.reshape(X.shape)  # (100,100)
+        ax = plt.axes(projection='3d')
+        surf = ax.plot_surface(X,Y,density,cmap=surface3d_cmap)
+        ax.set_xlabel('{}'.format(gene1))
+        ax.set_ylabel('{}'.format(gene2))  
+        ax.set_zlabel('PDF for KDE')      
+        fig.colorbar(mappable=surf,ax=ax)
+    if save:
+        if name is None:
+            plt.savefig(os.path.join(outdir,'coexpression_{}_{}_{}_plot.pdf'.format(kind,gene1,gene2)),bbox_inches='tight')
+            plt.close()
+        else:
+            plt.savefig(os.path.join(outdir,name),bbox_inches='tight')
+            plt.close()            
+
+    return ax
 
 
+def umap_color_exceed_102(adata,key,dot_size=None,legend_fontsize=6,outdir='.',name=None):
+    '''
+    draw a umap that bypass the scanpy 102 color upper bound, this can generate as many as 433 clusters.
+    :param adata: Anndata
+    :param key: the categorical column in adata.obs, which will be plotted
+    :param dot_size: None or number
+    :param legend_fontsize: defualt is 6
+    :param outdir: output directory, default is '.'
+    :param name: name of the plot, default is None
+
+    Exmaple::
+
+        from sctriangulate.preprocessing import umap_color_exceed_102
+        umap_color_exceed_102(adata,key='leiden6')  # more than 130 clusters
+
+    .. image:: ./_static/more_than102.png
+        :height: 550px
+        :width: 550px
+        :align: center
+        :target: target       
+    '''
+    fig,ax = plt.subplots()
+    mapping = colors_for_set(adata.obs[key].unique().tolist())
+    color = adata.obs[key].map(mapping).values
+    if dot_size is None:
+        dot_size = 120000/adata.shape[0]
+    ax.scatter(adata.obsm['X_umap'][:,0],adata.obsm['X_umap'][:,1],c=color,s=dot_size)
+    import matplotlib.lines as mlines
+    ax.legend(handles=[mlines.Line2D([],[],marker='o',linestyle='',color=i) for i in mapping.values()],
+            labels=[i for i in mapping.keys()],loc='upper left',bbox_to_anchor=(1,1),ncol=3,frameon=False,prop={'size':6})
+    if name is None:
+        name = 'umap_{}_exceed_102.pdf'.format(key)
+    plt.savefig(os.path.join(outdir,name),bbox_inches='tight')
+    plt.close()
 
 
+def custom_two_column_sankey(adata,left_annotation,right_annotation,opacity=0.6,pad=3,thickness=10,margin=300,text=True,save=True,as_html=True,outdir='.'):
+    import plotly.graph_objects as go
+    import kaleido
+    df = adata.obs.loc[:,[left_annotation,right_annotation]]
+    node_label = df[left_annotation].unique().tolist() + df[right_annotation].unique().tolist()
+    node_color = pick_n_colors(len(node_label))
+    link = []
+    for source,sub in df.groupby(by=left_annotation):
+        for target,subsub in sub.groupby(by=right_annotation):
+            if subsub.shape[0] > 0:
+                link.append((source,target,subsub.shape[0],subsub.shape[0]/sub.shape[0]))
+    link_info = list(zip(*link))
+    link_source = [node_label.index(item) for item in link_info[0]]
+    link_target = [node_label.index(item) for item in link_info[1]]
+    link_value = link_info[2]
+    link_pert = [round(item,2) for item in link_info[3]]
+    
+    link_color = ['rgba{}'.format(tuple([infer_to_256(item) for item in to_rgb(node_color[i])] + [opacity])) for i in link_source]
+    node_plotly = dict(pad = pad, thickness = thickness,line = dict(color = "grey", width = 0.1),label = node_label,color = node_color)
+    link_plotly = dict(source=link_source,target=link_target,value=link_value,color=link_color,customdata=link_pert,
+                       hovertemplate='%{source.label} -> %{target.label} <br /> number of cells: %{value} <br /> percentage: %{customdata}')
+    if not text:
+        fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly, textfont=dict(color='rgba(0,0,0,0)',size=1))])
+    else:
+        fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
+    fig.update_layout(title_text='sankey_{}_{}'.format(left_annotation,right_annotation), font_size=6, margin=dict(l=margin,r=margin))
+    if save:
+        if not as_html:
+            fig.write_image(os.path.join(outdir,'two_column_sankey_{}_{}_text_{}.pdf'.format(left_annotation,right_annotation,text))) 
+        else:
+            fig.write_html(os.path.join(outdir,'two_column_sankey_{}_{}_text_{}.html'.format(left_annotation,right_annotation,text)),include_plotlyjs='cdn') 

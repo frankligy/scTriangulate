@@ -1,15 +1,44 @@
 from matplotlib import cm
 import pandas as pd
 import numpy as np
-from matplotlib.colors import LinearSegmentedColormap, to_hex, to_rgb
+from matplotlib.colors import LinearSegmentedColormap, to_hex, to_rgb, to_rgba
 from matplotlib import colors
 import copy
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import os,sys
 
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
 mpl.rcParams['font.family'] = 'Arial'
+
+# ASCI escape codes
+def color_stdout(skk,c):
+    '''
+    color your output to the terminal
+    :param skk: the string you want to color
+    :param c: the name of the color 'red','green','yellow','lightpurple','cyan','lightgrey','black'
+
+    Example::
+
+        from color import color_stdout
+        # when print to terminal, it will be red
+        print(color_stdout('hello','red'))
+    '''
+    if c == 'red':
+        return "\033[91m {}\033[00m" .format(skk)
+    elif c == 'green':
+        return "\033[92m {}\033[00m" .format(skk)
+    elif c == 'yellow':
+        return "\033[93m {}\033[00m" .format(skk)
+    elif c == 'lightpurple':
+        return "\033[94m {}\033[00m" .format(skk)
+    elif c == 'cyan':
+        return "\033[95m {}\033[00m" .format(skk)
+    elif c == 'lightgrey':
+        return "\033[97m {}\033[00m" .format(skk)
+    elif c == 'black':
+        return "\033[98m {}\033[00m" .format(skk)
 
 # test_discrete_look
 def generate_block(color_list,name):
@@ -100,9 +129,16 @@ def hex2_to_rgb3(hex2):
             rgb3[i,j,:] = rgb_ 
     return rgb3
 
+
+
 # 256 to [0,1]
 def inter_from_256(x):
     return np.interp(x=x,xp=[0,255],fp=[0,1])
+
+# [0,1] to 256
+def infer_to_256(x):
+    return int(np.interp(x=x,xp=[0,1],fp=[0,255]))
+
 
 # choose colors
 def retrieve_pretty_colors(name):
@@ -179,7 +215,7 @@ def pick_n_colors(n):
         generate_block(color_list = pick_n_colors(20),name='tab20')
         generate_block(color_list = pick_n_colors(28),name='zeileis')
         generate_block(color_list = pick_n_colors(102),name='godsnot')
-        generate_block(color_list = pick_n_colors(120),name='jet')
+        generate_block(color_list = pick_n_colors(200),name='433')
 
     .. image:: ./_static/pick_n_colors.png
         :height: 300px
@@ -198,7 +234,8 @@ def pick_n_colors(n):
     elif n > 28 and n <= 102:
         _colors = _godsnot_102[:n]
     elif n > 102:
-        _colors = [to_hex(cm.jet(round(i))) for i in np.linspace(0,255,n)]
+        # _colors = [to_hex(cm.jet(round(i))) for i in np.linspace(0,255,n)]   # old way
+        _colors = np.random.choice(r433,size=n,replace=False)
     return _colors
 
 def colors_for_set(setlist):  # a list without redundancy
@@ -431,6 +468,23 @@ _godsnot_102 = [
     "#A4E804",
     "#324E72",
 ]
+
+# r433 is generated in R using the code below
+'''
+color = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
+library('gplots')
+hex_vector = c()
+for (c in color) {
+  h = col2hex(c)
+  hex_vector = append(hex_vector,h)
+}
+
+hex_matrix = t(as.matrix(hex_vector))
+write.table(hex_matrix,'433colorhex.txt',sep='\t',row.names=F,col.names=F)
+'''
+r433 = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)),'433colorhex.txt'),sep='\t',header=None).iloc[0,:].tolist()
+
+
 
 _pub_icgs2 = [
     '#F26D6D',  # red

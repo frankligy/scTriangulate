@@ -1,6 +1,20 @@
 Change Log
 ============
 
+Version 0.10.1 2022/01/07
+----------------------------
+
+1. ``Feature Enhancement``:
+
+    * Neighborhood Components Analysis (supervised PCA embedding)
+    * Coexpression plot
+    * Sankey plot
+    * Now supports for single-cell splicing data and single-cell mutation data multimodal analysis
+    * Can visualize as many as 433 single cell clusters
+    * color module support colorful stdout
+
+2. polish the documentation and fix bugs
+
 Version 0.9.2 2021/10/23
 ---------------------------
 

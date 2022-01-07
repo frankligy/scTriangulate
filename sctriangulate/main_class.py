@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from matplotlib.colors import to_rgba
 import matplotlib as mpl
 import seaborn as sns
 from anytree import Node, RenderTree
@@ -166,6 +167,21 @@ class ScTriangulate(object):
         for key in all_keys:
             for ichar in invalid_chars:
                 self.adata.obs.rename(columns={key:key.replace(ichar,'_')},inplace=True)   
+
+        ## replace query as well
+        tmp = []
+        for item in self.query:
+            for ichar in invalid_chars:
+                item = item.replace(ichar,'_')
+            tmp.append(item)
+        self.query = tmp
+
+        ## replace reference as well
+        new = self.reference
+        for ichar in invalid_chars:
+            new = new.replace(ichar,'_')
+        self.reference = new
+
         # step3: remove index name for smooth h5ad writing
         self.adata.obs.index.name = None
         self.adata.var.index.name = None
@@ -309,17 +325,18 @@ class ScTriangulate(object):
             df.to_csv(os.path.join(self.dir,'sctri_metrics_and_shapley_df_{}.txt'.format(barcode)),sep='\t')
         return df
 
-    def prune_result(self,win_fraction_cutoff=0.25,reassign_abs_thresh=10,scale_sccaf=True,remove1=True,assess_raw=False):
-        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,assess_raw=False)
+    def prune_result(self,win_fraction_cutoff=0.25,reassign_abs_thresh=10,scale_sccaf=True,layer=None,remove1=True,assess_raw=False):
+        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,layer=layer,assess_raw=False)
         self.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
         self.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=self.reference)
-        self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf)
+        self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer)
 
 
     @staticmethod
-    def salvage_run(step_to_start,last_step_file,compute_metrics_parallel=True,scale_sccaf=True,compute_shapley_parallel=True,win_fraction_cutoff=0.25,
-                    reassign_abs_thresh=10,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
-                    viewer_heterogeneity_keys=None):
+    def salvage_run(step_to_start,last_step_file,compute_metrics_parallel=True,scale_sccaf=True,layer=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,
+                    reassign_abs_thresh=10,assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
+                    viewer_heterogeneity_keys=None,nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,heatmap_cmap='viridis',heatmap_regex=None,
+                    heatmap_direction='include',heatmap_n_genes=None,heatmap_cbar_scale=None):
         '''
         This is a static method, which allows to user to resume running scTriangulate from certain point, instead of running from very 
         beginning if the intermediate files are present and intact.
@@ -341,23 +358,45 @@ class ScTriangulate(object):
             sctri.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
             sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=sctri.reference)
             sctri.plot_umap('pruned','category')
+            if nca_embed:
+                adata = nca_embedding(sctri.adata,10,'pruned','umap',n_top_genes=n_top_genes)
+                adata.write(os.path.join(sctri.dir,'adata_nca.h5ad'))
             if assess_pruned:
-                sctri.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf)
+                sctri.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer)
                 sctri.serialize(name='after_pruned_assess.p')
             if viewer_cluster:
                 sctri.viewer_cluster_feature_html()
-                sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys)
+                sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
             if viewer_heterogeneity:
                 if viewer_heterogeneity_keys is None:
                     viewer_heterogeneity_keys = [sctri.reference]
                 for key in viewer_heterogeneity_keys:
                     sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
                     sctri.viewer_heterogeneity_html(key=key)
-                    sctri.viewer_heterogeneity_figure(key=key)
+                    sctri.viewer_heterogeneity_figure(key=key,other_umap=other_umap,heatmap_scale=heatmap_scale,heatmap_cmap=heatmap_cmap,heatmap_regex=heatmap_regex,
+                                                      heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
+        elif step_to_start == 'build_all_viewers':
+            sctri = ScTriangulate.deserialize(last_step_file)
+            if viewer_cluster:
+                sctri.viewer_cluster_feature_html()
+                sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
+            if viewer_heterogeneity:
+                if viewer_heterogeneity_keys is None:
+                    viewer_heterogeneity_keys = [sctri.reference]
+                for key in viewer_heterogeneity_keys:
+                    sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
+                    sctri.viewer_heterogeneity_html(key=key)
+                    sctri.viewer_heterogeneity_figure(key=key,other_umap=other_umap,heatmap_scale=heatmap_scale,heatmap_cmap=heatmap_cmap,heatmap_regex=heatmap_regex,
+                                                      heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
+
+
+
             
 
-    def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
-                 assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None):
+    def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,layer=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
+                 assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None,
+                 nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,heatmap_cmap='viridis',heatmap_regex=None,heatmap_direction='include',heatmap_n_genes=None,
+                 heatmap_cbar_scale=None):
         '''
         This is the highest level wrapper function for running every step in one goal.
 
@@ -380,30 +419,36 @@ class ScTriangulate(object):
 
             sctri.lazy_run(viewer_heterogeneity_keys=['annotation1','annotation2'])
         '''
-        self.compute_metrics(parallel=compute_metrics_parallel,scale_sccaf=scale_sccaf)
+        self.compute_metrics(parallel=compute_metrics_parallel,scale_sccaf=scale_sccaf,layer=layer)
         self.serialize(name='after_metrics.p')
         self.compute_shapley(parallel=compute_shapley_parallel)
         self.serialize(name='after_shapley.p')
-        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,assess_raw=assess_raw)
+        self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,layer=layer,assess_raw=assess_raw)
         self.serialize(name='after_rank_pruning.p')
         self.uns['raw_cluster_goodness'].to_csv(os.path.join(self.dir,'raw_cluster_goodness.txt'),sep='\t')
         self.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
         self.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=self.reference)
-        for col in ['final_annotation','raw','pruned']:
+        for col in ['final_annotation','pruned']:
             self.plot_umap(col,'category')
+        if nca_embed:
+            logger_sctriangulate.info('starting to do nca embedding')
+            adata = nca_embedding(self.adata,10,'pruned','umap',n_top_genes=3000)
+            adata.write(os.path.join(self.dir,'adata_nca.h5ad'))
         if assess_pruned:
-            self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf)
+            self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer)
             self.serialize(name='after_pruned_assess.p')
         if viewer_cluster:
             self.viewer_cluster_feature_html()
-            self.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys)
+            self.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
         if viewer_heterogeneity:
             if viewer_heterogeneity_keys is None:
                 viewer_heterogeneity_keys = [self.reference]
             for key in viewer_heterogeneity_keys:
                 self.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
                 self.viewer_heterogeneity_html(key=key)
-                self.viewer_heterogeneity_figure(key=key)
+                self.viewer_heterogeneity_figure(key=key,other_umap=other_umap,heatmap_scale=heatmap_scale,heatmap_cmap=heatmap_cmap,heatmap_regex=heatmap_regex,
+                                                 heatmap_direction='include',heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
+
 
             
 
@@ -622,14 +667,18 @@ class ScTriangulate(object):
         root = Node(ref_col)
         hold_ref_var = {}
         for ref,grouped_df in obs.groupby(by=ref_col):
-            hold_ref_var[ref] = Node(ref,parent=root)
-            unique = grouped_df[query_col].unique()
+            ref_display = '{}[#:{}]'.format(ref,grouped_df.shape[0])
+            hold_ref_var[ref] = Node(ref_display,parent=root)
+            vf = grouped_df[query_col].value_counts()
+            unique = vf.index.tolist()
             if len(unique) == 1: # no sub-clusters
                 continue
             else:
                 hold_cluster_var = {}
                 for item in unique:
-                    hold_cluster_var[item] = Node(item,parent=hold_ref_var[ref])
+                    if vf[item] > 0:
+                        item_display = '{}[#:{};prop:{}]'.format(item,vf[item],round(vf[item]/grouped_df.shape[0],2))
+                        hold_cluster_var[item] = Node(item_display,parent=hold_ref_var[ref])
         if save:
             with open(os.path.join(self.dir,'display_hierarchy_{}_{}.txt'.format(ref_col,query_col)),'a') as f:
                 for pre, fill, node in RenderTree(root):
@@ -666,9 +715,61 @@ class ScTriangulate(object):
             self.uns[name] = {}
             self.uns[name][key] = collect[name]
 
+    def cluster_performance(self,cluster,competitors,reference,show_cluster_number=False,metrics=None,ylim=None,save=True,format='pdf'):
+        from sklearn.preprocessing import LabelEncoder
+        from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, homogeneity_completeness_v_measure
+        result = self.adata.obs
+        # label encoder
+        reference_encoded = LabelEncoder().fit_transform(result[reference].values)
+        competitors_encoded = [LabelEncoder().fit_transform(result[anno].values) for anno in competitors]
+        cluster_encoded = LabelEncoder().fit_transform(result[cluster].values)
+        # compute metrics for competitors
+        ari = []
+        nmi = []
+        homogeneity = []
+        completeness = []
+        vmeasure = []
+        for anno_encoded in competitors_encoded:
+            ari.append(adjusted_rand_score(reference_encoded,anno_encoded))
+            nmi.append(normalized_mutual_info_score(reference_encoded,anno_encoded))
+            h,c,v = homogeneity_completeness_v_measure(reference_encoded,anno_encoded)
+            homogeneity.append(h)
+            completeness.append(c)
+            vmeasure.append(v)
+        # compute metrics for cluster
+        ari.append(adjusted_rand_score(reference_encoded,cluster_encoded))
+        nmi.append(normalized_mutual_info_score(reference_encoded,cluster_encoded))
+        h,c,v = homogeneity_completeness_v_measure(reference_encoded,cluster_encoded)
+        homogeneity.append(h)
+        completeness.append(c)
+        vmeasure.append(v)
+        # now plot
+        fig,ax = plt.subplots()
+        ax.plot(np.arange(len(competitors)+1),homogeneity,label='Homogeneity',marker='o',linestyle='--')
+        ax.plot(np.arange(len(competitors)+1),completeness,label='Completeness',marker='o',linestyle='--')
+        ax.plot(np.arange(len(competitors)+1),vmeasure,label='VMeasure',marker='o',linestyle='--')
+        if metrics is not None:
+            ax.plot(np.arange(len(competitors)+1),ari,label='ARI',marker='o',linestyle='--')
+            ax.plot(np.arange(len(competitors)+1),nmi,label='NMI',marker='o',linestyle='--')
+        ax.legend(frameon=False,loc='upper left',bbox_to_anchor=(1,1))
+        ax.set_xticks(np.arange(len(competitors)+1))
+        ax.set_xticklabels(competitors+[cluster],fontsize=3)
+        ax.set_ylabel('Agreement with {}'.format(reference))
+        if ylim is not None:
+            ax.set_ylim(ylim)
+        if show_cluster_number:  # show how many clusters in each annotation
+            number = []
+            for anno in competitors + [cluster]:
+                number.append(len(result[anno].value_counts()))
+            for i,num in enumerate(number):
+                ax.text(x=i,y=vmeasure[i]+0.01,s=num,fontsize=6)
+
+        if save:
+            plt.savefig(os.path.join(self.dir,'cluster_performance_plot.{}'.format(format)),bbox_inches='tight')
+            plt.close()
 
 
-    def compute_metrics(self,parallel=True,scale_sccaf=True):
+    def compute_metrics(self,parallel=True,scale_sccaf=True,layer=None):
         '''
         main function for computing the metrics (defined by self.metrics) of each clusters in each annotation.
         After the run, q (# query) * m (# metrics) columns will be added to the adata.obs, the column like will be like
@@ -697,7 +798,7 @@ class ScTriangulate(object):
             logger_sctriangulate.info('Spawn to {} processes'.format(cores))
             pool = mp.Pool(processes=cores)
             self._to_sparse()
-            raw_results = [pool.apply_async(each_key_run,args=(self,key,scale_sccaf,)) for key in self.query]
+            raw_results = [pool.apply_async(each_key_run,args=(self,key,scale_sccaf,layer)) for key in self.query]
             pool.close()
             pool.join()
             for collect in raw_results:
@@ -717,7 +818,7 @@ class ScTriangulate(object):
         else:
             logger_sctriangulate.info('choosing to compute metrics sequentially')
             for key in self.query:
-                collect = each_key_run(self,key,scale_sccaf)
+                collect = each_key_run(self,key,scale_sccaf,layer)
                 key = collect['key']
                 for metric in self.metrics + list(self.add_metrics.keys()):
                     self.adata.obs['{}@{}'.format(metric,key)] = collect['col_{}'.format(metric)]
@@ -730,7 +831,7 @@ class ScTriangulate(object):
             subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr/'))])
             self._to_sparse()
 
-    def run_single_key_assessment(self,key,scale_sccaf):
+    def run_single_key_assessment(self,key,scale_sccaf,layer):
         '''
         this is a very handy function, given a set of annotation, this function allows you to assess the biogical robustness
         based on the metrics we define. The obtained score and cluster information will be automatically saved to self.cluster
@@ -745,7 +846,7 @@ class ScTriangulate(object):
             sctri.run_single_key_assessment(key='azimuth',scale_sccaf=True)
 
         '''
-        collect = each_key_run(self,key,scale_sccaf)
+        collect = each_key_run(self,key,scale_sccaf,layer)
         self._to_sparse()
         self.process_collect_object(collect)
 
@@ -1026,7 +1127,7 @@ class ScTriangulate(object):
         self.adata.obs['prefixed'] = col
 
 
-    def pruning(self,method='reassign',discard=None,scale_sccaf=True,abs_thresh=10,remove1=True,reference=None,parallel=True,assess_raw=False):
+    def pruning(self,method='reassign',discard=None,scale_sccaf=True,layer=None,abs_thresh=10,remove1=True,reference=None,parallel=True,assess_raw=False):
         '''
         Main function. After running ``compute_shapley``, we get **raw** cluster results. Althought the raw cluster is informative,
         there maybe some weired clusters that accidentally win out which doesn't attribute to its biological stability. For example,
@@ -1064,21 +1165,21 @@ class ScTriangulate(object):
                 self.invalid = invalid
 
             elif method == 'rank':
-                obs, df = rank_pruning(self,discard=discard,scale_sccaf=scale_sccaf,assess_raw=assess_raw)
+                obs, df = rank_pruning(self,discard=discard,scale_sccaf=scale_sccaf,layer=layer,assess_raw=assess_raw)
                 self.adata.obs = obs
                 self.uns['raw_cluster_goodness'] = df
                 self.adata.obs['confidence'] = self.adata.obs['pruned'].map(df['win_fraction'].to_dict())
 
         self._prefixing(col='pruned')
 
-        # finally, generate a celltype sheet
-        obs = self.adata.obs
-        with open(os.path.join(self.dir,'celltype.txt'),'w') as f:
-            f.write('reference\tcell_cluster\tchoice\n')
-            for ref,grouped_df in obs.groupby(by=self.reference):
-                unique = grouped_df['pruned'].unique()
-                for reassign in unique:
-                    f.write('{}\t{}\n'.format(self.reference + '@' + ref,reassign))
+        # # finally, generate a celltype sheet
+        # obs = self.adata.obs
+        # with open(os.path.join(self.dir,'celltype.txt'),'w') as f:
+        #     f.write('reference\tcell_cluster\tchoice\n')
+        #     for ref,grouped_df in obs.groupby(by=self.reference):
+        #         unique = grouped_df['pruned'].unique()
+        #         for reassign in unique:
+        #             f.write('{}\t{}\n'.format(self.reference + '@' + ref,reassign))
 
 
 
@@ -1337,7 +1438,10 @@ class ScTriangulate(object):
 
     def plot_heterogeneity(self,key,cluster,style,col='pruned',save=True,format='pdf',genes=None,umap_zoom_out=True,umap_dot_size=None,
                            subset=None,marker_gene_dict=None,jitter=True,rotation=60,single_gene=None,dual_gene=None,multi_gene=None,merge=None,
-                           to_sinto=False,to_samtools=False,cmap='YlOrRd',**kwarg): 
+                           to_sinto=False,to_samtools=False,cmap='YlOrRd',heatmap_cmap='viridis',heatmap_scale=None,heatmap_regex=None,heatmap_direction='include',
+                           heatmap_n_genes=None,heatmap_cbar_scale=None,gene1=None,gene2=None,kind=None,hist2d_bins=50,hist2d_cmap=bg_greyed_cmap('viridis'),
+                           hist2d_vmin=1e-5,hist2d_vmax=None,scatter_dot_color='blue',contour_cmap='viridis',contour_levels=None,contour_scatter=True,
+                           contour_scatter_dot_size=5,contour_train_kde='valid',surface3d_cmap='coolwarm',**kwarg): 
         '''
         Core plotting function in scTriangulate.
 
@@ -1345,17 +1449,18 @@ class ScTriangulate(object):
         :param cluster: string, the name of the cluster.
         :param stype: string, valid values are as below:
 
-                      * **umap**: plot the umap of this cluster (including its location and its suggestive heterogeneity)
-                      * **heatmap**: plot the heatmap of the differentially expressed features across all sub-populations within this cluster.
-                      * **build**: plot both the umap and heatmap, benefit is the column and raw colorbar of the heatmap is consistent with the umap color
-                      * **heatmap_custom_gene**, plot the heatmap, but with user-defined gene dictionary.
-                      * **heatmap+umap**, it is the umap + heatmap_custom_gene, and the colorbars are matching
-                      * **violin**: plot the violin plot of the specified genes across sub populations.
-                      * **single_gene**: plot the gradient of single genes across the cluster.
-                      * **dual_gene**: plot the dual-gene plot of two genes across the cluster, usually these two genes should correspond to the marker genes in two of the sub-populations.
-                      * **multi_gene**: plot the multi-gene plot of multiple genes across the cluster.
-                      * **cellxgene**: output the h5ad object which are readily transferrable to cellxgene. It also support atac pseudobuld analysis with ``to_sinto`` or ``to_samtools`` arguments.
-                      * **sankey**: plot the sankey plot showing fraction/percentage of cells that flow into each sub population
+            * **umap**: plot the umap of this cluster (including its location and its suggestive heterogeneity)
+            * **heatmap**: plot the heatmap of the differentially expressed features across all sub-populations within this cluster.
+            * **build**: plot both the umap and heatmap, benefit is the column and raw colorbar of the heatmap is consistent with the umap color
+            * **heatmap_custom_gene**, plot the heatmap, but with user-defined gene dictionary.
+            * **heatmap+umap**, it is the umap + heatmap_custom_gene, and the colorbars are matching
+            * **violin**: plot the violin plot of the specified genes across sub populations.
+            * **single_gene**: plot the gradient of single genes across the cluster.
+            * **dual_gene**: plot the dual-gene plot of two genes across the cluster, usually these two genes should correspond to the marker genes in two of the sub-populations.
+            * **multi_gene**: plot the multi-gene plot of multiple genes across the cluster.
+            * **cellxgene**: output the h5ad object which are readily transferrable to cellxgene. It also support atac pseudobuld analysis with ``to_sinto`` or ``to_samtools`` arguments.
+            * **sankey**: plot the sankey plot showing fraction/percentage of cells that flow into each sub population, requiring plotly if you only need html, and kaleido if you need static plot, otherwise, a less pretty matplotlib sankey will be plotted
+            * **coexpression**: visualize the coexpression pattern of two features, using contour plot or hist2d
 
         :param col: string, either 'raw' or 'pruned'.
         :param save: boolean, whether to save or not.
@@ -1373,6 +1478,46 @@ class ScTriangulate(object):
         :param merge: nested list, the sub-populations that we want to merge. [('sub-c1','sub-c2'),('sub-c3','sub-c4')]
         :param to_sinto: boolean, for cellxgene mode, output the txt files for running sinto to generate pseudobulk bam files.
         :param to_samtools: boolean,for cellxgene mode, output the txt files for running samtools to generate the pseudobulk bam files.
+        :param cmap: a valid string for matplotlib cmap or scTriangulate color module retrieve_pretty_cmap function return object, default is 'YlOrRd', will be used for umap
+
+        The following will be used for heatmap only:
+
+        :param heatmap_cmap: a valid string for matplotlib cmap or scTriangulate color module retrieve_pretty_cmap function return object, default is 'viridis'.
+        :param heatmap_scale: None, minmax, median, mean, z_score, default is None, useful when very large or small values exist in the adata.X, scaling can yield better visual effects
+
+            * ``None`` means no scale will be performed, the raw valus shown in adata.X will be plotted in the heatmap
+            * ``minmax`` means the raw values will be row-scaled to [0,1] using a MinMaxScaler
+            * ``median`` means the raw values will be row-scaled via substracting by the median per row
+            * ``mean`` means the raw values will be row-scaled via substracting by the mean per row
+            * ``z_score`` means the raw values will be row-scaled via Scaling (mean-centered and variance normalized)
+
+        :param heatmap_regex: None or a raw string for example r'^AB_' (meaning selecing all ADT features as scTriangulate by default prefix ADT features will AB_), the usage of that is to only display certain features from certain modlaities. The underlying implementation is just a regular expression selection. 
+        :param heatmap_direction: string, 'include' or 'exclude', it is along with the heatmap_regex parameter, include means doing positive selection, exclude means to exclude the features that match with the heatmap_regex
+        :param heatmap_n_genes: an integer, by default, program display 50//n_cluster genes for each cluster, this will overwrite the default.
+        :param heatmap_cbar_scale: None or a tuple or a fraction. A tuple for example (-0.5,0.5) will clip the colorbar within -0.5 to 0.5, a fraction number for instance 0.25, will shrink the default colorbar range say -1 to 1 to -0.25 to 0.25
+
+        The following will be used for coexpression plot only:
+
+        :param gene1: the first gene/features to inspect, the gene name, a string.
+        :param gene2: the second gene/features to inspect, the gene name, a string.
+        :param kind: a string, 'scatter' or 'hist2d' or 'contour' or 'contourf' or 'surface3d', those are all supported figure types to represent the coexpression pattern of two features.
+        :param hist2d_bins: integer, default is 50, only used is the kind is hist2d, it will determine the number of the bins
+        :param hist2d_cmap: a valid matplotlib cmap string, default is bg_greyed_cmap('viridis'), only used for hist2d
+        :param hist2d_vmin: the min value for hist2d graph, default is 1e-5, useful if you want to make the low expressin region lightgrey.
+        :param hist2d_vmax: the max value for hist2d graph, default is None
+        :param scatter_dot_color: the color of the scatter plot dot, default is 'blue'
+        :param contour_cmap: the valid matplotlib camp string, default is 'viridis'
+        :param contour_levels: an integer, the levels of contours to show, default is None
+        :param contour_scatter: boolean and default is True, whether or not to show the scatter plot on top of the contour plot
+        :param contour_scatter_dot_size: float or integer, the dot size of the scatter plot on top of contour plot, default is 5.
+        :param contour_train_kde: a string, either 'valid', 'semi-vaid' or 'full', it determines what subset of dots will be used for inferring the kernel
+
+            * ``valid``: only data points that are non-zero for both gene1 and gene2
+            * ``semi_valid``: only data points that are non-zero for at least one of the gene
+            * ``full``: all data points will be used for kde estimation
+
+        :param surface_3d_cmap: a valid matplotlib cmap string, for surface 3d plot, the default would be 'coolwarm'
+
 
         Example::
         
@@ -1383,6 +1528,7 @@ class ScTriangulate(object):
             sctri.plot_heterogeneity('leiden1','0','cellxgene')
             sctri.plot_heterogeneity('leiden1','0','heatmap+umap',subset=['leiden1@0','leiden3@10'],marker_gene_dict=marker_gene_dict)
             sctri.plot_heterogeneity('leiden1','0','dual_gene',dual_gene=['MAPK14','CD52'])
+            sctri.plot_heterogeneity('leiden1','0','coexpression',gene1='MAPK14',genes='CD52',kind='contour')
    
         '''
         adata_s = self.adata[self.adata.obs[key]==cluster,:].copy()
@@ -1414,6 +1560,7 @@ class ScTriangulate(object):
             adata_s.obs[col] = tmp_new_col
 
         if style == 'build':  # draw umap and heatmap
+            
 
             # umap
             fig,axes = plt.subplots(nrows=2,ncols=1,gridspec_kw={'hspace':0.5},figsize=(5,10))
@@ -1433,15 +1580,52 @@ class ScTriangulate(object):
             tmp.pop('rank_genes_groups',None)
             adata_s.uns = tmp
 
+            if heatmap_scale is not None :   # rowwise scaling in case features from multiple modalities are in differen scale
+                if heatmap_scale == 'minmax':
+                    from sklearn.preprocessing import MinMaxScaler
+                    scaled_X = MinMaxScaler().fit_transform(make_sure_mat_dense(adata_s.X))
+                    adata_s.X = scaled_X
+                elif heatmap_scale == 'median':
+                    scaled_X = make_sure_mat_dense(adata_s.X) - np.median(make_sure_mat_dense(adata_s.X),axis=0)[np.newaxis,:]
+                    adata_s.X = scaled_X
+                elif heatmap_scale == 'mean':
+                    scaled_X = make_sure_mat_dense(adata_s.X) - np.mean(make_sure_mat_dense(adata_s.X),axis=0)[np.newaxis,:]
+                    adata_s.X = scaled_X     
+                elif heatmap_scale == 'z_score':
+                    from sklearn.preprocessing import scale
+                    scaled_X = scale(X=make_sure_mat_dense(adata_s.X),axis=0)
+                    adata_s.X = scaled_X   
+
             if len(adata_s.obs[col].unique()) == 1: # it is already unique
                 logger_sctriangulate.info('{0} entirely being assigned to one type, no need to do DE'.format(cluster))
                 return None
             else:
                 sc.tl.rank_genes_groups(adata_s,groupby=col)
-                adata_s = filter_DE_genes(adata_s,self.species,self.criterion)
+                adata_s = filter_DE_genes(adata_s,self.species,self.criterion,heatmap_regex,heatmap_direction)
                 number_of_groups = len(adata_s.obs[col].unique())
-                genes_to_pick = 50 // number_of_groups
-                sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered')
+                if heatmap_n_genes is None:
+                    genes_to_pick = 50 // number_of_groups
+                else:
+                    genes_to_pick = heatmap_n_genes
+                if heatmap_cbar_scale is None:   # let scanpy default norm figure that out for you, seems the max and min are not the same as the max/min from the data
+                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=heatmap_cmap)
+                else:
+                    if isinstance(heatmap_cbar_scale,tuple):
+                        v = make_sure_mat_dense(adata_s.X)
+                        min_now = heatmap_cbar_scale[0]
+                        max_now = heatmap_cbar_scale[1]
+                    else:
+                        v = make_sure_mat_dense(adata_s.X)
+                        max_v = v.max()
+                        min_v = v.min()
+                        max_v = max([max_v,abs(min_v)])     # make them symmetrical 
+                        min_v = max_v * (-1)   
+                        max_now = max_v * heatmap_cbar_scale
+                        min_now = min_v * heatmap_cbar_scale
+                    adata_s.layers['to_plot'] = v                   # very weired fix, have to set a new layer....    
+                    sc.pl.rank_genes_groups_heatmap(adata_s,layer='to_plot',n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=heatmap_cmap,
+                                                    vmin=min_now,vmax=max_now)
+                    
                 if save:
                     plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,'heatmap',format)),bbox_inches='tight')
                     plt.close()
@@ -1564,15 +1748,52 @@ class ScTriangulate(object):
             tmp = adata_s.uns
             tmp.pop('rank_genes_groups',None)
             adata_s.uns = tmp
+
+            if heatmap_scale is not None :   # rowwise scaling in case features from multiple modalities are in differen scale
+                if heatmap_scale == 'minmax':
+                    from sklearn.preprocessing import MinMaxScaler
+                    scaled_X = MinMaxScaler().fit_transform(make_sure_mat_dense(adata_s.X))
+                    adata_s.X = scaled_X
+                elif heatmap_scale == 'median':
+                    scaled_X = make_sure_mat_dense(adata_s.X) - np.median(make_sure_mat_dense(adata_s.X),axis=0)[np.newaxis,:]
+                    adata_s.X = scaled_X
+                elif heatmap_scale == 'mean':
+                    scaled_X = make_sure_mat_dense(adata_s.X) - np.mean(make_sure_mat_dense(adata_s.X),axis=0)[np.newaxis,:]
+                    adata_s.X = scaled_X       
+                elif heatmap_scale == 'z_score':
+                    from sklearn.preprocessing import scale
+                    scaled_X = scale(X=make_sure_mat_dense(adata_s.X),axis=0)
+                    adata_s.X = scaled_X   
+
             if len(adata_s.obs[col].unique()) == 1: # it is already unique
                 logger_sctriangulate.info('{0} entirely being assigned to one type, no need to do DE'.format(cluster))
                 return None
             else:
                 sc.tl.rank_genes_groups(adata_s,groupby=col)
-                adata_s = filter_DE_genes(adata_s,self.species,self.criterion)
+                adata_s = filter_DE_genes(adata_s,self.species,self.criterion,heatmap_regex,heatmap_direction)
                 number_of_groups = len(adata_s.obs[col].unique())
-                genes_to_pick = 50 // number_of_groups
-                sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered')
+                if heatmap_n_genes is None:
+                    genes_to_pick = 50 // number_of_groups
+                else:
+                    genes_to_pick = heatmap_n_genes
+                if heatmap_cbar_scale is None:   # let scanpy default norm figure that out for you, seems the max and min are not the same as the max/min from the data
+                    sc.pl.rank_genes_groups_heatmap(adata_s,n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=heatmap_cmap)
+                else:
+                    if isinstance(heatmap_cbar_scale,tuple):
+                        v = make_sure_mat_dense(adata_s.X)
+                        min_now = heatmap_cbar_scale[0]
+                        max_now = heatmap_cbar_scale[1]
+                    else:
+                        v = make_sure_mat_dense(adata_s.X)
+                        max_v = v.max()
+                        min_v = v.min()
+                        max_v = max([max_v,abs(min_v)])     # make them symmetrical 
+                        min_v = max_v * (-1)   
+                        max_now = max_v * heatmap_cbar_scale
+                        min_now = min_v * heatmap_cbar_scale
+                    adata_s.layers['to_plot'] = v                   # very weired fix, have to set a new layer....    
+                    sc.pl.rank_genes_groups_heatmap(adata_s,layer='to_plot',n_genes=genes_to_pick,swap_axes=True,key='rank_genes_groups_filtered',cmap=heatmap_cmap,
+                                                    vmin=min_now,vmax=max_now)
                 if save:
                     plt.savefig(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),bbox_inches='tight')
                     plt.close()
@@ -1590,6 +1811,13 @@ class ScTriangulate(object):
                     df.set_index(keys='names',inplace=True)
                     sc_marker_dict[group] = df
                 return sc_marker_dict
+
+        elif style == 'coexpression':
+            plot_coexpression(adata_s,gene1=gene1,gene2=gene2,kind=kind,hist2d_bins=hist2d_bins,hist2d_cmap=hist2d_cmap,
+                           hist2d_vmin=hist2d_vmin,hist2d_vmax=hist2d_vmax,scatter_dot_color=scatter_dot_color,contour_cmap=contour_cmap,
+                           contour_levels=contour_levels,contour_scatter=contour_scatter,contour_scatter_dot_size=contour_scatter_dot_size,
+                           contour_train_kde=contour_train_kde,surface3d_cmap=surface3d_cmap,save=True,outdir=self.dir,
+                           name='{}_{}_heterogeneity_{}_{}_{}_{}_{}.{}'.format(key,cluster,col,gene1,gene2,style,kind,format))
 
         elif style == 'heatmap_custom_gene':
             sc.pl.heatmap(adata_s,marker_gene_dict,groupby=col,swap_axes=True,dendrogram=True)
@@ -1645,7 +1873,6 @@ class ScTriangulate(object):
         elif style == 'sankey':
             try:
                 import plotly.graph_objects as go
-                import kaleido
             except:
                 logger_sctriangulate.warning('no plotly or kaleido library, fall back to matplotlib sankey plot')
                 # processing the obs
@@ -1703,7 +1930,6 @@ class ScTriangulate(object):
 
                 # get node label and node color
                 node_label = unique_ref + unique_query + unique_cluster
-                from matplotlib import cm,colors
                 node_color = pick_n_colors(len(node_label))
 
                 # get link information [(source,target,value),(),()]    
@@ -1718,18 +1944,75 @@ class ScTriangulate(object):
                 link_source = [node_label.index(item) for item in link_info[0]]
                 link_target = [node_label.index(item) for item in link_info[1]]
                 link_value = link_info[2]
-                link_color = [node_color[i] for i in link_source]
+                link_color = ['rgba{}'.format(tuple([infer_to_256(item) for item in to_rgb(node_color[i])] + [0.4])) for i in link_source]
 
-                print(node_label,node_color,link_source,link_target,link_value,link_color)
-
+            
                 # start to draw using plotly and save using kaleido
-                node_plotly = dict(pad = 15, thickness = 20,line = dict(color = "black", width = 0.5),label = node_label,color = node_color)
+                node_plotly = dict(pad = 15, thickness = 15,line = dict(color = "black", width = 0.5),label = node_label,color = node_color)
                 link_plotly = dict(source=link_source,target=link_target,value=link_value,color=link_color)
                 fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
-                fig.update_layout(title_text='{}_{}_heterogeneity_{}_{}'.format(key,cluster,col,style), font_size=10)
-                fig.show()
+                fig.update_layout(title_text='{}_{}_heterogeneity_{}_{}'.format(key,cluster,col,style), font_size=6)
                 if save:
-                    fig.write_image(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)))
+                    try:
+                        fig.write_image(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)))
+                    except:
+                        fig.write_html(os.path.join(self.dir,'{}_{}_heterogeneity_{}_{}.{}'.format(key,cluster,col,style,format)),include_plotlyjs='cdn')
+
+
+    def plot_two_column_sankey(self,left_annotation,right_annotation,opacity=0.6,pad=3,thickness=10,margin=300,text=True,save=True):
+        '''
+        sankey plot to show the correpondance between two annotation, for example, annotation1 and annotation2, how many cells from each cluster in
+        annotation1 will flow to each cluster in annotation2.
+
+        :param left_annotation: a string, the name of the annotation1
+        :param right_annotation: a string, the name of the annotation2
+        :param opacity: float number, default is 0.6, the opacity of the sankey strips
+        :param pad: float number, default is 3, the gap between blocks vertically
+        :param thickness: float number, default is 10, the width of each block
+        :param margin: the white margin of the sankey plot, large value means the sankey plot will not consume the whole horizontal space (shrinkaged), default is 300
+        :param text: whether to show the text or not, default is True, only set to False if you want to have publication quality static figure, because plotly will add a weired background shady effect on the text, not good for publication, so you can fisrt remove text, then add it back youself manually
+        :param save: wheter to save or not, default is True.
+
+        Example::
+
+            sctri.plot_two_column_sankey('leiden1','leiden2',margin=5)
+
+        .. image:: ./_static/two_column_sankey.png
+            :height: 300px
+            :width: 400px
+            :align: center
+            :target: target
+
+        '''
+        import plotly.graph_objects as go
+        import kaleido
+        df = self.adata.obs.loc[:,[left_annotation,right_annotation]]
+        node_label = df[left_annotation].unique().tolist() + df[right_annotation].unique().tolist()
+        node_color = pick_n_colors(len(node_label))
+        link = []
+        for source,sub in df.groupby(by=left_annotation):
+            for target,subsub in sub.groupby(by=right_annotation):
+                if subsub.shape[0] > 0:
+                    link.append((source,target,subsub.shape[0]))
+        link_info = list(zip(*link))
+        link_source = [node_label.index(item) for item in link_info[0]]
+        link_target = [node_label.index(item) for item in link_info[1]]
+        link_value = link_info[2]
+        link_color = ['rgba{}'.format(tuple([infer_to_256(item) for item in to_rgb(node_color[i])] + [opacity])) for i in link_source]
+        node_plotly = dict(pad = pad, thickness = thickness,line = dict(color = "grey", width = 0.1),label = node_label,color = node_color)
+        link_plotly = dict(source=link_source,target=link_target,value=link_value,color=link_color)
+        if not text:
+            fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly, textfont=dict(color='rgba(0,0,0,0)',size=1))])
+        else:
+            fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
+        fig.update_layout(title_text='sankey_{}_{}'.format(left_annotation,right_annotation), font_size=6, margin=dict(l=margin,r=margin))
+        if save:
+            try:
+                fig.write_image(os.path.join(self.dir,'two_column_sankey_{}_{}_text_{}.pdf'.format(left_annotation,right_annotation,text))) 
+            except:
+                fig.write_html(os.path.join(self.dir,'two_column_sankey_{}_{}_text_{}.pdf'.format(left_annotation,right_annotation,text)),include_plotlyjs='cdn')  
+
+
 
 
     def plot_circular_barplot(self,key,col,save=True,format='pdf'):
@@ -1798,7 +2081,7 @@ class ScTriangulate(object):
             plt.savefig(os.path.join(self.dir,'sctri_circular_barplot_{}.{}'.format(col,format)),bbox_inches='tight')
             plt.close()
 
-    def modality_contributions(self,mode='marker_genes',key='pruned',tops=20,regex_adt=r'^AB_',regex_atac=r'^chr\d{1,2}'):
+    def modality_contributions(self,mode='marker_genes',key='pruned',tops=20,regex_dict={'adt':r'^AB_','atac':r'^chr\d{1,2}'}):
         '''
         calculate teh modality contributions for multi modal analysis, the modality contributions of each modality of each cluster means
         the number of features from this modality that made into the top {tops} feature list. Three columns will be added to obs, they are
@@ -1822,7 +2105,13 @@ class ScTriangulate(object):
         # need to choose the persepctive, default is pruned column
         # will build a three maps (ADT, ATAC, RNA), each of them {c1:0.3,..} 
         # only within modality comparison makes sense
-        map_adt, map_atac, map_rna = {},{},{}
+        
+        # step1: build several maps
+        meta_map = {}
+        meta_map['rna'] = {}
+        for k,v in regex_dict.items():
+            meta_map[k] = {}
+        # step2: get features and importance, and see which category each feature belongs to
         for cluster in self.adata.obs[key].unique():
             if mode == 'marker_genes':
                 features = self.uns[mode][key].loc[cluster]['purify']
@@ -1833,35 +2122,29 @@ class ScTriangulate(object):
                 tops_features = list(features.keys())[:tops]
                 importance = list(features.values())[:tops]
             for f,i in zip(tops_features,importance):
-                if re.search(pattern=regex_adt,string=f):
+                being_assigned = False
+                for k,v in regex_dict.items():
+                    if re.search(pattern=v,string=f):
+                        being_assigned = True
+                        try:
+                            meta_map[k][cluster] += i
+                        except KeyError:
+                            meta_map[k][cluster] = 0
+                            meta_map[k][cluster] += i
+                if not being_assigned:
                     try:
-                        map_adt[cluster] += i
-                    except KeyError:
-                        map_adt[cluster] = 0
-                        map_adt[cluster] += i
-                elif re.search(pattern=regex_atac,string=f):
-                    try:
-                        map_atac[cluster] += i
-                    except KeyError:
-                        map_atac[cluster] = 0
-                        map_atac[cluster] += i
-                else:
-                    try:
-                        map_rna[cluster] += i
-                    except KeyError:
-                        map_rna[cluster] = 0
-                        map_rna[cluster] += i
-        self.adata.obs[key] = self.adata.obs[key].astype('O')
-        self.adata.obs['adt_contribution'] = self.adata.obs[key].map(map_adt).fillna(0).astype('int64').values
-        self.adata.obs['atac_contribution'] = self.adata.obs[key].map(map_atac).fillna(0).astype('int64').values   
-        self.adata.obs['rna_contribution'] = self.adata.obs[key].map(map_rna).fillna(0).astype('int64').values
-        self.adata.obs[key] = self.adata.obs[key].astype('category')
-
-        
+                        meta_map['rna'][cluster] += i
+                    except:
+                        meta_map['rna'][cluster] = 0
+                        meta_map['rna'][cluster] += i
+        # step3: write to the obs for modality contribution        
+        self.adata.obs[key] = self.adata.obs[key].astype('O').astype('category')
+        for k in meta_map.keys():
+            self.adata.obs['{}_contribution'.format(k)] = self.adata.obs[key].map(meta_map[k]).fillna(0).astype('float32').values
 
 
     def plot_multi_modal_feature_rank(self,cluster,mode='marker_genes',key='pruned',tops=20,
-                                    regex_adt=r'^AB_',regex_atac=r'^chr\d{1,2}',save=True,format='.pdf'):
+                                    regex_dict={'adt':r'^AB_','atac':r'^chr\d{1,2}'},save=True,format='.pdf'):
 
         '''
         plot the top features in each clusters, the features are colored by the modality and ranked by the importance.
@@ -1897,14 +2180,16 @@ class ScTriangulate(object):
             x = np.arange(tops)
             labels = tops_features
         colors = []
+        candidate_colors = pick_n_colors(len(regex_dict)+1)
         for item in labels:
-            if re.search(pattern=regex_adt,string=item):
-                colors.append('blue')
-            elif re.search(pattern=regex_atac,string=item):
-                colors.append('#3FBF90')
-            else:
-                colors.append('#D56DF2')
-        #print(x,labels,importance,colors)
+            being_assigned = False
+            for i,(k,v) in enumerate(regex_dict.items()):
+                if re.search(pattern=v,string=item):
+                    being_assigned = True
+                    colors.append(candidate_colors[i])
+                    break
+            if not being_assigned:
+                colors.append(candidate_colors[-1])
         fig,ax = plt.subplots()
         ax.bar(x=x,height=importance,width=0.5,color=colors,edgecolor='k')
         ax.set_xticks(x)
@@ -1914,7 +2199,7 @@ class ScTriangulate(object):
         ax.set_ylabel('Rank(importance)')
         ax.set_title('{}_{}_{}_{}_features'.format(mode,key,cluster,tops))
         import matplotlib.patches as mpatches
-        ax.legend(handles=[mpatches.Patch(color=i) for i in ['blue','#3FBF90','#D56DF2']],labels=['ADT','ATAC','RNA'],
+        ax.legend(handles=[mpatches.Patch(color=i) for i in candidate_colors],labels=list(regex_dict.keys())+['rna'],
                     frameon=False,loc='upper left',bbox_to_anchor=(1,1))
         
         if save:
@@ -1990,7 +2275,7 @@ class ScTriangulate(object):
 
 
     def plot_long_heatmap(self,clusters=None,key='pruned',n_features=5,mode='marker_genes',cmap='viridis',save=True,format='pdf',figsize=(6,4.8),
-                          feature_fontsize=3,cluster_fontsize=5):
+                          feature_fontsize=3,cluster_fontsize=5,heatmap_regex=None,heatmap_direction='include'):
 
         '''
         the default scanpy heatmap is not able to support the display of arbitrary number of marker genes for each clusters, the max feature is 50.
@@ -2006,6 +2291,8 @@ class ScTriangulate(object):
         :param figsize: tuple, the width and the height of the plot.
         :param feature_fontsize: int/float. the fontsize for the feature.
         :param cluster_fontsize: int/float, the fontsize for the cluster.
+        :param heatmap_regex: None or a raw string for example r’^AB_’ (meaning selecing all ADT features as scTriangulate by default prefix ADT features will AB_), the usage of that is to only display certain features from certain modlaities. The underlying implementation is just a regular expression selection.
+        :param heatmap_direction: string, ‘include’ or ‘exclude’, it is along with the heatmap_regex parameter, include means doing positive selection, exclude means to exclude the features that match with the heatmap_regex
 
         Examples::
 
@@ -2019,15 +2306,46 @@ class ScTriangulate(object):
 
         '''
         df = self.uns[mode][key]
+        # if heatmap_regex and heatmap_direction are present, try to filter the marker genes first
+        if heatmap_regex is not None:
+            if heatmap_direction == 'include':
+                new_purify_col = []
+                for lis in df['purify']:
+                    new_lis = []
+                    for item in lis:
+                        pat = re.compile(heatmap_regex)
+                        if re.search(pat,item):
+                            new_lis.append(item)
+                    new_purify_col.append(new_lis)
+            elif heatmap_direction == 'exclude':
+                new_purify_col = []
+                for lis in df['purify']:
+                    new_lis = []
+                    for item in lis:
+                        pat = re.compile(heatmap_regex)
+                        if not re.search(pat,item):
+                            new_lis.append(item)
+                    new_purify_col.append(new_lis) 
+            df['purify'] = new_purify_col
         # get feature pool
+        ignore_clusters = []
         feature_pool = []
         for i in range(df.shape[0]):
             cluster = df.index[i]
-            features = df.iloc[i]['purify'][:n_features]
+            if len(df.iloc[i]['purify']) == 0:
+                ignore_clusters.append(cluster)
+                print(prRed('{} only has {} markers with the regex specified, this cluster will not be plotted'.format(cluster,len(df.iloc[i]['purify']))))
+                continue
+            elif n_features > len(df.iloc[i]['purify']):
+                features = df.iloc[i]['purify']
+                print('{} only has {} markers with the regex specified, only these markers will be plotted'.format(cluster,len(df.iloc[i]['purify'])))
+                continue
+            else:
+                features = df.iloc[i]['purify'][:n_features]
             feature_pool.extend(features)
         # determine cluster order
         if clusters is None:
-            clusters = df.index
+            clusters = list(set(df.index).difference(set(ignore_clusters)))
         core_adata = self.adata[self.adata.obs[key].isin(clusters),feature_pool]
         core_df = pd.DataFrame(data=make_sure_mat_dense(core_adata.copy().X),
                                index=core_adata.obs_names,
@@ -2042,7 +2360,12 @@ class ScTriangulate(object):
         feature_cluster_df = pd.DataFrame({'feature':[],'cluster':[]})
         for i in range(df.shape[0]):
             cluster = df.index[i]
-            features = df.iloc[i]['purify'][:n_features]   
+            if cluster in ignore_clusters:
+                continue
+            if n_features > len(df.iloc[i]['purify']):
+                features = df.iloc[i]['purify']
+            else:
+                features = df.iloc[i]['purify'][:n_features]   
             chunk = pd.DataFrame({'feature':features,'cluster':np.full(len(features),fill_value=cluster)})
             feature_cluster_df = pd.concat([feature_cluster_df,chunk],axis=0) 
         feature_to_cluster = feature_cluster_df.groupby(by='feature')['cluster'].apply(lambda x:x.values[0]).to_dict()
@@ -2094,7 +2417,7 @@ class ScTriangulate(object):
         vline_coords = tmp_cum * (e-s) + s
         print(vline_coords)
         for x in vline_coords:
-            ax1.axvline(x,ymin=0,ymax=1,color='white',linewidth=0.03) 
+            ax1.axvline(x,ymin=0,ymax=1,color='white',linewidth=0.01) 
         # colorbar
         gs.update(right=0.8)
         gs_cbar = mpl.gridspec.GridSpec(nrows=1,ncols=1,left=0.85,top=0.3)
@@ -2109,10 +2432,6 @@ class ScTriangulate(object):
         return export
 
 
-        
-
-
-
     def _atomic_viewer_figure(self,key):
         for cluster in self.adata.obs[key].unique():
             try:
@@ -2124,9 +2443,11 @@ class ScTriangulate(object):
                 continue
 
 
-    def _atomic_viewer_hetero(self,key):
+    def _atomic_viewer_hetero(self,key,format='png',heatmap_scale=False,heatmap_cmap='viridis',heatmap_regex=None,heatmap_direction='include',
+                              heatmap_n_genes=None,heatmap_cbar_scale=None):
         for cluster in self.adata.obs[key].unique():
-            self.plot_heterogeneity(key,cluster,'build',format='png')
+            self.plot_heterogeneity(key,cluster,'build',format=format,heatmap_scale=heatmap_scale,heatmap_cmap=heatmap_cmap,heatmap_regex=heatmap_regex,
+                                    heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
 
 
     def viewer_cluster_feature_figure(self,parallel=False,select_keys=None,other_umap=None):
@@ -2195,7 +2516,8 @@ class ScTriangulate(object):
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.js'),os.path.join(self.dir,'figure4viewer')))
         os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.css'),os.path.join(self.dir,'figure4viewer')))
 
-    def viewer_heterogeneity_figure(self,key,other_umap=None):
+    def viewer_heterogeneity_figure(self,key,other_umap=None,format='png',heatmap_scale=False,heatmap_cmap='viridis',heatmap_regex=None,heatmap_direction='include',
+                                    heatmap_n_genes=None,heatmap_cbar_scale=None):
         '''
         Generating the figures for the viewer heterogeneity page
 
@@ -2219,8 +2541,8 @@ class ScTriangulate(object):
         ori_dir = self.dir
         new_dir = os.path.join(self.dir,'figure4viewer')
         self.dir = new_dir
-        
-        self._atomic_viewer_hetero(key)
+        self._atomic_viewer_hetero(key,format=format,heatmap_scale=heatmap_scale,heatmap_cmap=heatmap_cmap,heatmap_regex=heatmap_regex,heatmap_direction=heatmap_direction,
+                                   heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
         # dial back
         self.dir = ori_dir
         if other_umap is not None:
@@ -2271,7 +2593,7 @@ def penalize_artifact_void(obs,query,stamps,metrics):
 
 
 
-def each_key_run(sctri,key,scale_sccaf):
+def each_key_run(sctri,key,scale_sccaf,layer):
     folder = sctri.dir
     adata = sctri.adata
     species = sctri.species
@@ -2297,7 +2619,7 @@ def each_key_run(sctri,key,scale_sccaf):
     cluster_to_metric['cluster_to_reassign'], confusion_reassign = reassign_score(adata_to_compute,key,marker_genes)
     logger_sctriangulate.info('Process {}, for {}, finished reassign score computing'.format(os.getpid(),key))
     '''tfidf10 score'''
-    cluster_to_metric['cluster_to_tfidf10'], exclusive_genes = tf_idf10_for_cluster(adata_to_compute,key,species,criterion)
+    cluster_to_metric['cluster_to_tfidf10'], exclusive_genes = tf_idf10_for_cluster(adata_to_compute,key,species,criterion,layer=layer)
     logger_sctriangulate.info('Process {}, for {}, finished tfidf score computing'.format(os.getpid(),key))
     '''SCCAF score'''
     cluster_to_metric['cluster_to_SCCAF'], confusion_sccaf = SCCAF_score(adata_to_compute,key, species, criterion,scale_sccaf)
@@ -2307,7 +2629,7 @@ def each_key_run(sctri,key,scale_sccaf):
     logger_sctriangulate.info('Process {}, for {}, finished doublet score assigning'.format(os.getpid(),key))
     '''added other scores'''
     for metric,func in add_metrics.items():
-        cluster_to_metric['cluster_to_{}'.format(metric)] = func(adata_to_compute,key,species,criterion)
+        cluster_to_metric['cluster_to_{}'.format(metric)] = func(adata_to_compute,key,species,criterion,layer=layer)
         logger_sctriangulate.info('Process {}, for {}, finished {} score computing'.format(os.getpid(),key,metric))
 
 
@@ -2356,10 +2678,18 @@ def run_assign(obs):
     obs['raw'] = assign
     return obs
 
-def filter_DE_genes(adata,species,criterion):
+def filter_DE_genes(adata,species,criterion,regex=None,direction='include'):
     de_gene = pd.DataFrame.from_records(adata.uns['rank_genes_groups']['names']) #column use field name, index is none by default, so incremental int value
+    # first filter out based on the level of artifact genes
     artifact = set(read_artifact_genes(species,criterion).index)
     de_gene.mask(de_gene.isin(artifact),inplace=True)
+    # second filter based on regex and direction (include or exclude)
+    if regex is not None:
+        pat = re.compile(regex)
+        if direction == 'include':
+            de_gene.where(de_gene.applymap(lambda x: True if pd.isna(x) or re.search(pat,x) else False),inplace=True)
+        elif direction == 'exclude':
+            de_gene.mask(de_gene.applymap(lambda x: False if pd.isna(x) or not re.search(pat,x) else True),inplace=True)
     adata.uns['rank_genes_groups_filtered'] = adata.uns['rank_genes_groups'].copy()
     adata.uns['rank_genes_groups_filtered']['names'] = de_gene.to_records(index=False)
     return adata

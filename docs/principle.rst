@@ -127,7 +127,7 @@ Let's show some of the functionalities:
 
 **1. UMAP**::
 
-    sctri.plot_sctri.plot_heterogeneity(key='sctri_rna_leiden_1',cluster='6',style='umap')
+    sctri.plot_heterogeneity(key='sctri_rna_leiden_1',cluster='6',style='umap')
 
 .. image:: ./_static/ph_umap.png
     :height: 300px
@@ -137,7 +137,7 @@ Let's show some of the functionalities:
 
 **2. Heatmap**::
 
-    sctri.plot_sctri.plot_heterogeneity(key='sctri_rna_leiden_1',cluster='6',style='heatmap')
+    sctri.plot_heterogeneity(key='sctri_rna_leiden_1',cluster='6',style='heatmap')
 
 .. image:: ./_static/ph_heatmap.png
     :height: 400px
@@ -147,13 +147,36 @@ Let's show some of the functionalities:
 
 **3. dual_gene_plot**::
 
-    sctri.plot_sctri.plot_heterogeneity(key='sctri_rna_leiden_1',cluster='6',style='dual_gene',genes=['TRDC','SLC4A10'])
+    sctri.plot_heterogeneity(key='sctri_rna_leiden_1',cluster='6',style='dual_gene',genes=['TRDC','SLC4A10'])
 
 .. image:: ./_static/ph_dual_gene.png
     :height: 350px
     :width: 500px
     :align: center
     :target: target
+
+**4. coexpression_plot**::
+
+    sctri.plot_heterogeneity(key='lenden1',cluster='6',style='coexpression',kind='contourf')
+
+.. image:: ./_static/coexpression.png
+    :height: 350px
+    :width: 500px
+    :align: center
+    :target: target
+
+plot_two_column_sankey
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+To visualize the correspondence of two annotations::
+
+    sctri.plot_two_column_sankey('leiden1','leiden2',margin=5)
+
+.. image:: ./_static/two_column_sankey.png
+    :height: 350px
+    :width: 500px
+    :align: center
+    :target: target   
 
 plot_concordance
 ~~~~~~~~~~~~~~~~~~
@@ -210,10 +233,6 @@ In multi-modal setting, a cluster's identify usually defined by all modalities, 
     :target: target
 
 
-
-
-
-
 plot_confusion
 ~~~~~~~~~~~~~~~~
 
@@ -226,6 +245,8 @@ It allows you to visualize the stability of each clustes in one annotation::
     :width: 500px
     :align: center
     :target: target
+
+
 
 
 
