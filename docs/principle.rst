@@ -157,7 +157,7 @@ Let's show some of the functionalities:
 
 **4. coexpression_plot**::
 
-    sctri.plot_heterogeneity(key='lenden1',cluster='6',style='coexpression',kind='contourf')
+    sctri.plot_heterogeneity(key='lenden1',cluster='6',style='coexpression',kind='contourf',gene1='NKG7',gene2='CD8A')
 
 .. image:: ./_static/coexpression.png
     :height: 350px
