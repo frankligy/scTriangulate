@@ -22,7 +22,7 @@ requires = [
 
 setup(
       name = 'sctriangulate',
-      version = '0.9.2',
+      version = '0.10.1',
       description= 'A Python package to mix-and-match conflicting clustering results in single cell analysis, and generate reconciled clustering solutions.',
       long_description=long_description,
       long_description_content_type='text/markdown',
@@ -35,7 +35,7 @@ setup(
           'Ducumentation':'https://sctriangulate.readthedocs.io',
       },
       packages=['sctriangulate'],
-      package_data = {'sctriangulate':['artifact_genes.txt','viewer/*']},
+      package_data = {'sctriangulate':['artifact_genes.txt','viewer/*','433colorhex.txt']},
       install_requires=requires,
       python_requires='>=3.7',
       classifiers=[
