@@ -318,15 +318,14 @@ def make_sure_adata_writable(adata,delete=False):
     return adata
 
 
-def scanpy_recipe(adata,species='human',is_log=False,resolutions=[1,2,3],modality='rna',umap=True,umap_min_dist=0.5,save=True,pca_n_comps=None,n_top_genes=3000):
+def scanpy_recipe(adata,species='human',is_log=False,resolutions=[1,2,3],modality='rna',umap=True,save=True,pca_n_comps=None,n_top_genes=3000):
     '''
     Main preprocessing function. Run Scanpy normal pipeline to achieve Leiden clustering with various resolutions across multiple modalities.
 
     :param adata: Anndata
-    :param species: string, valid values: 'human', 'mouse', used for recognizing mitochondrial reads
     :param is_log: boolean, whether the adata.X is count or normalized data.
     :param resolutions: list, what leiden resolutions the users want to obtain.
-    :param modality: string, valid values: 'rna','adt','atac'
+    :param modality: string, valid values: 'rna','adt','atac', 'binary'[mutation data, TCR data, etc]
     :param umap: boolean, whether to compute umap embedding.
     :param save: boolean, whether to save the obtained adata object with cluster label information in it.
     :param pca_n_comps: int, how many PCs to keep when running PCA. Suggestion: RNA (30-50), ADT (15), ATAC (100)
@@ -343,6 +342,8 @@ def scanpy_recipe(adata,species='human',is_log=False,resolutions=[1,2,3],modalit
         adata = scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='adt',pca_n_comps=15)
         # atac
         adata = scanpy_recipe(adata,is_log=False,resolutions=[1,2,3],modality='atac',pca_n_comps=100,n_top_genes=100000)
+        # binary
+        adata = scanpy_recipe(adata,resolutions=[1,2,3],modality='binary')
 
     '''
     adata.var_names_make_unique()
@@ -366,7 +367,7 @@ def scanpy_recipe(adata,species='human',is_log=False,resolutions=[1,2,3],modalit
             for resolution in resolutions:
                 sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
             if umap:
-                sc.tl.umap(adata, min_dist=umap_min_dist)
+                sc.tl.umap(adata)
             # put raw back to X, and make sure it is sparse matrix
             adata = adata.raw.to_adata()
             if not issparse(adata.X):
@@ -468,6 +469,19 @@ def scanpy_recipe(adata,species='human',is_log=False,resolutions=[1,2,3],modalit
             if save:
                 resolutions = '_'.join([str(item) for item in resolutions])
                 adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
+
+    elif modality == 'binary':  # mutation 
+        #sc.tl.pca(adata,n_comps=pca_n_comps)
+        sc.pp.neighbors(adata,use_rep='X',metric='jaccard')
+        for resolution in resolutions:
+            sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
+        if umap:
+            sc.tl.umap(adata)
+        if not issparse(adata.X):
+            adata.X = csr_matrix(adata.X)
+        if save:
+            resolutions = '_'.join([str(item) for item in resolutions])
+            adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
 
     return adata
     
