@@ -244,6 +244,10 @@ gene_activity_count_matrix_new_10x()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.gene_activity_count_matrix_new_10x
 
+format_find_concat()
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.format_find_concat
+
 find_genes()
 ~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.find_genes

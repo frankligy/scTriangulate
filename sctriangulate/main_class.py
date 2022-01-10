@@ -402,6 +402,15 @@ class ScTriangulate(object):
 
         :param compute_metrics_parallel: boolean, whether to parallelize ``compute_metrics`` step. Default: True
         :param scale_sccaf: boolean, whether to first scale the expression matrix before running sccaf score. Default: True
+        :param layer: string, the key to the adata.layers that contain raw count / non-negative count, default is None. See below for details
+
+        .. note::
+
+            The reason why we have ``layer`` parameter is because sometimes the expression values you put to adata.X has been batch-corrected or processed
+            such that the original zero count will be a negative value, which violates the default TFIDF score calculation. So if that's the case, please
+            add a pre-corrected copy of your data, it can be the raw count, log raw count, or whatever, as long as the original zero count is still zero, and
+            insert it to adata.layers dictionary. For instance, if that key is 'raw_count', then here you need to specifiy as layer='raw_count'
+
         :param compute_shapley_parallel: boolean, whether to parallelize ``compute_parallel`` step. Default: True
         :param win_fraction_cutoff: float, between 0-1, the cutoff for function ``add_invalid_by_win_fraction``. Default: 0.25
         :param reassign_abs_thresh: int, the cutoff for minimum number of cells a valid cluster should haves. Default: 10
