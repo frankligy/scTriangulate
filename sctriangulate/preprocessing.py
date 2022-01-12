@@ -273,7 +273,7 @@ def doublet_predict(adata):  # gave RNA count or log matrix
 
 def make_sure_adata_writable(adata,delete=False):
     '''
-    maks sure the adata is able to write to disk, since h5 file is stricted typed, so on mixed dtype is allowd.
+    maks sure the adata is able to write to disk, since h5 file is stricted typed, so no mixed dtype is allowd.
     this function basically is to detect the column of obs/var that are of mixed types, and delete them.
 
     :param adata: Anndata
@@ -327,11 +327,12 @@ def make_sure_adata_writable(adata,delete=False):
     return adata
 
 
-def scanpy_recipe(adata,species='human',is_log=False,resolutions=[1,2,3],modality='rna',umap=True,save=True,pca_n_comps=None,n_top_genes=3000):
+def scanpy_recipe(adata,species='human',is_log=False,resolutions=[1,2,3],modality='rna',umap=True,save=True,pca_n_comps=50,n_top_genes=3000):
     '''
     Main preprocessing function. Run Scanpy normal pipeline to achieve Leiden clustering with various resolutions across multiple modalities.
 
     :param adata: Anndata
+    :param species: string, 'human' or 'mouse'
     :param is_log: boolean, whether the adata.X is count or normalized data.
     :param resolutions: list, what leiden resolutions the users want to obtain.
     :param modality: string, valid values: 'rna','adt','atac', 'binary'[mutation data, TCR data, etc]
