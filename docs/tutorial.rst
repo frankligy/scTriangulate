@@ -331,6 +331,14 @@ can help us make the decision.
 
 the dataset can be downloaded from the http://altanalyze.org/scTriangulate/CITESeq/TNC_r1-RNA-ADT.h5.
 
+As a more general explanation of how scTriangulate can be used in multi-modal setting, we use a pictorial representation:
+
+.. image:: ./_static/tutorial/multi_modal/general.png
+   :height: 400px
+   :width: 600px
+   :align: center
+   :target: target
+
 Load data and preprocessing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -399,8 +407,8 @@ We filtered out the cells whose min_genes < 300, min_counts < 500, mt > 20%, the
 
 Perform unsupervised Leiden clustering on each of the modality, and then combined two adata objects::
 
-    adata_rna = scanpy_recipe(adata_rna,False,resolutions=[1,2,3],modality='rna',pca_n_comps=50)
-    adata_adt = scanpy_recipe(adata_adt,False,resolutions=[1,2,3],modality='adt',pca_n_comps=15)
+    adata_rna = scanpy_recipe(adata_rna,is_log=False,resolutions=[1,2,3],modality='rna',pca_n_comps=50)
+    adata_adt = scanpy_recipe(adata_adt,is_log=False,resolutions=[1,2,3],modality='adt',pca_n_comps=15)
     adata_combine = concat_rna_and_other(adata_rna,adata_adt,umap='other',name='adt',prefix='AB_')
 
 .. image:: ./_static/tutorial/multi_modal/rna3.png
@@ -458,6 +466,11 @@ scTriangulate allows the triangulation amongst diverse resolutions and modalitie
    :width: 400px
    :align: center
    :target: target
+
+scTriangulate can visualize the top markers in each cluster, example output see ``plot_multi_modal_feature_rank`` ::
+
+    sctri.plot_multi_modal_feature_rank(cluster='sctri_rna_leiden_3@6')
+
 
 scTriangulate discovers new cell states from the ADT markers (CD56 high MAIT cell), supported by `previous literature <https://www.pnas.org/content/114/27/E5434>`_,
 azimuth prediction can be downloaded from http://altanalyze.org/scTriangulate/CITESeq/azimuth_pred.tsv::
