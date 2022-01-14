@@ -2,6 +2,8 @@ sphinx==4.1.1
 sphinx_rtd_theme==0.5.2
 readthedocs-sphinx-search==0.1.0rc3
 sphinx-autoapi==1.8.4
+llvmlite==0.38.0
+numba==0.55.0
 scanpy==1.7.2
 numpy==1.19.5
 pandas==1.1.5
