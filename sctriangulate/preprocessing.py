@@ -94,13 +94,15 @@ def large_txt_to_mtx(int_file,out_folder,gene_is_index=True,type_convert_to='int
         mmwrite(os.path.join(out_folder,'matrix.mtx'),csr_matrix(data.values.T))        
 
 
-def mtx_to_adata(int_folder,gene_is_index=True,feature='genes'):  # whether the mtx file is gene * cell
+def mtx_to_adata(int_folder,gene_is_index=True,feature='genes',feature_col='index',barcode_col='index'):  # whether the mtx file is gene * cell
     '''
     convert mtx file to adata in RAM, make sure the X is sparse.
 
     :param int_folder: string, folder where the mtx files are stored.
     :param gene_is_index: boolean, whether the gene is index.
     :param features: string, the name of the feature tsv file, if rna, it will be genes.tsv.
+    :param feature_col: 'index' as index, or a int (which column, python is zero based) to use in your feature.tsv as feature
+    :param barcode_col: 'index' as index, or a int (which column, python is zero based) to use in your barcodes.tsv as barcode
 
     :return: AnnData
 
@@ -110,8 +112,14 @@ def mtx_to_adata(int_folder,gene_is_index=True,feature='genes'):  # whether the 
         mtx_to_adata(int_folder='./data',gene_is_index=False,feature='genes')
 
     '''
-    gene = pd.read_csv(os.path.join(int_folder,'{}.tsv'.format(feature)),sep='\t',index_col=0,header=None).index
-    cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None).index
+    if feature_col == 'index':
+        gene = pd.read_csv(os.path.join(int_folder,'{}.tsv'.format(feature)),sep='\t',index_col=0,header=None).index
+    else:
+        gene = pd.read_csv(os.path.join(int_folder,'{}.tsv'.format(feature)),sep='\t',index_col=0,header=None)[feature_col]
+    if barcode_col == 'index':
+        cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None).index
+    else:
+        cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None)[barcode_col]
     value = csr_matrix(mmread(os.path.join(int_folder,'matrix.mtx')))
     if gene_is_index:
         value = value.T

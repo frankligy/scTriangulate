@@ -2153,7 +2153,7 @@ class ScTriangulate(object):
 
 
     def plot_multi_modal_feature_rank(self,cluster,mode='marker_genes',key='pruned',tops=20,
-                                    regex_dict={'adt':r'^AB_','atac':r'^chr\d{1,2}'},save=True,format='.pdf'):
+                                    regex_dict={'adt':r'^AB_','atac':r'^chr[0-9XY]'},save=True,format='.pdf'):
 
         '''
         plot the top features in each clusters, the features are colored by the modality and ranked by the importance.
