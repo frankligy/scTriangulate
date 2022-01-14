@@ -17,8 +17,6 @@ import matplotlib as mpl
 
 from sctriangulate.colors import *
 
-
-
 # for publication ready figure
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
