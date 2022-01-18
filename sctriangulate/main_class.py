@@ -402,15 +402,6 @@ class ScTriangulate(object):
 
         :param compute_metrics_parallel: boolean, whether to parallelize ``compute_metrics`` step. Default: True
         :param scale_sccaf: boolean, whether to first scale the expression matrix before running sccaf score. Default: True
-        :param layer: string, the key to the adata.layers that contain raw count / non-negative count, default is None. See below for details
-
-        .. note::
-
-            The reason why we have ``layer`` parameter is because sometimes the expression values you put to adata.X has been batch-corrected or processed
-            such that the original zero count will be a negative value, which violates the default TFIDF score calculation. So if that's the case, please
-            add a pre-corrected copy of your data, it can be the raw count, log raw count, or whatever, as long as the original zero count is still zero, and
-            insert it to adata.layers dictionary. For instance, if that key is 'raw_count', then here you need to specifiy as layer='raw_count'
-
         :param compute_shapley_parallel: boolean, whether to parallelize ``compute_parallel`` step. Default: True
         :param win_fraction_cutoff: float, between 0-1, the cutoff for function ``add_invalid_by_win_fraction``. Default: 0.25
         :param reassign_abs_thresh: int, the cutoff for minimum number of cells a valid cluster should haves. Default: 10
@@ -2153,7 +2144,7 @@ class ScTriangulate(object):
 
 
     def plot_multi_modal_feature_rank(self,cluster,mode='marker_genes',key='pruned',tops=20,
-                                    regex_dict={'adt':r'^AB_','atac':r'^chr[0-9XY]'},save=True,format='.pdf'):
+                                    regex_dict={'adt':r'^AB_','atac':r'^chr\d{1,2}'},save=True,format='.pdf'):
 
         '''
         plot the top features in each clusters, the features are colored by the modality and ranked by the importance.
@@ -2343,7 +2334,7 @@ class ScTriangulate(object):
             cluster = df.index[i]
             if len(df.iloc[i]['purify']) == 0:
                 ignore_clusters.append(cluster)
-                print(prRed('{} only has {} markers with the regex specified, this cluster will not be plotted'.format(cluster,len(df.iloc[i]['purify']))))
+                print(color_stdout('{} only has {} markers with the regex specified, this cluster will not be plotted'.format(cluster,len(df.iloc[i]['purify'])),'red'))
                 continue
             elif n_features > len(df.iloc[i]['purify']):
                 features = df.iloc[i]['purify']
@@ -2434,7 +2425,7 @@ class ScTriangulate(object):
         plt.colorbar(im,cax=ax4)
     
         if save:
-            plt.savefig(os.path.join(self.dir,'sctri_long_umap.pdf'),bbox_inches='tight')
+            plt.savefig(os.path.join(self.dir,'sctri_long_heatmap.pdf'),bbox_inches='tight')
             plt.close()
         # return that can be imported to morpheus
         export = pd.DataFrame(data=draw_data,columns=p_adata.obs_names,index=p_adata.var_names)

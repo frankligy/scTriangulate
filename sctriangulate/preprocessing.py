@@ -17,6 +17,8 @@ import matplotlib as mpl
 
 from sctriangulate.colors import *
 
+
+
 # for publication ready figure
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
@@ -92,15 +94,13 @@ def large_txt_to_mtx(int_file,out_folder,gene_is_index=True,type_convert_to='int
         mmwrite(os.path.join(out_folder,'matrix.mtx'),csr_matrix(data.values.T))        
 
 
-def mtx_to_adata(int_folder,gene_is_index=True,feature='genes',feature_col='index',barcode_col='index'):  # whether the mtx file is gene * cell
+def mtx_to_adata(int_folder,gene_is_index=True,feature='genes'):  # whether the mtx file is gene * cell
     '''
     convert mtx file to adata in RAM, make sure the X is sparse.
 
     :param int_folder: string, folder where the mtx files are stored.
     :param gene_is_index: boolean, whether the gene is index.
     :param features: string, the name of the feature tsv file, if rna, it will be genes.tsv.
-    :param feature_col: 'index' as index, or a int (which column, python is zero based) to use in your feature.tsv as feature
-    :param barcode_col: 'index' as index, or a int (which column, python is zero based) to use in your barcodes.tsv as barcode
 
     :return: AnnData
 
@@ -110,14 +110,8 @@ def mtx_to_adata(int_folder,gene_is_index=True,feature='genes',feature_col='inde
         mtx_to_adata(int_folder='./data',gene_is_index=False,feature='genes')
 
     '''
-    if feature_col == 'index':
-        gene = pd.read_csv(os.path.join(int_folder,'{}.tsv'.format(feature)),sep='\t',index_col=0,header=None).index
-    else:
-        gene = pd.read_csv(os.path.join(int_folder,'{}.tsv'.format(feature)),sep='\t',index_col=0,header=None)[feature_col]
-    if barcode_col == 'index':
-        cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None).index
-    else:
-        cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None)[barcode_col]
+    gene = pd.read_csv(os.path.join(int_folder,'{}.tsv'.format(feature)),sep='\t',index_col=0,header=None).index
+    cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None).index
     value = csr_matrix(mmread(os.path.join(int_folder,'matrix.mtx')))
     if gene_is_index:
         value = value.T
@@ -189,8 +183,8 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None,kind='d
     Examples::
 
         from sctriangulate.preprocessing import add_annotations
-        add_annotations(adata,inputs='./annotation.txt',cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'])
-        add_annotations(adata,inputs=df,cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'])
+        add_annotations(adata,input='./annotation.txt',cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'])
+        add_annotations(adata,input=df,cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'])
 
     '''
     # means a single file such that one column is barcodes, annotations are within other columns
@@ -279,7 +273,7 @@ def doublet_predict(adata):  # gave RNA count or log matrix
 
 def make_sure_adata_writable(adata,delete=False):
     '''
-    maks sure the adata is able to write to disk, since h5 file is stricted typed, so no mixed dtype is allowd.
+    maks sure the adata is able to write to disk, since h5 file is stricted typed, so on mixed dtype is allowd.
     this function basically is to detect the column of obs/var that are of mixed types, and delete them.
 
     :param adata: Anndata
@@ -333,12 +327,11 @@ def make_sure_adata_writable(adata,delete=False):
     return adata
 
 
-def scanpy_recipe(adata,species='human',is_log=False,resolutions=[1,2,3],modality='rna',umap=True,save=True,pca_n_comps=50,n_top_genes=3000):
+def scanpy_recipe(adata,species='human',is_log=False,resolutions=[1,2,3],modality='rna',umap=True,save=True,pca_n_comps=None,n_top_genes=3000):
     '''
     Main preprocessing function. Run Scanpy normal pipeline to achieve Leiden clustering with various resolutions across multiple modalities.
 
     :param adata: Anndata
-    :param species: string, 'human' or 'mouse'
     :param is_log: boolean, whether the adata.X is count or normalized data.
     :param resolutions: list, what leiden resolutions the users want to obtain.
     :param modality: string, valid values: 'rna','adt','atac', 'binary'[mutation data, TCR data, etc]
@@ -635,23 +628,7 @@ def just_log_norm(adata):
     return adata
 
 def format_find_concat(adata,canonical_chr_only=True,gtf_file='gencode.v38.annotation.gtf',key_added='gene_annotation',**kwargs):
-    '''
-    this is a wrapper function to add nearest genes to your ATAC peaks or bins. For instance, if the peak is chr1:55555-55566,
-    it will be annotated as chr1:55555-55566_gene1;gene2
-
-    :param adata: The anndata, the var_names is the peak/bin, please make sure the format is like chr1:55555-55566
-    :param canonical_chr_only: boolean, default to True, means only contain features on canonical chromosomes. for human, it is chr1-22 and X,Y
-    :param gtf_file: the path to the gtf files, we provide the hg38 on this `google drive link <https://drive.google.com/file/d/11gbJl2-wZr3LbpWaU9RiUAGPebqWYi1z/view?usp=sharing>`_ to download
-    :param key_added: string, the column name where the gene annotation will be inserted to adata.var, default is 'gene_annotation'
-
-    :return adata: Anndata, the gene annotation will be added to var, and the var_name will be suffixed with gene annotation, if canonical_chr_only is True, then only features on canonical 
-                   chromsome will be retained.
-
-    Example::
-
-        adata = format_find_concat(adata)
-    '''
-    adata = reformat_peak(adata,canonical_chr_only=canonical_chr_only)
+    adata= reformat_peak(adata,canonical_chr_only=canonical_chr_only)
     find_genes(adata,gtf_file=gtf_file,key_added=key_added,**kwargs)
     adata.var_names = [name + '_' + gene for name,gene in zip(adata.var_names,adata.var[key_added])]
     return adata

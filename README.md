@@ -12,7 +12,7 @@ Please don't hesitate to reach out to me if you have any questions (contact down
 
 ## Tutorials and Installation
 
-Check our [full documentation and step-by-step tutorials.](https://sctriangulate.readthedocs.io/en/stable/get_started.html)
+Check our [full documentation and step-by-step tutorials.](https://sctriangulate.readthedocs.io/en/latest/get_started.html)
 
 ## Overview
 
