@@ -14,6 +14,9 @@ import anndata as ad
 from scipy.io import mmread,mmwrite
 from scipy.sparse import csr_matrix,issparse
 import matplotlib as mpl
+from functools import reduce
+from sklearn.decomposition import PCA
+import umap
 
 from sctriangulate.colors import *
 
@@ -1350,3 +1353,83 @@ def custom_two_column_sankey(adata,left_annotation,right_annotation,opacity=0.6,
             fig.write_image(os.path.join(outdir,'two_column_sankey_{}_{}_text_{}.pdf'.format(left_annotation,right_annotation,text))) 
         else:
             fig.write_html(os.path.join(outdir,'two_column_sankey_{}_{}_text_{}.html'.format(left_annotation,right_annotation,text)),include_plotlyjs='cdn') 
+
+
+def rna_umap_transform(outdir,ref_exp,ref_group,q_exp_list,q_group_list,q_identifier_list,pca_n_components,umap_min_dist=0.5):
+    '''
+    Take a reference expression matrix (pandas dataframe), and a list of query expression matrics (pandas dataframe),
+    along with a list of query expression identifiers. This function will generate the umap transformation of your reference exp,
+    and make sure to squeeze your each query exp to the same umap transformation.
+
+    :param outdir: the path in which all the results will go
+    :param ref_exp: the pandas dataframe object,index is the features, column is the cell barcodes
+    :param ref_group: the pandas series object, index is the cell barcodes, the value is the clusterlabel information
+    :param q_exp_list: the list of pandas dataframe object, requirement is the same as ref_exp
+    :param q_group_list: the list of pandas series object, requirement is the same as ref_group
+    :param q_identifier_list: the list of string, to denote the name of each query dataset
+    :param pca_n_components: the int, denote the PCs to use for PCA
+    :param umap_min_dist: the float number, denote the min_dist parameter for umap program
+
+    Examples::
+
+        rna_umap_transform(outdir='.',ref_exp=ref_df,ref_group=ref_group_df,q_exp_list=[q1_df],q_group_list=[q1_group_df],q_identifier_list=['q1'],pca_n_components=50)
+    '''
+    # create outdir if not exist
+    if not os.path.exists(outdir):
+        os.mkdir(outdir)
+
+    ref_variable = ref_exp.index.values
+    store_df = []
+    store_variable = []
+    for q_exp in q_exp_list:
+        q_variable = q_exp.index.values
+        store_df.append(q_exp)
+        store_variable.append(q_variable)
+
+    # find common features between ref and all qs.
+    all_variable = copy.deepcopy(store_variable)
+    all_variable.insert(0,ref_variable)
+    common_variable = list(reduce(lambda a,b: set(a).intersection(set(b)),all_variable))
+
+    # subset the exps, also transpose
+    ref_exp_common = ref_exp.loc[common_variable,:].T
+    store_df_common = []
+    for q_exp in store_df:
+        q_exp_common = q_exp.loc[common_variable,:].T
+        store_df_common.append(q_exp_common)
+
+
+    # train pca and umap on ref
+    ref_pca_model = PCA(n_components = pca_n_components).fit(ref_exp_common.values)
+    ref_pca_score = ref_pca_model.transform(ref_exp_common.values)
+    ref_umap_model = umap.UMAP(min_dist=umap_min_dist).fit(ref_pca_score)
+    ref_umap_embed = ref_umap_model.embedding_
+
+    # transform all the querys
+    store_q_umap = []
+    for q_exp_common in store_df_common:
+        q_pca_score = ref_pca_model.transform(q_exp_common.values)
+        q_umap_embed = ref_umap_model.transform(q_pca_score)
+        store_q_umap.append(q_umap_embed)
+
+
+    ref_umap_embed_df = pd.DataFrame(data=ref_umap_embed,index=ref_exp_common.index,columns=['umap_x','umap_y'])
+    ref_umap_embed_df.to_csv(os.path.join(outdir,'ref_umap.txt'),sep='\t')
+    for i,item in enumerate(store_q_umap):
+        q_exp_common = store_df_common[i]
+        item = pd.DataFrame(data=item,index=q_exp_common.index,columns=['umap_x','umap_y'])
+        item.to_csv(os.path.join(outdir,'query_{}_umap.txt'.format(q_identifier_list[i])),sep='\t')
+
+
+    # visualization
+    all_identifier = ['ref'] + q_identifier_list
+    all_exp = [ref_exp_common] + store_df_common
+    all_label_mapping = [group_df.to_dict() for group_df in [ref_group] + q_group_list]
+    all_umap = [ref_umap_embed] + store_q_umap
+    for i,exp,label_map,embed in zip(all_identifier,all_exp,all_label_mapping,all_umap):
+        adata = ad.AnnData(X=exp.values,obs=pd.DataFrame(index=exp.index),var=pd.DataFrame(index=exp.columns))
+        adata.obs['label'] = adata.obs_names.map(label_map).fillna('unknown').values
+        adata.obsm['X_umap'] = embed
+        sc.pl.umap(adata,color='label',legend_loc='on data',legend_fontsize=6)
+        plt.savefig(os.path.join(outdir,'umap_{}.pdf'.format(i)),bbox_inches='tight')
+        plt.close()
