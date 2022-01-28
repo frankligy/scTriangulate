@@ -256,6 +256,10 @@ reformat_peak()
 ~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.reformat_peak
 
+rna_umap_transform()
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.rna_umap_transform
+
 
 Colors Module
 ----------------------

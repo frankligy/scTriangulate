@@ -235,7 +235,7 @@ def add_umap(adata,inputs,mode,cols=None,index_col=0):
     Examples::
 
         from sctriangulate.preprocessing import add_umap
-        add_umap(adata,inputs='umap.txt',mode='pandas_disk',cols=['umap1','umap2],index_col=0)
+        add_umap(adata,inputs='umap.txt',mode='pandas_disk',cols=['umap1','umap2'],index_col=0)
 
     '''
     # make sure cols are [umap_x, umap_y]
