@@ -9,7 +9,7 @@ import networkx as nx
 
 
 # implement spatial additional stability metrics cluster level
-def cluster_level_spatial_stability(adata,key,method,neighbor_key=None,sparse=None,coord_type='generic',n_neighs=6,radius=None,delaunay=False):
+def cluster_level_spatial_stability(adata,key,method,neighbor_key='spatial_distances',sparse=True,coord_type='generic',n_neighs=6,radius=None,delaunay=False):
     if method == 'degree_centrality' or method == 'closeness_centrality' or method == 'average_clustering':
         sq.gr.spatial_neighbors(adata,coord_type=coord_type,n_neighs=n_neighs,radius=radius,delaunay=delaunay)
         sq.gr.centrality_scores(adata, cluster_key=key)
@@ -26,6 +26,7 @@ def cluster_level_spatial_stability(adata,key,method,neighbor_key=None,sparse=No
             v = subdf.iloc[s, :]['stats']
             mapping[c] = v
     elif method == 'assortativity':
+        sq.gr.spatial_neighbors(adata,coord_type=coord_type,n_neighs=n_neighs,radius=radius,delaunay=delaunay)
         adjacency_matrix = adata.obsp[neighbor_key]
         if sparse:
             G = nx.from_scipy_sparse_matrix(adjacency_matrix)
@@ -42,6 +43,7 @@ def cluster_level_spatial_stability(adata,key,method,neighbor_key=None,sparse=No
             self_mix = mix_mat[o, o] / mix_mat[o, :].sum()
             mapping[c] = o
     elif method == 'number_connected_components':
+        sq.gr.spatial_neighbors(adata,coord_type=coord_type,n_neighs=n_neighs,radius=radius,delaunay=delaunay)
         adjacency_matrix = adata.obsp[neighbor_key]
         if sparse:
             G = nx.from_scipy_sparse_matrix(adjacency_matrix)
