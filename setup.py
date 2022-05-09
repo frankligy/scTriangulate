@@ -9,15 +9,12 @@ long_description = '\n\n'.join([open(os.path.join(base_dir,'README.md'),'r').rea
 
 # requires
 requires = [
-    'scanpy ==1.7.2',
+    'squidpy ==1.2.0',
     'gseapy ==0.10.4',
     'scrublet ==0.2.3',
     'yattag',
     'anytree',
-    'mygene ==3.2.2',
-    'numpy ==1.19.5',
-    'pandas ==1.1.5',
-    'leidenalg',
+    'mygene ==3.2.2'
 ]
 
 setup(

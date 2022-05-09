@@ -504,6 +504,15 @@ def scanpy_recipe(adata,species='human',is_log=False,resolutions=[1,2,3],modalit
             resolutions = '_'.join([str(item) for item in resolutions])
             adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,umap))
 
+    elif modality == 'spatial':
+        sc.pp.scale(adata)
+        sc.pp.neighbors(adata)
+        for resolution in resolutions:
+            sc.tl.leiden(adata,resolution=resolution,key_added='sctri_{}_leiden_{}'.format(modality,resolution))
+        if save:
+            resolutions = '_'.join([str(item) for item in resolutions])
+            adata.write('adata_after_scanpy_recipe_{}_{}_umap_{}.h5ad'.format(modality,resolutions,False))        
+
     return adata
     
 
