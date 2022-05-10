@@ -103,7 +103,7 @@ def mtx_to_adata(int_folder,gene_is_index=True,feature='genes',feature_col='inde
 
     :param int_folder: string, folder where the mtx files are stored.
     :param gene_is_index: boolean, whether the gene is index.
-    :param features: string, the name of the feature tsv file, if rna, it will be genes.tsv.
+    :param feature: string, the name of the feature tsv file, if rna, it will be genes.tsv.
     :param feature_col: 'index' as index, or a int (which column, python is zero based) to use in your feature.tsv as feature
     :param barcode_col: 'index' as index, or a int (which column, python is zero based) to use in your barcodes.tsv as barcode
 
@@ -194,8 +194,8 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None,kind='d
     Examples::
 
         from sctriangulate.preprocessing import add_annotations
-        add_annotations(adata,inputs='./annotation.txt',cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'])
-        add_annotations(adata,inputs=df,cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'])
+        add_annotations(adata,inputs='./annotation.txt',cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'],kind='disk')
+        add_annotations(adata,inputs=df,cols_input=['col1','col2'],index_col=0,cols_output=['annotation1','annontation2'],kind='memory')
 
     '''
     # means a single file such that one column is barcodes, annotations are within other columns
@@ -264,12 +264,12 @@ def doublet_predict(adata):  # gave RNA count or log matrix
 
     :param adata: Anndata
 
-    :return: AnnData
+    :return: dict
 
     Examples::
 
         from sctriangulate.preprocessing import doublet_predict
-        new_adata = doublet_predict(old_adata)
+        mapping = doublet_predict(old_adata)
 
     '''
     from scipy.sparse import issparse

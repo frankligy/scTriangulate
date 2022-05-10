@@ -73,7 +73,13 @@ class ScTriangulate(object):
                     specified by dir parameter.
     :param add_metrics: python dictionary. These allows users to add additional metrics to favor or disqualify certain cluster. By default,
                         we add tfidf5 score {'tfidf5':tf_idf5_for_cluster}, remember the value in the dictionary should be the name of a callable, user
-                        can define the callable by themselves.
+                        can define the callable by themselves. If don't want any addded metrics, using empty dict {}.
+    .. note:
+
+        For the callable, the signature should be func(adata,key,**kwargs) -> mapping {cluster1:0.5,cluster2:0.6}, when running the program in
+        lazy_run function, we need to specify added_metrics_kwargs as a list, each element in the list is a dictionary that corresponds to the kwargs
+        that will be passed to each callable. 
+
     :param predict_doublet: boolean or string, whether to predict doublet using scrublet or not. Valid value:
 
         * True: will predict doublet score
@@ -393,7 +399,7 @@ class ScTriangulate(object):
 
             
 
-    def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,layer=None,added_metrics_kwargs=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
+    def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,layer=None,added_metrics_kwargs=[{'species':'human','criterion':2,'layer':None}],compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
                  assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None,
                  nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,heatmap_cmap='viridis',heatmap_regex=None,heatmap_direction='include',heatmap_n_genes=None,
                  heatmap_cbar_scale=None):
@@ -402,6 +408,8 @@ class ScTriangulate(object):
 
         :param compute_metrics_parallel: boolean, whether to parallelize ``compute_metrics`` step. Default: True
         :param scale_sccaf: boolean, whether to first scale the expression matrix before running sccaf score. Default: True
+        :param layer: None or str, the adata layer where the raw count is stored, useful when calculating tfidf score when adata.X has been skewed (no zero value, like totalVI denoised value)
+        :param added_metrics_kwargs: list, see the notes in __init__ function, this is to specify additional arguments that will be passed to each added metrics callable.
         :param compute_shapley_parallel: boolean, whether to parallelize ``compute_parallel`` step. Default: True
         :param win_fraction_cutoff: float, between 0-1, the cutoff for function ``add_invalid_by_win_fraction``. Default: 0.25
         :param reassign_abs_thresh: int, the cutoff for minimum number of cells a valid cluster should haves. Default: 10
