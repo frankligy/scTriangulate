@@ -60,7 +60,9 @@ def cluster_level_spatial_stability(adata,key,method,neighbor_key='spatial_dista
 
 
 # implement spatial cell-level metrics
-def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=None,delaunay=False,sparse=True):
+def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=None,delaunay=False,sparse=True,
+                            library_id=None,img_key='hires_image',sf_key='tissue_hires_scalef',sd_key='spot_diameter_fullres',feature_types=['summary','texture','histogram'],
+                            feature_added_kwargs=[{},{},{}]):
     if mode == 'coordinate':
         spatial_adata = ad.AnnData(X=adata.obsm['spatial'],var=pd.DataFrame(index=['spatial_x','spatial_y']),obs=pd.DataFrame(index=adata.obs_names))
     elif mode == 'graph_importance':
@@ -78,6 +80,20 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
         for k,v in values_dict.items():
             adata_copy.obs[k] = list(v.values())
         spatial_adata = ad.AnnData(adata_copy.obs[list(values_dict.keys())])
+    elif mode == 'tissue_image':
+        # to comply with convention, we assume the img is stored at adata.uns['spatial'][{library_id}]['images'], at certain key slot, dims are (y,x,channels)
+        # we assume scalefactor will be adata.uns['spatial'][{library_id}]['scalefactors'], at certain key slot
+        # we assume spot_diameter will be adata.uns['spatial'][{library_id}]['scalefactors'], at certain key slot
+        # if adding custom function, feature_types = ['summary','texture',histogram','custom'], define one custom function that return all you want
+        # then for feature_added_kwargs = [{},{},{},{'func':customized_func,'arg2':4}]
+        scalef = adata.uns['spatial'][library_id]['scalefactors'][sf_key]
+        img = sq.im.ImageContainer(img=adata.uns['spatial'][library_id]['images'][img_key],layer='image',dims=('y','x','channels'),scale=scalef)
+        adata_copy = adata.copy()
+        features_df_list = []
+        for feature,added_kwargs in zip(feature_types,feature_added_kwargs):
+            sq.im.calculate_image_features(adata_copy, img, features=feature, features_kwargs={feature: added_kwargs},key_added="{}_features".format(feature), show_progress_bar=True)
+            features_df_list.append(adata_copy.obsm["{}_features".format(feature)])
+        spatial_adata = ad.AnnData(pd.concat(features_df_list,axis=1))
     spatial_adata.obsm['spatial'] = adata.obsm['spatial']
     return spatial_adata
 
