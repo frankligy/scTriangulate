@@ -62,7 +62,7 @@ def cluster_level_spatial_stability(adata,key,method,neighbor_key='spatial_dista
 # implement spatial cell-level metrics
 def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=None,delaunay=False,sparse=True,
                             library_id=None,img_key='hires_image',sf_key='tissue_hires_scalef',sd_key='spot_diameter_fullres',feature_types=['summary','texture','histogram'],
-                            feature_added_kwargs=[{},{},{}]):
+                            feature_added_kwargs=[{},{},{}],segmentation_feature=False,segmentation_method='watershed'):
     if mode == 'coordinate':
         spatial_adata = ad.AnnData(X=adata.obsm['spatial'],var=pd.DataFrame(index=['spatial_x','spatial_y']),obs=pd.DataFrame(index=adata.obs_names))
     elif mode == 'graph_importance':
@@ -93,6 +93,10 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
         for feature,added_kwargs in zip(feature_types,feature_added_kwargs):
             sq.im.calculate_image_features(adata_copy, img, features=feature, features_kwargs={feature: added_kwargs},key_added="{}_features".format(feature), show_progress_bar=True)
             features_df_list.append(adata_copy.obsm["{}_features".format(feature)])
+        if segmentation_feature:
+            sq.im.segment(img=img, layer="image", layer_added="segmented", method=segmentation_method)
+            sq.im.calculate_image_features(adata_copy,img,layer="image",features="segmentation",key_added="segmentation_features",features_kwargs={"segmentation": {"label_layer": "segmented"]}},mask_circle=True)
+            features_df_list.append(adata_copy.obsm['segmentation_features'])
         spatial_adata = ad.AnnData(pd.concat(features_df_list,axis=1))
     spatial_adata.obsm['spatial'] = adata.obsm['spatial']
     return spatial_adata
