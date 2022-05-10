@@ -2423,7 +2423,6 @@ class ScTriangulate(object):
         # add white vline
         s,e = ax1.get_xlim()
         vline_coords = tmp_cum * (e-s) + s
-        print(vline_coords)
         for x in vline_coords:
             ax1.axvline(x,ymin=0,ymax=1,color='white',linewidth=0.01) 
         # colorbar
@@ -2433,7 +2432,7 @@ class ScTriangulate(object):
         plt.colorbar(im,cax=ax4)
     
         if save:
-            plt.savefig(os.path.join(self.dir,'sctri_long_heatmap.pdf'),bbox_inches='tight')
+            plt.savefig(os.path.join(self.dir,'sctri_long_heatmap_{}.pdf'.format(key)),bbox_inches='tight')
             plt.close()
         # return that can be imported to morpheus
         export = pd.DataFrame(data=draw_data,columns=p_adata.obs_names,index=p_adata.var_names)
