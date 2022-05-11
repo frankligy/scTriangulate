@@ -157,6 +157,31 @@ def mtx_to_large_txt(int_folder,out_file,gene_is_index=False):
         data = pd.DataFrame(data=value.T,index=cell,columns=gene)
     data.to_csv(out_file,sep='\t',chunksize=1000)
 
+
+def adata_to_mtx(adata,gene_is_index=True,var_column=None,obs_column=None,outdir='data'):
+    # create folder if not exist
+    if not os.path.exists(outdir):
+        os.mkdir(outdir)
+    # write genes.tsv
+    if var_column is None:
+        var = adata.var_names.to_series()
+    else:
+        var = adata.var[var_column]
+    var.to_csv(os.path.join(outdir,'genes.tsv'),sep='\t',header=None,index=None)
+    # write barcodes.tsv
+    if obs_column is None:
+        obs = adata.obs_names.to_series()
+    else:
+        obs = adata.obs[obs_column]
+    obs.to_csv(os.path.join(outdir,'barcodes.tsv'),sep='\t',header=None,index=None)
+    # write matrix.mtx
+    if not gene_is_index:
+        mmwrite(os.path.join(outdir,'matrix.mtx'),make_sure_mat_sparse(adata.X))
+    else:
+        mmwrite(os.path.join(outdir,'matrix.mtx'),make_sure_mat_sparse(adata.X).transpose())
+
+
+
 def add_azimuth(adata,result,name='predicted.celltype.l2'):
     '''
     a convenient function if you have azimuth predicted labels in hand, and want to add the label to the adata.

@@ -95,7 +95,7 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
             features_df_list.append(adata_copy.obsm["{}_features".format(feature)])
         if segmentation_feature:
             sq.im.segment(img=img, layer="image", layer_added="segmented", method=segmentation_method)
-            sq.im.calculate_image_features(adata_copy,img,layer="image",features="segmentation",key_added="segmentation_features",features_kwargs={"segmentation": {"label_layer": "segmented"]}},mask_circle=True)
+            sq.im.calculate_image_features(adata_copy,img,layer="image",features="segmentation",key_added="segmentation_features",features_kwargs={"segmentation": {"label_layer": "segmented"}},mask_circle=True)
             features_df_list.append(adata_copy.obsm['segmentation_features'])
         spatial_adata = ad.AnnData(pd.concat(features_df_list,axis=1))
     spatial_adata.obsm['spatial'] = adata.obsm['spatial']
