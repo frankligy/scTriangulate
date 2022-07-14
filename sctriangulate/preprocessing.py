@@ -647,26 +647,34 @@ def nca_embedding(adata,nca_n_components,label,method,max_iter=50,plot=True,save
 
 
 
-def umap_dual_view_save(adata,cols):
+def umap_dual_view_save(adata,cols,method='umap'):
     '''
     generate a pdf file with two umap up and down, one is with legend on side, another is with legend on data.
     More importantly, this allows you to generate multiple columns iteratively.
 
     :param adata: Anndata
     :param cols: list, all columns from which we want to draw umap.
+    :param method: string, either umap or tsne
 
     Examples::
 
         from sctriangulate.preprocessing import umap_dual_view_save
         umap_dual_view_save(adata,cols=['annotation1','annotation2','total_counts'])
     '''
-    for col in cols:
-        fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
-        sc.pl.umap(adata,color=col,frameon=False,ax=ax[0])
-        sc.pl.umap(adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
-        plt.savefig('./umap_dual_view_{}.pdf'.format(col),bbox_inches='tight')
-        plt.close()
-
+    if method == 'umap':
+        for col in cols:
+            fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
+            sc.pl.umap(adata,color=col,frameon=False,ax=ax[0])
+            sc.pl.umap(adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
+            plt.savefig('./umap_dual_view_{}.pdf'.format(col),bbox_inches='tight')
+            plt.close()
+    elif method == 'tsne':
+        for col in cols:
+            fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
+            sc.pl.tsne(adata,color=col,frameon=False,ax=ax[0])
+            sc.pl.tsne(adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
+            plt.savefig('./tsne_dual_view_{}.pdf'.format(col),bbox_inches='tight')
+            plt.close()      
 
 def just_log_norm(adata):
     sc.pp.normalize_total(adata,target_sum=1e4)
