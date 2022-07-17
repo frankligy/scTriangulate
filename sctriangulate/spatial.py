@@ -20,13 +20,14 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,spa
     :param mtx_folder: string, if mode_count == 'mtx', specify the folder name
     :param spatial_folder: string, if mode_spatial == 'visium', specifiy the folder name
     :param spatial_library_id: string, when necessary, specify the library_id for the spatial slide
-    :param **kwargs: optional keyword arguments will be passed to mtx_to_adata
+    :param kwargs: optional keyword arguments will be passed to mtx_to_adata
 
     Examples::
-            id_ = '1160920F'
-            adata_spatial = read_spatial_data(mtx_folder='filtered_count_matrices/{}_filtered_count_matrix'.format(id_),
-                                              spatial_folder='filtered_count_matrices/{}_filtered_count_matrix/{}_spatial'.format(id_,id_),
-                                              spatial_library_id=id_,feature='features.tsv')
+
+        id_ = '1160920F'
+        adata_spatial = read_spatial_data(mtx_folder='filtered_count_matrices/{}_filtered_count_matrix'.format(id_),
+                                          spatial_folder='filtered_count_matrices/{}_filtered_count_matrix/{}_spatial'.format(id_,id_),
+                                          spatial_library_id=id_,feature='features.tsv')
 
     '''
     if mode_count == 'mtx':
@@ -150,9 +151,9 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
     :param adata: the adata to extract features from
     :param mode: string, support:
 
-        * coordinate
-        * graph_importance
-        * tissue_images
+        * **coordinate**: feature derived from pure spatial coordinates
+        * **graph_importance**: feature derived from the spatial neighbor graph 
+        * **tissue_images**: feature derived from assciated tissue images (H&E, fluorescent)
 
     :param coord_type: string, default is generic, passed to sq.gr.spatial_neighbors()
     :param n_neighs: int, default is 6, passed to sq.gr.spatial_neighbors()
