@@ -183,6 +183,9 @@ mtx_to_large_txt()
 ~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.mtx_to_large_txt
 
+adata_to_mtx()
+~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.adata_to_mtx
 
 add_azimuth()
 ~~~~~~~~~~~~~~~~

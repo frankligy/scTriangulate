@@ -97,15 +97,17 @@ def large_txt_to_mtx(int_file,out_folder,gene_is_index=True,type_convert_to='int
         mmwrite(os.path.join(out_folder,'matrix.mtx'),csr_matrix(data.values.T))        
 
 
-def mtx_to_adata(int_folder,gene_is_index=True,feature='genes',feature_col='index',barcode_col='index'):  # whether the mtx file is gene * cell
+def mtx_to_adata(int_folder,gene_is_index=True,feature='genes.tsv',feature_col='index',barcode='barcodes.tsv',barcode_col='index',matrix='matrix.mtx'):  # whether the mtx file is gene * cell
     '''
     convert mtx file to adata in RAM, make sure the X is sparse.
 
     :param int_folder: string, folder where the mtx files are stored.
     :param gene_is_index: boolean, whether the gene is index.
-    :param feature: string, the name of the feature tsv file, if rna, it will be genes.tsv.
+    :param feature: string, the name of the feature file, default for rna is genes.tsv
     :param feature_col: 'index' as index, or a int (which column, python is zero based) to use in your feature.tsv as feature
+    :param barcode: string, the name of the barcode file, default is barcodes.tsv
     :param barcode_col: 'index' as index, or a int (which column, python is zero based) to use in your barcodes.tsv as barcode
+    :param matrix: string, the name of the sparse matrix
 
     :return: AnnData
 
@@ -116,14 +118,14 @@ def mtx_to_adata(int_folder,gene_is_index=True,feature='genes',feature_col='inde
 
     '''
     if feature_col == 'index':
-        gene = pd.read_csv(os.path.join(int_folder,'{}.tsv'.format(feature)),sep='\t',index_col=0,header=None).index
+        gene = pd.read_csv(os.path.join(int_folder,feature),sep='\t',index_col=0,header=None).index
     else:
-        gene = pd.read_csv(os.path.join(int_folder,'{}.tsv'.format(feature)),sep='\t',index_col=0,header=None)[feature_col]
+        gene = pd.read_csv(os.path.join(int_folder,feature),sep='\t',index_col=0,header=None)[feature_col]
     if barcode_col == 'index':
-        cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None).index
+        cell = pd.read_csv(os.path.join(int_folder,barcode),sep='\t',index_col=0,header=None).index
     else:
-        cell = pd.read_csv(os.path.join(int_folder,'barcodes.tsv'),sep='\t',index_col=0,header=None)[barcode_col]
-    value = csr_matrix(mmread(os.path.join(int_folder,'matrix.mtx')))
+        cell = pd.read_csv(os.path.join(int_folder,barcode),sep='\t',index_col=0,header=None)[barcode_col]
+    value = csr_matrix(mmread(os.path.join(int_folder,matrix)))
     if gene_is_index:
         value = value.T
         adata = ad.AnnData(X=value,obs=pd.DataFrame(index=cell),var=pd.DataFrame(index=gene))
@@ -159,6 +161,19 @@ def mtx_to_large_txt(int_folder,out_file,gene_is_index=False):
 
 
 def adata_to_mtx(adata,gene_is_index=True,var_column=None,obs_column=None,outdir='data'):
+    '''
+    write a adata to mtx file
+
+    :param adata: AnnData, the adata to convert
+    :param gene_is_index: boolean, for the resultant mtx, will gene be the index or feature is the index
+    :param var_column: list, the var columns to write the genes.tsv, None will write all available columns
+    :param obs_column: list, the obs columns to write the barcodes.tsv, None will write all available columns
+    :param outdir: string, the name of the mtx folder, default is data
+
+    Example::
+
+        adata_to_mtx(adata,True,None,None,'data')
+    '''
     # create folder if not exist
     if not os.path.exists(outdir):
         os.mkdir(outdir)
@@ -204,7 +219,7 @@ def add_azimuth(adata,result,name='predicted.celltype.l2'):
     adata.obs['prediction_score'] = adata.obs_names.map(azimuth_prediction).values
     adata.obs['mapping_score'] = adata.obs_names.map(azimuth_mapping).values
 
-def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None,kind='disk'):
+def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None,sep='\t',kind='disk'):
     '''
     Adding annotations from external sources to the adata
 
@@ -213,6 +228,7 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None,kind='d
     :param cols_input: list, what columns the users want to transfer to the adata.
     :param index_col: int, for the input, which column will serve as the index column
     :param cols_output: list, corresponding to the cols_input, how these columns will be named in the adata.obs columns
+    :param sep: string, default is tab
     :param kind: a string, either 'disk', or 'memory', disk means the input is the path to the text file, 'memory' means the input is the
                 variable name in the RAM that represents the dataframe
 
@@ -225,7 +241,7 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None,kind='d
     '''
     # means a single file such that one column is barcodes, annotations are within other columns
     if kind == 'disk':
-        annotations = pd.read_csv(inputs,sep='\t',index_col=index_col).loc[:,cols_input]
+        annotations = pd.read_csv(inputs,sep=sep,index_col=index_col).loc[:,cols_input]
     elif kind == 'memory':   # index_col will be ignored
         annotations = inputs.loc[:,cols_input]
     mappings = []
