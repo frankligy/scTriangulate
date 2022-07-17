@@ -307,5 +307,20 @@ generate_gradient()
 ~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.colors.generate_gradient
 
+Spatial (Experimental)
+---------------------------
+
+read_spatial_data
+~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.spatial.read_spatial_data
+
+cluster_level_spatial_stability
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.spatial.cluster_level_spatial_stability
+
+create_spatial_features
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.spatial.create_spatial_features
+
 
 

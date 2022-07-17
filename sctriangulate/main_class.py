@@ -657,7 +657,7 @@ class ScTriangulate(object):
         Display the hierarchy of suggestive sub-clusterings, see the example results down the page.
 
         :param ref_col: string, the annotation/column name in adata.obs which we want to inspect how it can be sub-divided
-        :param query_col: string, either 'raw' or 'pruned'
+        :param query_col: string, any cluster annotation column name
         :param save: boolean, whether to save it to a file or stdout. Default: True
 
         Examples::
