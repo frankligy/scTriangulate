@@ -19,7 +19,7 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,spa
     :param mode_spatial: string, how the spatial images and associated files are present, it can be in visium format, or others
     :param mtx_folder: string, if mode_count == 'mtx', specify the folder name
     :param spatial_folder: string, if mode_spatial == 'visium', specifiy the folder name
-    :param spatial_library_id, string, when necessary, specify the library_id for the spatial slide
+    :param spatial_library_id: string, when necessary, specify the library_id for the spatial slide
     :param **kwargs: optional keyword arguments will be passed to mtx_to_adata
 
     Examples::
@@ -69,12 +69,12 @@ def cluster_level_spatial_stability(adata,key,method,neighbor_key='spatial_dista
     :param key: string, the column in obs to derive cluster-level stability score
     :param method: string, which score, support tbe following:
 
-                   # degree_centrality
-                   # closeness_centrality
-                   # average_clustering 
-                   # spread
-                   # assortativity
-                   # number_connected_components
+                   * degree_centrality
+                   * closeness_centrality
+                   * average_clustering 
+                   * spread
+                   * assortativity
+                   * number_connected_components
 
     :param neighbor_key: string, which obsm key to use for neighbor adjancency, default is spatial_distances
     :param sparse: boolean, whether the adjancency matrix is sparse or not, default is True
@@ -84,6 +84,7 @@ def cluster_level_spatial_stability(adata,key,method,neighbor_key='spatial_dista
     :param delaunay: boolean, default is False, whether to use delaunay for spatial graph, passed to sq.gr.spatial_neighbors()
 
     Examples::
+
         cluster_level_spatial_stability(adata,'cluster',method='centrality')
         cluster_level_spatial_stability(adata,'cluster',method='spread')
         cluster_level_spatial_stability(adata,'cluster',method='assortativity',neighbor_key='spatial_distances',sparse=True)
@@ -149,9 +150,9 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
     :param adata: the adata to extract features from
     :param mode: string, support:
 
-        # coordinate
-        # graph_importance
-        # tissue_images
+        * coordinate
+        * graph_importance
+        * tissue_images
 
     :param coord_type: string, default is generic, passed to sq.gr.spatial_neighbors()
     :param n_neighs: int, default is 6, passed to sq.gr.spatial_neighbors()
