@@ -1,0 +1,13 @@
+sphinx==4.1.1
+sphinx_rtd_theme==0.5.2
+readthedocs-sphinx-search==0.1.0rc3
+sphinx-autoapi==1.8.4
+llvmlite==0.37.0
+numba==0.54.1
+squidpy==1.2.0
+gseapy==0.10.4'
+scrublet==0.2.3'
+yattag
+anytree
+mygene==3.2.2
+
