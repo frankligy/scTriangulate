@@ -22,6 +22,7 @@ mpl.rcParams['font.family'] = 'Arial'
 def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,spatial_folder=None,spatial_library_id=None,**kwargs):
     '''
     read the spatial data into the memory as adata
+    
     :param mode_count: string, how the spatial count data is present, it can be a folder containing mtx file, or h5 file, or others
     :param mode_spatial: string, how the spatial images and associated files are present, it can be in visium format, or others
     :param mtx_folder: string, if mode_count == 'mtx', specify the folder name
