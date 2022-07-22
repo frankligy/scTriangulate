@@ -22,20 +22,19 @@ mpl.rcParams['font.family'] = 'Arial'
 def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,spatial_folder=None,spatial_library_id=None,**kwargs):
     '''
     read the spatial data into the memory as adata
-
     :param mode_count: string, how the spatial count data is present, it can be a folder containing mtx file, or h5 file, or others
     :param mode_spatial: string, how the spatial images and associated files are present, it can be in visium format, or others
     :param mtx_folder: string, if mode_count == 'mtx', specify the folder name
     :param spatial_folder: string, if mode_spatial == 'visium', specifiy the folder name
-    :param spatial_library_id, string, when necessary, specify the library_id for the spatial slide
-    :param **kwargs: optional keyword arguments will be passed to mtx_to_adata
+    :param spatial_library_id: string, when necessary, specify the library_id for the spatial slide
+    :param kwargs: optional keyword arguments will be passed to mtx_to_adata
 
     Examples::
-            id_ = '1160920F'
-            adata_spatial = read_spatial_data(mtx_folder='filtered_count_matrices/{}_filtered_count_matrix'.format(id_),
-                                              spatial_folder='filtered_count_matrices/{}_filtered_count_matrix/{}_spatial'.format(id_,id_),
-                                              spatial_library_id=id_,feature='features.tsv')
 
+        id_ = '1160920F'
+        adata_spatial = read_spatial_data(mtx_folder='filtered_count_matrices/{}_filtered_count_matrix'.format(id_),
+                                          spatial_folder='filtered_count_matrices/{}_filtered_count_matrix/{}_spatial'.format(id_,id_),
+                                          spatial_library_id=id_,feature='features.tsv')
     '''
     if mode_count == 'mtx':
         adata_spatial = mtx_to_adata(int_folder=mtx_folder,**kwargs)
@@ -72,17 +71,16 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,spa
 def cluster_level_spatial_stability(adata,key,method,neighbor_key='spatial_distances',sparse=True,coord_type='generic',n_neighs=6,radius=None,delaunay=False):
     '''
     derive optional stability score in the context of spatial transcriptomics
-
     :param adata: the Anndata
     :param key: string, the column in obs to derive cluster-level stability score
     :param method: string, which score, support tbe following:
 
-                   # degree_centrality
-                   # closeness_centrality
-                   # average_clustering 
-                   # spread
-                   # assortativity
-                   # number_connected_components
+                * degree_centrality
+                * closeness_centrality
+                * average_clustering 
+                * spread
+                * assortativity
+                * number_connected_components
 
     :param neighbor_key: string, which obsm key to use for neighbor adjancency, default is spatial_distances
     :param sparse: boolean, whether the adjancency matrix is sparse or not, default is True
@@ -92,11 +90,11 @@ def cluster_level_spatial_stability(adata,key,method,neighbor_key='spatial_dista
     :param delaunay: boolean, default is False, whether to use delaunay for spatial graph, passed to sq.gr.spatial_neighbors()
 
     Examples::
+    
         cluster_level_spatial_stability(adata,'cluster',method='centrality')
         cluster_level_spatial_stability(adata,'cluster',method='spread')
         cluster_level_spatial_stability(adata,'cluster',method='assortativity',neighbor_key='spatial_distances',sparse=True)
         cluster_level_spatial_stability(adata,'cluster',method='number_connected_components',neighbor_key='spatial_distances',sparse=True)
-
     '''
     if method == 'degree_centrality' or method == 'closeness_centrality' or method == 'average_clustering':
         sq.gr.spatial_neighbors(adata,coord_type=coord_type,n_neighs=n_neighs,radius=radius,delaunay=delaunay)
@@ -153,13 +151,12 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
                             feature_added_kwargs=[{},{},{}],segmentation_feature=False,segmentation_method='watershed'):
     '''
     Extract spatial features (including spatial coordinates, spatial neighbor graph, spatial image)
-
     :param adata: the adata to extract features from
     :param mode: string, support:
 
-        # coordinate
-        # graph_importance
-        # tissue_images
+        * **coordinate**: feature derived from pure spatial coordinates
+        * **graph_importance**: feature derived from the spatial neighbor graph 
+        * **tissue_images**: feature derived from assciated tissue images (H&E, fluorescent)
 
     :param coord_type: string, default is generic, passed to sq.gr.spatial_neighbors()
     :param n_neighs: int, default is 6, passed to sq.gr.spatial_neighbors()
@@ -173,7 +170,6 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
     :param feature_added_kwargs: nested list, each element is a dict, containing additional keyword arguments being passed to each feature function in feature_types
     :param segmentation_feature: boolean, whether to extract segmentation feature or not, default is False
     :param segmentation_method: string the segmentation method to use, default is 'watershed'
-
     '''
     if mode == 'coordinate':
         spatial_adata = ad.AnnData(X=adata.obsm['spatial'],var=pd.DataFrame(index=['spatial_x','spatial_y']),obs=pd.DataFrame(index=adata.obs_names))
@@ -217,10 +213,10 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
 def multicellular_spatial_structure(adata_spatial,coord_type='grid',n_neighrs=6,n_rings=1,spatial_community_resolution=8,spatial_community_min_cells=10,
                                     plot=True,outdir='.',mode='spot_cell_type_proportion'):
     '''
-    The most important analysis is to define `spatial program`, meaning spatial region that are proximal and somehow transcriptomically similar. This function
+    The most important analysis is to define **spatial program**, meaning spatial region that are proximal and somehow transcriptomically similar. This function
     provide a very flexible way to define `spatial program` by first derive spatial community solely based on spatial coordinates, then we merge spatial community into
     spatial cluster/structure such that spatial communities sharing similar gene expression or cell phenotype profile will be clustered tegether, the resultant spatial cluster
-    represents the biologically meaningful multicellular spatial structure, it is inspired by `this paper <https://www.nature.com/articles/s41588-022-01041-y>`_.
+    represents the biologically meaningful multicellular spatial structure, it is inspired by Figure 4 in `this paper <https://www.nature.com/articles/s41588-022-01041-y>`_.
 
     :param adata_spatial: the Anndata with spatial coordinate
     :param coord_type: either grid or generic, passed to sq.gr.spatial_neighbors function
