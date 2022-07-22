@@ -322,5 +322,9 @@ create_spatial_features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.spatial.create_spatial_features
 
+multicellular_spatial_structure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.spatial.multicellular_spatial_structure
+
 
 

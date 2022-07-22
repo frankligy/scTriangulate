@@ -8,6 +8,14 @@ import networkx as nx
 from .preprocessing import *
 from PIL import Image
 from json import load
+from matplotlib.pyplot as plt
+import matplotlib as mpl
+from tqdm import tqdm
+
+# for publication ready figure
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'Arial'
 
 
 # spatial IO
@@ -19,15 +27,14 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,spa
     :param mode_spatial: string, how the spatial images and associated files are present, it can be in visium format, or others
     :param mtx_folder: string, if mode_count == 'mtx', specify the folder name
     :param spatial_folder: string, if mode_spatial == 'visium', specifiy the folder name
-    :param spatial_library_id: string, when necessary, specify the library_id for the spatial slide
-    :param kwargs: optional keyword arguments will be passed to mtx_to_adata
+    :param spatial_library_id, string, when necessary, specify the library_id for the spatial slide
+    :param **kwargs: optional keyword arguments will be passed to mtx_to_adata
 
     Examples::
-
-        id_ = '1160920F'
-        adata_spatial = read_spatial_data(mtx_folder='filtered_count_matrices/{}_filtered_count_matrix'.format(id_),
-                                          spatial_folder='filtered_count_matrices/{}_filtered_count_matrix/{}_spatial'.format(id_,id_),
-                                          spatial_library_id=id_,feature='features.tsv')
+            id_ = '1160920F'
+            adata_spatial = read_spatial_data(mtx_folder='filtered_count_matrices/{}_filtered_count_matrix'.format(id_),
+                                              spatial_folder='filtered_count_matrices/{}_filtered_count_matrix/{}_spatial'.format(id_,id_),
+                                              spatial_library_id=id_,feature='features.tsv')
 
     '''
     if mode_count == 'mtx':
@@ -70,12 +77,12 @@ def cluster_level_spatial_stability(adata,key,method,neighbor_key='spatial_dista
     :param key: string, the column in obs to derive cluster-level stability score
     :param method: string, which score, support tbe following:
 
-                   * degree_centrality
-                   * closeness_centrality
-                   * average_clustering 
-                   * spread
-                   * assortativity
-                   * number_connected_components
+                   # degree_centrality
+                   # closeness_centrality
+                   # average_clustering 
+                   # spread
+                   # assortativity
+                   # number_connected_components
 
     :param neighbor_key: string, which obsm key to use for neighbor adjancency, default is spatial_distances
     :param sparse: boolean, whether the adjancency matrix is sparse or not, default is True
@@ -85,7 +92,6 @@ def cluster_level_spatial_stability(adata,key,method,neighbor_key='spatial_dista
     :param delaunay: boolean, default is False, whether to use delaunay for spatial graph, passed to sq.gr.spatial_neighbors()
 
     Examples::
-
         cluster_level_spatial_stability(adata,'cluster',method='centrality')
         cluster_level_spatial_stability(adata,'cluster',method='spread')
         cluster_level_spatial_stability(adata,'cluster',method='assortativity',neighbor_key='spatial_distances',sparse=True)
@@ -151,9 +157,9 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
     :param adata: the adata to extract features from
     :param mode: string, support:
 
-        * **coordinate**: feature derived from pure spatial coordinates
-        * **graph_importance**: feature derived from the spatial neighbor graph 
-        * **tissue_images**: feature derived from assciated tissue images (H&E, fluorescent)
+        # coordinate
+        # graph_importance
+        # tissue_images
 
     :param coord_type: string, default is generic, passed to sq.gr.spatial_neighbors()
     :param n_neighs: int, default is 6, passed to sq.gr.spatial_neighbors()
@@ -208,4 +214,83 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
     return spatial_adata
 
 
+def multicellular_spatial_structure(adata_spatial,coord_type='grid',n_neighrs=6,n_rings=1,spatial_community_resolution=8,spatial_community_min_cells=10,
+                                    plot=True,outdir='.',mode='spot_cell_type_proportion'):
+    '''
+    The most important analysis is to define `spatial program`, meaning spatial region that are proximal and somehow transcriptomically similar. This function
+    provide a very flexible way to define `spatial program` by first derive spatial community solely based on spatial coordinates, then we merge spatial community into
+    spatial cluster/structure such that spatial communities sharing similar gene expression or cell phenotype profile will be clustered tegether, the resultant spatial cluster
+    represents the biologically meaningful multicellular spatial structure, it is inspired by `this paper <https://www.nature.com/articles/s41588-022-01041-y>`_.
+
+    :param adata_spatial: the Anndata with spatial coordinate
+    :param coord_type: either grid or generic, passed to sq.gr.spatial_neighbors function
+    :param n_neighrs: int, default is 6, passed to sq.gr.spatial_neighbors function
+    :param n_rings: int, default is 1, passed to sq.gr.spatial_neighbors function
+    :param spatial_community_resolution: float, default is 8, passed to nx.algorithms.community.greedy_modularity_communities, high value means smaller clusters
+    :param spatial_community_min_cells: int, the minimum number of cells/spots that a spatial community needs to have
+    :param plot: boolean, whether to plot spatial community and spatial cluster
+    :param outdir: string, the path to the output dir
+    :param mode: string, which transcriptomical profile to consider, it can be 'spot_cell_type_proportion' coming out of spatial deconvolution methods or spot gene expression
+
+    Examples::
+
+        multicellular_spatial_structure(adata_spatial,outdir='result')
+
+    '''
+    adata_spatial = adata.spatial.copy()
+    # step1: build spatial community
+    sq.gr.spatial_neighbors(adata_spatial,coord_type=coord_type,n_neighs=n_neighbors,n_rings=n_rings)
+    G = nx.from_scipy_sparse_matrix(adata_spatial.obsp['spatial_distances'])
+    index2barcode = pd.Series(index=list(G.nodes()),data=adata_spatial.obs_names.tolist()).to_dict()
+    partitions = nx.algorithms.community.greedy_modularity_communities(G,resolution=spatial_community_resolution)
+    mapping = {}
+    for i,par in enumerate(partitions):
+        if len(par) >= spatial_community_min_cells:
+            for node in par:
+                mapping[index2barcode[node]] = i
+    adata_spatial.obs['community'] = adata_spatial.obs_names.map(mapping).fillna('unknown').values
+    adata_spatial = adata_spatial[adata_spatial.obs['community']!='unknown',:].copy()
+    adata_spatial.obs['community'] = adata_spatial.obs['community'].astype('int').astype('category')
+    if plot:
+        sc.pl.spatial(adata_spatial,color='community')
+        plt.savefig(os.path.join(outdir,'spatial_community_plot.pdf'))
+        plt.close()
+    # step2: integrate other information and cluster communities
+    if mode == 'spot_cell_type_proportion':
+        # assuming the cell type proportion for each spot is in adata.X
+        decon = adata.spatial.to_df()
+        interactions = list(product(decon.columns.tolist(),decon.columns.tolist()))
+        data_list = []
+        for i,par in tqdm(enumerate(partitions),total=len(partitions)):
+            if len(par) >= spatial_community_min_cells:
+                G_sub = G.subgraph(nodes=par).copy()
+                nodes = [index2barcode[node] for node in G_sub.nodes()]
+                feature = []
+                for inter in interactions:
+                    v = 0
+                    tmp = adata_decon[nodes,inter]
+                    for edge in G_sub.edges():
+                        c1 = index2barcode[edge[0]]
+                        c2 = index2barcode[edge[1]]
+                        v += tmp[[c1,c2],:].X.mean()
+                    v /= len(G_sub.edges())
+                    feature.append(v)
+                data_list.append(pd.Series(index=interactions,data=feature,name=i))
+        df_subgraph = pd.concat(data_list,axis=1).T.astype('float')
+        model = AgglomerativeClustering(n_clusters=10)
+        model.fit(df_subgraph.values)
+        mi_r = pd.MultiIndex.from_arrays([['subgraph_{}'.format(i) for i in df_subgraph.index],['cluster_{}'.format(i) for i in model.labels_]])
+        mi_c = pd.MultiIndex.from_tuples(list(df_subgraph.columns))
+        df_subgraph.index = mi_r
+        df_subgraph.columns = mi_c
+        df_subgraph.to_csv(os.path.join(outdir,'df_subgraph.txt'),sep='\t')
+        if plot:
+            mapping2 = pd.Series(index=df_subgraph.index,data=model.labels_).to_dict()
+            adata_spatial.obs['cluster'] = adata_spatial.obs['community'].map(mapping2).values
+            adata_spatial.obs['cluster'] = adata_spatial.obs['cluster'].astype('category')
+            sc.pl.spatial(adata_decon,color='cluster')
+            plt.savefig(os.path.join(outdir,'spatial_structure_plot.pdf'))
+            plt.close()            
+
+        return df_subgraph
 

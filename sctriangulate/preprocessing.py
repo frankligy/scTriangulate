@@ -258,7 +258,7 @@ def add_annotations(adata,inputs,cols_input,index_col=0,cols_output=None,sep='\t
             adata.obs[cols_output[i]] = adata.obs[cols_output[i]].astype('str').astype('category')
 
 
-def add_umap(adata,inputs,mode,cols=None,index_col=0):
+def add_umap(adata,inputs,mode,cols=None,index_col=0,key='X_umap'):
     '''
     if umap embedding is pre-computed, add it back to adata object.
 
@@ -272,6 +272,7 @@ def add_umap(adata,inputs,mode,cols=None,index_col=0):
 
     :param cols: list, what columns contain umap embeddings
     :param index_col: int, which column will serve as the index column.
+    :param key: string, the key name to add to obsm
 
     Examples::
 
@@ -286,7 +287,7 @@ def add_umap(adata,inputs,mode,cols=None,index_col=0):
         umap_y = df[cols[1]].to_dict()
         adata.obs['umap_x'] = adata.obs_names.map(umap_x).values
         adata.obs['umap_y'] = adata.obs_names.map(umap_y).values
-        adata.obsm['X_umap'] = adata.obs.loc[:,['umap_x','umap_y']].values
+        adata.obsm[key] = adata.obs.loc[:,['umap_x','umap_y']].values
         adata.obs.drop(columns=['umap_x','umap_y'],inplace=True)
     elif mode == 'pandas_memory':
         df = inputs
@@ -294,10 +295,10 @@ def add_umap(adata,inputs,mode,cols=None,index_col=0):
         umap_y = df[cols[1]].to_dict()
         adata.obs['umap_x'] = adata.obs_names.map(umap_x).values
         adata.obs['umap_y'] = adata.obs_names.map(umap_y).values
-        adata.obsm['X_umap'] = adata.obs.loc[:,['umap_x','umap_y']].values
+        adata.obsm[key] = adata.obs.loc[:,['umap_x','umap_y']].values
         adata.obs.drop(columns=['umap_x','umap_y'],inplace=True)
     elif mode == 'numpy':  # assume the order is correct
-        adata.obsm['X_umap'] = inputs
+        adata.obsm[key] = inputs
 
 def doublet_predict(adata):  # gave RNA count or log matrix
     '''
