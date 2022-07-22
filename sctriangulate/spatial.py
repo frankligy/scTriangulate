@@ -8,7 +8,7 @@ import networkx as nx
 from .preprocessing import *
 from PIL import Image
 from json import load
-from matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import matplotlib as mpl
 from tqdm import tqdm
 
