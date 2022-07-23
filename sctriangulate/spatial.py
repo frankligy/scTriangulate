@@ -72,6 +72,7 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,spa
 def cluster_level_spatial_stability(adata,key,method,neighbor_key='spatial_distances',sparse=True,coord_type='generic',n_neighs=6,radius=None,delaunay=False):
     '''
     derive optional stability score in the context of spatial transcriptomics
+
     :param adata: the Anndata
     :param key: string, the column in obs to derive cluster-level stability score
     :param method: string, which score, support tbe following:
@@ -152,6 +153,7 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
                             feature_added_kwargs=[{},{},{}],segmentation_feature=False,segmentation_method='watershed'):
     '''
     Extract spatial features (including spatial coordinates, spatial neighbor graph, spatial image)
+    
     :param adata: the adata to extract features from
     :param mode: string, support:
 
