@@ -95,7 +95,7 @@ def plot_deconvolution(adata,decon,fraction=0.1,size=0.5,library_id=None,alpha=0
         plot_deconvolution(adata_spatial,decon,fraction=0.5,alpha=0.3)
 
     .. image:: ./_static/decon.png
-        :height: 550px
+        :height: 400px
         :width: 550px
         :align: center
         :target: target  
