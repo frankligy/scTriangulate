@@ -64,6 +64,68 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,spa
     
 
 
+# visualize deconvolution
+def plot_one_dot(ax,prop,x,y,scale_factor,circle_diameter,colors):
+    previous = 0
+    for i, (p, c) in enumerate(zip(prop, colors)):
+        this = 2 * np.pi * p + previous
+        x_  = [0] + np.cos(np.linspace(previous, this, 50)).tolist() + [0]
+        y_  = [0] + np.sin(np.linspace(previous, this, 50)).tolist() + [0]
+        xy_ = np.column_stack([x_, y_])
+        s = np.abs(xy_).max()
+        previous = this
+        ax.scatter([x * scale_factor], [y * scale_factor], marker=xy_, s=s**2 * circle_diameter, facecolor=c,lw=0)
+    return ax
+
+def plot_deconvolution(adata,decon,fraction=0.1,size=0.5,library_id=None,alpha=0.5,outdir='.'):
+    '''
+    Visualize the deconvolution result as pie chart, serving as a complement function on top of scanpy.pl.spatial where each dot now is a pie chart
+
+    :param adata: AnnData, requires img, scale_factor, spot_diameter in the canonical slot based on squidpy convention, you can get it either using squidpy.read_visium or sctriangulate.spatial.read_spatial_data
+    :param decon: A dataframe whose index is spot barcode, column is the cell types, value represents cell type proportion (each row sums to 1)
+    :param fraction: float, plot that fraction of spot on the image, default is 0.1
+    :param size: float, default is 0.5, adjust it based on visual effect
+    :param library_id: None or string, if None, automatically extract from adata.uns['spatial'], or particularly specify
+    :param alpha: float, default is 0.5, the transparency of the underlying image
+    :param outdir: string, the output dir for saved image
+
+    Example::
+
+        decon = pd.read_csv('inputs/decon_results_A/cell2location_prop_processed.txt',index_col=0,sep='\t')
+        plot_deconvolution(adata_spatial,decon,fraction=0.5,alpha=0.3)
+
+    .. image:: ./_static/decon.png
+        :height: 550px
+        :width: 550px
+        :align: center
+        :target: target  
+
+    '''
+    decon = decon.loc[adata.obs_names,:]
+    adata.obsm['decon'] = decon
+    adata = adata.copy()
+    sc.pp.subsample(adata,fraction=fraction)
+    if library_id is None:
+        library_id = list(adata.uns['spatial'].keys())[0]
+        spot_size = adata.uns['spatial'][library_id]['scalefactors']['spot_diameter_fullres']
+        scale_factor = adata.uns['spatial'][library_id]['scalefactors']['tissue_hires_scalef']
+        img = adata.uns['spatial'][library_id]['images']['hires']
+        circle_diameter = spot_size * scale_factor * size
+        colors_set = colors_for_set(adata.obsm['decon'].columns.tolist())
+        colors_list = list(colors_set.values())
+        fig, ax = plt.subplots()
+        for prop, (x, y) in tqdm(zip(adata.obsm['decon'].values, adata.obsm['spatial']), total=adata.shape[0]):
+            ax = plot_one_dot(ax, prop, x, y, scale_factor, circle_diameter, colors_list)
+        ax.imshow(X=img, aspect='equal', alpha=alpha, origin='upper')
+        ax.set_xticks([])
+        ax.set_yticks([])
+        import matplotlib.patches as mpatches
+        ax.legend(handles=[mpatches.Patch(color=i) for i in colors_list], labels=list(colors_set.keys()),
+                  loc='upper left', bbox_to_anchor=[1, 1], frameon=False)
+        plt.savefig(os.path.join(outdir,'deconvolution_fraction_{}_size_{}_alpha_{}.pdf'.format(fraction,size,alpha)), bbox_inches='tight')
+        plt.close()
+
+
 
 
 

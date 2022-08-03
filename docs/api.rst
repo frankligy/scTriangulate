@@ -314,6 +314,10 @@ read_spatial_data
 ~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.spatial.read_spatial_data
 
+plot_deconvolution
+~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.spatial.plot_deconvolution
+
 cluster_level_spatial_stability
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.spatial.cluster_level_spatial_stability
