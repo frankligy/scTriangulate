@@ -11,6 +11,9 @@ from json import load
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from tqdm import tqdm
+from sklearn.cluster import AgglomerativeClustering
+import networkx as nx
+from itertools import product
 
 # for publication ready figure
 mpl.rcParams['pdf.fonttype'] = 42
@@ -275,8 +278,76 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
     return spatial_adata
 
 
-def multicellular_spatial_structure(adata_spatial,coord_type='grid',n_neighrs=6,n_rings=1,spatial_community_resolution=8,spatial_community_min_cells=10,
-                                    plot=True,outdir='.',mode='spot_cell_type_proportion'):
+def identify_ecosystem(adata_spatial,coord_type='grid',n_neighbors=6,n_rings=1,include_self=True,resolution=1,save=True,outdir='.',legend_loc='right margin'):
+    '''
+    Ecosystem means the frequent interaction within one cell type, or across multiple cell types. Examples include:
+
+    1. A ecosytem within which macrophage interact with macrophage
+    2. A ecosytem where stroma cells encapsulating tumor tissue
+    3. A ecosytem where T cell and B cell co-occur
+
+    This function is inspired by the recurrent cellular neighborhood analysis described in `The Spatial Landscape of Progression and Immunoediting in Primary Melanoma at
+    Single-Cell Resolution <https://pubmed.ncbi.nlm.nih.gov/35404441/>`_.
+
+    :param adata_spatial: Anndata, follow the squidpy convention in terms of the slot where img, scale_factor should go into, further more, please put decon dataframe into adata_spatial.obsm['decon']
+    :param coord_type: either grid or generic, passed to sq.gr.spatial_neighbors function
+    :param n_neighbors: int, default is 6, passed to sq.gr.spatial_neighbors function
+    :param n_rings: int, default is 1, passed to sq.gr.spatial_neighbors function
+    :param include_self, boolean, when counting neighbors, whether or not including the spot itself
+    :param resolution: float, default is 1, this will be passed to leiden algorithm
+    :param save: boolean, whether to save the plot or not
+    :param outdir: string, default is '.', output directory
+    :param legend_loc, string, passed to sq.pl.spatial, default is right margin
+
+    Example::
+
+        adata_spatial.obsm['decon'] = decon.loc[adata_spatial.obs_names,:]
+        adata_neigh = identify_ecosystem(adata_spatial,n_rings=2)
+        sc.pl.spatial(adata_neigh,color='leiden',groups=['6'],alpha_img=0.2)
+    '''
+    # assuming decon is stored at adata_spatil.obsm['decon'] as a dataframe
+    # remember, if you want to add a df to obsm, index and obs_names must align
+    adata_decon = ad.AnnData(X=adata_spatial.obsm['decon'].values,var=pd.DataFrame(index=adata_spatial.obsm['decon'].columns),obs=pd.DataFrame(index=adata_spatial.obsm['decon'].index))
+    adata_spatial = adata_spatial[adata_decon.obs_names,:].copy()
+    add_umap(adata_decon,inputs=adata_spatial.obsm['spatial'],mode='numpy',key='spatial')
+    adata_decon.uns['spatial'] = adata_spatial.uns['spatial']
+    adata_spatial = adata_decon
+    # build adata_neigh
+    sq.gr.spatial_neighbors(adata_spatial,coord_type=coord_type,n_neighs=n_neighbors,n_rings=n_rings)
+    adj = adata_spatial.obsp['spatial_distances'].toarray()
+    adj = np.where(adj>0,1,0)
+    dict_prop = {}
+    for i in range(adata_spatial.shape[0]):
+        dict_prop[i] = adata_spatial.X[i,:]
+    neighbor_profile = np.zeros_like(adata_spatial.X,dtype=np.float64)
+    for i in range(adj.shape[0]):
+        valid_indices = adj[i,:].nonzero()[0]
+        if len(valid_indices) > 0:
+            if include_self:
+                valid_decon = [dict_prop[i]]
+            else:
+                valid_decon = []
+            for j in valid_indices:
+                valid_decon.append(dict_prop[j])
+            valid_decon = np.array(valid_decon).mean(axis=0)
+            neighbor_profile[i,:] = valid_decon
+    adata_neigh = ad.AnnData(X=neighbor_profile,var=pd.DataFrame(index=adata_spatial.var_names),obs=pd.DataFrame(index=adata_spatial.obs_names))
+    adata_spatial = adata_spatial[adata_neigh.obs_names,:].copy()
+    add_umap(adata_neigh,inputs=adata_spatial.obsm['spatial'],mode='numpy',key='spatial')
+    adata_neigh.uns['spatial'] = adata_spatial.uns['spatial']
+    # cluster based on neigh and plot
+    sc.pp.neighbors(adata_neigh)
+    sc.tl.leiden(adata_neigh,resolution=resolution)
+    sc.pl.spatial(adata_neigh,color='leiden',legend_loc=legend_loc)
+    plt.savefig(os.path.join(outdir,'ecosystem_scatter_plot_{}.pdf'.format(legend_loc.replace(' ','_'))),bbox_inches='tight');plt.close()
+    sc.pl.heatmap(adata_neigh,var_names=adata_neigh.var_names,groupby='leiden',dendrogram=True)
+    plt.savefig(os.path.join(outdir,'ecosystem_heatmap.pdf'),bbox_inches='tight');plt.close()
+
+    return adata_neigh
+
+
+def identify_spatial_program(adata_spatial,coord_type='grid',n_neighbors=6,n_rings=1,spatial_community_resolution=8,spatial_community_min_cells=10,
+                             plot=True,outdir='.',mode='spot_cell_type_proportion',n_program=10):
     '''
     The most important analysis is to define **spatial program**, meaning spatial region that are proximal and somehow transcriptomically similar. This function
     provide a very flexible way to define `spatial program` by first derive spatial community solely based on spatial coordinates, then we merge spatial community into
@@ -285,20 +356,29 @@ def multicellular_spatial_structure(adata_spatial,coord_type='grid',n_neighrs=6,
 
     :param adata_spatial: the Anndata with spatial coordinate
     :param coord_type: either grid or generic, passed to sq.gr.spatial_neighbors function
-    :param n_neighrs: int, default is 6, passed to sq.gr.spatial_neighbors function
+    :param n_neighbors: int, default is 6, passed to sq.gr.spatial_neighbors function
     :param n_rings: int, default is 1, passed to sq.gr.spatial_neighbors function
     :param spatial_community_resolution: float, default is 8, passed to nx.algorithms.community.greedy_modularity_communities, high value means smaller clusters
     :param spatial_community_min_cells: int, the minimum number of cells/spots that a spatial community needs to have
     :param plot: boolean, whether to plot spatial community and spatial cluster
     :param outdir: string, the path to the output dir
     :param mode: string, which transcriptomical profile to consider, it can be 'spot_cell_type_proportion' coming out of spatial deconvolution methods or spot gene expression
+    :param n_program: int, the number of spatial program you want, it is passed to hierarchical clustering algorithm
+
+    :return df_subgragh: dataFrame, readily input for Broad Morpheus online heatmap generation tool.
 
     Examples::
 
-        multicellular_spatial_structure(adata_spatial,outdir='result')
-
+        adata_spatial.obsm['decon'] = decon.loc[adata_spatial.obs_names,:]
+        df_subgraph = identify_spatial_program(adata_spatial,n_rings=1)
     '''
-    adata_spatial = adata.spatial.copy()
+    # assuming decon is stored at adata_spatil.obsm['decon'] as a dataframe
+    # remember, if you want to add a df to obsm, index and obs_names must align
+    adata_decon = ad.AnnData(X=adata_spatial.obsm['decon'].values,var=pd.DataFrame(index=adata_spatial.obsm['decon'].columns),obs=pd.DataFrame(index=adata_spatial.obsm['decon'].index))
+    adata_spatial = adata_spatial[adata_decon.obs_names,:].copy()
+    add_umap(adata_decon,inputs=adata_spatial.obsm['spatial'],mode='numpy',key='spatial')
+    adata_decon.uns['spatial'] = adata_spatial.uns['spatial']
+    adata_spatial = adata_decon
     # step1: build spatial community
     sq.gr.spatial_neighbors(adata_spatial,coord_type=coord_type,n_neighs=n_neighbors,n_rings=n_rings)
     G = nx.from_scipy_sparse_matrix(adata_spatial.obsp['spatial_distances'])
@@ -314,12 +394,12 @@ def multicellular_spatial_structure(adata_spatial,coord_type='grid',n_neighrs=6,
     adata_spatial.obs['community'] = adata_spatial.obs['community'].astype('int').astype('category')
     if plot:
         sc.pl.spatial(adata_spatial,color='community')
-        plt.savefig(os.path.join(outdir,'spatial_community_plot.pdf'))
+        plt.savefig(os.path.join(outdir,'subgraph_plot.pdf'),bbox_inches='tight')
         plt.close()
     # step2: integrate other information and cluster communities
     if mode == 'spot_cell_type_proportion':
         # assuming the cell type proportion for each spot is in adata.X
-        decon = adata.spatial.to_df()
+        decon = adata_spatial.to_df()
         interactions = list(product(decon.columns.tolist(),decon.columns.tolist()))
         data_list = []
         for i,par in tqdm(enumerate(partitions),total=len(partitions)):
@@ -338,19 +418,19 @@ def multicellular_spatial_structure(adata_spatial,coord_type='grid',n_neighrs=6,
                     feature.append(v)
                 data_list.append(pd.Series(index=interactions,data=feature,name=i))
         df_subgraph = pd.concat(data_list,axis=1).T.astype('float')
-        model = AgglomerativeClustering(n_clusters=10)
+        model = AgglomerativeClustering(n_clusters=n_program)
         model.fit(df_subgraph.values)
-        mi_r = pd.MultiIndex.from_arrays([['subgraph_{}'.format(i) for i in df_subgraph.index],['cluster_{}'.format(i) for i in model.labels_]])
+        mi_r = pd.MultiIndex.from_arrays([['subgraph_{}'.format(i) for i in df_subgraph.index],['program_{}'.format(i) for i in model.labels_]])
         mi_c = pd.MultiIndex.from_tuples(list(df_subgraph.columns))
+        mapping2 = pd.Series(index=df_subgraph.index,data=model.labels_).to_dict()
         df_subgraph.index = mi_r
         df_subgraph.columns = mi_c
-        df_subgraph.to_csv(os.path.join(outdir,'df_subgraph.txt'),sep='\t')
+        df_subgraph.to_csv(os.path.join(outdir,'spatial_program.txt'),sep='\t')
         if plot:
-            mapping2 = pd.Series(index=df_subgraph.index,data=model.labels_).to_dict()
             adata_spatial.obs['cluster'] = adata_spatial.obs['community'].map(mapping2).values
             adata_spatial.obs['cluster'] = adata_spatial.obs['cluster'].astype('category')
-            sc.pl.spatial(adata_decon,color='cluster')
-            plt.savefig(os.path.join(outdir,'spatial_structure_plot.pdf'))
+            sc.pl.spatial(adata_spatial,color='cluster')
+            plt.savefig(os.path.join(outdir,'spatial_program_plot.pdf'))
             plt.close()            
 
         return df_subgraph
