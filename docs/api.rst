@@ -328,7 +328,7 @@ create_spatial_features
 
 identify_ecosystem
 ~~~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: sctriangulate.spatial.identify_ecosytem
+.. autofunction:: sctriangulate.spatial.identify_ecosystem
 
 identity_spatial_program
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
