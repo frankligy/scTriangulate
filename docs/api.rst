@@ -326,9 +326,13 @@ create_spatial_features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.spatial.create_spatial_features
 
-multicellular_spatial_structure
+identify_ecosystem
+~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.spatial.identify_ecosytem
+
+identity_spatial_program
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: sctriangulate.spatial.multicellular_spatial_structure
+.. autofunction:: sctriangulate.spatial.identify_spatial_program
 
 
 
