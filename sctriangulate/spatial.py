@@ -304,6 +304,12 @@ def identify_ecosystem(adata_spatial,coord_type='grid',n_neighbors=6,n_rings=1,i
         adata_spatial.obsm['decon'] = decon.loc[adata_spatial.obs_names,:]
         adata_neigh = identify_ecosystem(adata_spatial,n_rings=2)
         sc.pl.spatial(adata_neigh,color='leiden',groups=['6'],alpha_img=0.2)
+
+    .. image:: ./_static/ecosystem.png
+        :height: 400px
+        :width: 550px
+        :align: center
+        :target: target 
     '''
     # assuming decon is stored at adata_spatil.obsm['decon'] as a dataframe
     # remember, if you want to add a df to obsm, index and obs_names must align
@@ -371,6 +377,12 @@ def identify_spatial_program(adata_spatial,coord_type='grid',n_neighbors=6,n_rin
 
         adata_spatial.obsm['decon'] = decon.loc[adata_spatial.obs_names,:]
         df_subgraph = identify_spatial_program(adata_spatial,n_rings=1)
+
+    .. image:: ./_static/spatial_program.png
+        :height: 400px
+        :width: 550px
+        :align: center
+        :target: target 
     '''
     # assuming decon is stored at adata_spatil.obsm['decon'] as a dataframe
     # remember, if you want to add a df to obsm, index and obs_names must align
