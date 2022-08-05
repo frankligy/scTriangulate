@@ -293,11 +293,11 @@ def identify_ecosystem(adata_spatial,coord_type='grid',n_neighbors=6,n_rings=1,i
     :param coord_type: either grid or generic, passed to sq.gr.spatial_neighbors function
     :param n_neighbors: int, default is 6, passed to sq.gr.spatial_neighbors function
     :param n_rings: int, default is 1, passed to sq.gr.spatial_neighbors function
-    :param include_self, boolean, when counting neighbors, whether or not including the spot itself
+    :param include_self: boolean, when counting neighbors, whether or not including the spot itself
     :param resolution: float, default is 1, this will be passed to leiden algorithm
     :param save: boolean, whether to save the plot or not
     :param outdir: string, default is '.', output directory
-    :param legend_loc, string, passed to sq.pl.spatial, default is right margin
+    :param legend_loc: string, passed to sq.pl.spatial, default is right margin
 
     Example::
 
