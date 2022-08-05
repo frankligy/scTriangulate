@@ -561,7 +561,7 @@ def scanpy_recipe(adata,species='human',is_log=False,resolutions=[1,2,3],modalit
 
 
 
-def concat_rna_and_other(adata_rna,adata_other,umap,name,prefix):
+def concat_rna_and_other(adata_rna,adata_other,umap,umap_key,name,prefix):
     '''
     concatenate rna adata and another modality's adata object
 
@@ -592,9 +592,9 @@ def concat_rna_and_other(adata_rna,adata_other,umap,name,prefix):
     adata_other.var_names = [prefix + item for item in adata_other.var_names]
     adata_combine = ad.concat([adata_rna,adata_other],axis=1,join='outer',merge='first',label='modality',keys=['rna','{}'.format(name)])
     if umap == 'rna':
-        adata_combine.obsm['X_umap'] = adata_rna.obsm['X_umap']
+        adata_combine.obsm[umap_key] = adata_rna.obsm[umap_key]
     elif umap == 'other':
-        adata_combine.obsm['X_umap'] = adata_other.obsm['X_umap']
+        adata_combine.obsm[umap_key] = adata_other.obsm[umap_key]
     if not issparse(adata_combine.X):
         adata_combine.X = csr_matrix(adata_combine.X)
     return adata_combine

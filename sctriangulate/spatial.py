@@ -213,8 +213,8 @@ def cluster_level_spatial_stability(adata,key,method,neighbor_key='spatial_dista
 
 
 # implement spatial cell-level metrics
-def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=None,delaunay=False,sparse=True,
-                            library_id=None,img_key='hires_image',sf_key='tissue_hires_scalef',sd_key='spot_diameter_fullres',feature_types=['summary','texture','histogram'],
+def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,n_rings=1,radius=None,delaunay=False,sparse=True,
+                            library_id=None,img_key='hires',sf_key='tissue_hires_scalef',sd_key='spot_diameter_fullres',feature_types=['summary','texture','histogram'],
                             feature_added_kwargs=[{},{},{}],segmentation_feature=False,segmentation_method='watershed'):
     '''
     Extract spatial features (including spatial coordinates, spatial neighbor graph, spatial image)
@@ -228,6 +228,7 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
 
     :param coord_type: string, default is generic, passed to sq.gr.spatial_neighbors()
     :param n_neighs: int, default is 6, passed to sq.gr.spatial_neighbors()
+    :param n_rings: int, default is 1, passed to sq.gr.spatial_neighbors()
     :param radius: float or None (default), passed to sq.gr.spatial_neighbors()
     :param delaunay: boolean, default is False, whether to use delaunay for spatial graph, passed to sq.gr.spatial_neighbors()
     :param library_id: string or None, when choosing tissue_images, need to retrieve the image from adata.uns
@@ -238,12 +239,23 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
     :param feature_added_kwargs: nested list, each element is a dict, containing additional keyword arguments being passed to each feature function in feature_types
     :param segmentation_feature: boolean, whether to extract segmentation feature or not, default is False
     :param segmentation_method: string the segmentation method to use, default is 'watershed'
+
+    Examples::
+
+        # derive feature
+        spatial_adata_image = create_spatial_features(adata_spatial,mode='tissue_image',library_id='CID44971',img_key='hires',segmentation_feature=True)  
+        # derive spatial clusters
+        sc.pp.neighbors(spatial_adata_image)
+        sc.tl.leiden(spatial_adata_image)
+        spatial_adata_image.uns['spatial'] = adata_spatial.uns['spatial']
+        spatial_adata_image.obsm['spatial'] = adata_spatial.obsm['spatial']
+        sc.pl.spatial(spatial_adata_image,color='leiden')
     '''
     if mode == 'coordinate':
         spatial_adata = ad.AnnData(X=adata.obsm['spatial'],var=pd.DataFrame(index=['spatial_x','spatial_y']),obs=pd.DataFrame(index=adata.obs_names))
     elif mode == 'graph_importance':
         adata_copy = adata.copy()
-        sq.gr.spatial_neighbors(adata_copy,coord_type=coord_type,n_neighs=n_neighs,radius=radius,delaunay=delaunay)
+        sq.gr.spatial_neighbors(adata_copy,coord_type=coord_type,n_neighs=n_neighs,n_rings=1,radius=radius,delaunay=delaunay)
         adjacency_matrix = adata_copy.obsp['spatial_distances']
         if sparse:
             G = nx.from_scipy_sparse_matrix(adjacency_matrix)
@@ -271,10 +283,9 @@ def create_spatial_features(adata,mode,coord_type='generic',n_neighs=6,radius=No
             features_df_list.append(adata_copy.obsm["{}_features".format(feature)])
         if segmentation_feature:
             sq.im.segment(img=img, layer="image", layer_added="segmented", method=segmentation_method)
-            sq.im.calculate_image_features(adata_copy,img,layer="image",features="segmentation",key_added="segmentation_features",features_kwargs={"segmentation": {"label_layer": "segmented"}},mask_circle=True)
+            sq.im.calculate_image_features(adata_copy,img,layer="image",features="segmentation",key_added="segmentation_features",features_kwargs={"segmentation": {"label_layer": "segmented"}},mask_circle=True, show_progress_bar=True)
             features_df_list.append(adata_copy.obsm['segmentation_features'])
-        spatial_adata = ad.AnnData(pd.concat(features_df_list,axis=1))
-    spatial_adata.obsm['spatial'] = adata.obsm['spatial']
+        spatial_adata = ad.AnnData(pd.concat(features_df_list,axis=1).fillna(value=0))
     return spatial_adata
 
 
