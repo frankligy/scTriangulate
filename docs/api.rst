@@ -17,7 +17,7 @@ __init__()
                       regress_out_size_effect, compute_shapley, pruning, plot_umap, plot_confusion, plot_cluster_feature,
                       modality_contributions, plot_multi_modal_feature_rank, plot_long_heatmap, viewer_cluster_feature_figure,
                       viewer_cluster_feature_html, viewer_heterogeneity_figure, viewer_heterogeneity_html, plot_concordance,
-                      plot_two_column_sankey
+                      plot_two_column_sankey, extract_stability
 
 (statis) deserialize()
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,6 +58,10 @@ display_hierarchy()
 doublet_predict()
 ~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.main_class.ScTriangulate.doublet_predict
+
+extract_stability()
+~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.main_class.ScTriangulate.extract_stability
 
 gene_to_df()
 ~~~~~~~~~~~~~~~~~

@@ -282,6 +282,25 @@ class ScTriangulate(object):
         elif raw:
             self.uns['{}'.format(mode)][key].to_csv(os.path.join(self.dir,'sctri_gene_to_df_{}_{}.txt'.format(mode,key)),sep='\t')
 
+    def extract_stability(self,keys=None):
+        '''
+        To extract cluster stability information
+
+        :params keys: a list, containing the annotation column names, None means all in self.query
+
+        Examples::
+
+            sctri.extract_stability(keys=['annotation1','annotation2'])
+        '''
+        if keys is None:
+            keys = self.query
+        for key in keys:
+            series_list = []
+            for metric in self.total_metrics:
+                cluster_to_score = self.score[key]['cluster_to_{}'.format(metric)]
+                series_list.append(pd.Series(data=cluster_to_score,name=metric))
+            pd.concat(series_list,axis=1).to_csv(os.path.join(self.dir,'stability_{}.txt'.format(key)),sep='\t')
+
     def confusion_to_df(self,mode,key):
         '''
         Print out the confusion matrix with cluster labels (dataframe).
