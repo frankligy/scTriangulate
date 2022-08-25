@@ -743,6 +743,25 @@ class ScTriangulate(object):
             self.uns[name][key] = collect[name]
 
     def cluster_performance(self,cluster,competitors,reference,show_cluster_number=False,metrics=None,ylim=None,save=True,format='pdf'):
+        '''
+        automatic benchmark of scTriangulate clusters with all the individual or competitor annotation, against a 'gold standard' annotation,
+        measured by all unsupervised cluster metrics (homogeneity, completeness, v_measure, ARI, NMI).
+
+        :params cluster: string, the scTriangulate annotation column name, for example, pruned
+        :params competitiors: list of string, each is a column name of a competitor annotation
+        :params reference: string, the column name containing reference annotation, for example, azimuth
+        :params show_cluster_number: bool, whether to show the number of cluster of each annotation in the performance line plot
+        :params metrics: None or any other, if not None, ARI and NMI will also be plotted
+        :params ylim: None or a tuple, specifiying the ylims of plot
+        :params save: bool, whether to save the figure
+        :params format: string, default is pdf, the format to save
+
+        Examples::
+
+            sctri.cluster_performance(cluster='pruned',competitors=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'],
+                                      reference='azimuth',show_cluster_number=True,metrics=None)
+
+        '''
         from sklearn.preprocessing import LabelEncoder
         from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, homogeneity_completeness_v_measure
         result = self.adata.obs
@@ -794,6 +813,12 @@ class ScTriangulate(object):
         if save:
             plt.savefig(os.path.join(self.dir,'cluster_performance_plot.{}'.format(format)),bbox_inches='tight')
             plt.close()
+
+        # assemble returned metrics
+        df = pd.DataFrame.from_records(data=[ari,nmi,homogeneity,completeness,vmeasure],columns=competitors+[cluster],index=['ari','nmi','homogeneity','completeness','vmeasure'])
+        if save:
+            df.to_csv(os.path.join(self.dir,'cluster_performance.txt'),sep='\t')
+        return df
 
 
     def compute_metrics(self,parallel=True,scale_sccaf=True,layer=None,added_metrics_kwargs=None):
