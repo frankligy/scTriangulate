@@ -761,9 +761,16 @@ class ScTriangulate(object):
             sctri.cluster_performance(cluster='pruned',competitors=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'],
                                       reference='azimuth',show_cluster_number=True,metrics=None)
 
+
+        .. image:: ./_static/cluster_performance.png
+            :height: 350px
+            :width: 500px
+            :align: center
+            :target: target          
+
         '''
         from sklearn.preprocessing import LabelEncoder
-        from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, homogeneity_completeness_v_measure
+        from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, homogeneity_completeness_v_measure, adjusted_mutual_info_score
         result = self.adata.obs
         # label encoder
         reference_encoded = LabelEncoder().fit_transform(result[reference].values)
@@ -771,20 +778,20 @@ class ScTriangulate(object):
         cluster_encoded = LabelEncoder().fit_transform(result[cluster].values)
         # compute metrics for competitors
         ari = []
-        nmi = []
+        ami = []
         homogeneity = []
         completeness = []
         vmeasure = []
         for anno_encoded in competitors_encoded:
             ari.append(adjusted_rand_score(reference_encoded,anno_encoded))
-            nmi.append(normalized_mutual_info_score(reference_encoded,anno_encoded))
+            ami.append(adjusted_mutual_info_score(reference_encoded,anno_encoded))
             h,c,v = homogeneity_completeness_v_measure(reference_encoded,anno_encoded)
             homogeneity.append(h)
             completeness.append(c)
             vmeasure.append(v)
         # compute metrics for cluster
         ari.append(adjusted_rand_score(reference_encoded,cluster_encoded))
-        nmi.append(normalized_mutual_info_score(reference_encoded,cluster_encoded))
+        ami.append(adjusted_mutual_info_score(reference_encoded,cluster_encoded))
         h,c,v = homogeneity_completeness_v_measure(reference_encoded,cluster_encoded)
         homogeneity.append(h)
         completeness.append(c)
@@ -796,7 +803,7 @@ class ScTriangulate(object):
         ax.plot(np.arange(len(competitors)+1),vmeasure,label='VMeasure',marker='o',linestyle='--')
         if metrics is not None:
             ax.plot(np.arange(len(competitors)+1),ari,label='ARI',marker='o',linestyle='--')
-            ax.plot(np.arange(len(competitors)+1),nmi,label='NMI',marker='o',linestyle='--')
+            ax.plot(np.arange(len(competitors)+1),ami,label='AMI',marker='o',linestyle='--')
         ax.legend(frameon=False,loc='upper left',bbox_to_anchor=(1,1))
         ax.set_xticks(np.arange(len(competitors)+1))
         ax.set_xticklabels(competitors+[cluster],fontsize=3)
@@ -815,7 +822,7 @@ class ScTriangulate(object):
             plt.close()
 
         # assemble returned metrics
-        df = pd.DataFrame.from_records(data=[ari,nmi,homogeneity,completeness,vmeasure],columns=competitors+[cluster],index=['ari','nmi','homogeneity','completeness','vmeasure'])
+        df = pd.DataFrame.from_records(data=[ari,ami,homogeneity,completeness,vmeasure],columns=competitors+[cluster],index=['ari','ami','homogeneity','completeness','vmeasure'])
         if save:
             df.to_csv(os.path.join(self.dir,'cluster_performance.txt'),sep='\t')
         return df
