@@ -764,7 +764,7 @@ class ScTriangulate(object):
 
         .. image:: ./_static/cluster_performance.png
             :height: 350px
-            :width: 500px
+            :width: 600px
             :align: center
             :target: target          
 
