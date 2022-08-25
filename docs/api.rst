@@ -41,7 +41,7 @@ clear_invalid()
 
 cluster_performance()
 ~~~~~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: sctriangulate.main_cluster.ScTriangulate.cluster_performance
+.. autofunction:: sctriangulate.main_class.ScTriangulate.cluster_performance
 
 compute_metrics()
 ~~~~~~~~~~~~~~~~~~~~
