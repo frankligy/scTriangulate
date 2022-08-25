@@ -747,14 +747,14 @@ class ScTriangulate(object):
         automatic benchmark of scTriangulate clusters with all the individual or competitor annotation, against a 'gold standard' annotation,
         measured by all unsupervised cluster metrics (homogeneity, completeness, v_measure, ARI, NMI).
 
-        :params cluster: string, the scTriangulate annotation column name, for example, pruned
-        :params competitiors: list of string, each is a column name of a competitor annotation
-        :params reference: string, the column name containing reference annotation, for example, azimuth
-        :params show_cluster_number: bool, whether to show the number of cluster of each annotation in the performance line plot
-        :params metrics: None or any other, if not None, ARI and NMI will also be plotted
-        :params ylim: None or a tuple, specifiying the ylims of plot
-        :params save: bool, whether to save the figure
-        :params format: string, default is pdf, the format to save
+        :param cluster: string, the scTriangulate annotation column name, for example, pruned
+        :param competitiors: list of string, each is a column name of a competitor annotation
+        :param reference: string, the column name containing reference annotation, for example, azimuth
+        :param show_cluster_number: bool, whether to show the number of cluster of each annotation in the performance line plot
+        :param metrics: None or any other, if not None, ARI and NMI will also be plotted
+        :param ylim: None or a tuple, specifiying the ylims of plot
+        :param save: bool, whether to save the figure
+        :param format: string, default is pdf, the format to save
 
         Examples::
 

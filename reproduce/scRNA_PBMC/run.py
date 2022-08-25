@@ -203,92 +203,14 @@ sctri = ScTriangulate.deserialize('output_two/after_pruned_assess.p')
 # sctri.plot_umap('pruned_final_annotation','category')
 
 # plot concordance
-confusion_df = sctri.plot_concordance(key1='azimuth',key2='pruned',style='3dbar')
-confusion_df.to_csv('output_two/azimuth_pruned_confusion.txt',sep='\t')
-# generate_gradient(cmap='jet',name='jet')
+# confusion_df = sctri.plot_concordance(key1='azimuth',key2='pruned',style='3dbar')
+# confusion_df.to_csv('output_two/azimuth_pruned_confusion.txt',sep='\t')
 
 
 
-# v-measure plot
-# from sklearn.preprocessing import LabelEncoder
-# from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score, homogeneity_completeness_v_measure
-# result = sctri.adata.obs
-# azimuth = LabelEncoder().fit_transform(result['azimuth'].values)
-# leiden1 = LabelEncoder().fit_transform(result['leiden1'].values)
-# leiden2 = LabelEncoder().fit_transform(result['leiden2'].values)
-# leiden3 = LabelEncoder().fit_transform(result['leiden3'].values)
-# pruned = LabelEncoder().fit_transform(result['pruned'].values)
+# cluster performance plot
+sctri.cluster_performance(cluster='pruned',competitors=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'],reference='azimuth',show_cluster_number=True,metrics=None)
 
-# for test in [leiden1,leiden2,leiden3,pruned]:
-#     print('ARI:{}'.format(adjusted_rand_score(azimuth,test)))
-#     print('V:{}'.format(homogeneity_completeness_v_measure(azimuth, test)))
-#     print('NMI:{}'.format(normalized_mutual_info_score(azimuth,test)))
-
-'''
-ARI:0.5011579040293368
-V:(0.8117030890841928, 0.7045263914413321, 0.7543267765458033)
-NMI:0.7543267765458033
-ARI:0.4328692303679871
-V:(0.8248995749634627, 0.6655871491412404, 0.7367292140861539)
-NMI:0.736729214086154
-ARI:0.30173849414833653
-V:(0.8381897816150324, 0.5934047555759651, 0.694869656965142)
-NMI:0.6948696569651421
-ARI:0.35295807833354215
-V:(0.838036299746353, 0.6312244083998317, 0.7200750208482997)
-NMI:0.7200750208482996
-'''
-
-# fig,ax = plt.subplots()
-# ax.plot([1,2,3,4],[0.8117,0.8249,0.8382,0.8380],label='Homogeneity',marker='o',linestyle='--')
-# ax.plot([1,2,3,4],[0.7045,0.6655,0.5934,0.6312],label='Completeness', marker='o', linestyle='--')
-# ax.plot([1,2,3,4], [0.7543,0.7367,0.6948,0.7201], label='NMI', marker='o', linestyle='--')
-# ax.legend(frameon=False,loc='upper left',bbox_to_anchor=(1,1))
-# ax.set_xticks([1,2,3,4])
-# ax.set_xticklabels(['r=1','r=2','r=3','scTriangulate'])
-# plt.savefig('check.pdf',bbox_inches='tight')
-# plt.close()
-
-# sys.exit('stop')
-
-
-# axes[0].spines['bottom'].set_visible(False)
-# axes[1].spines['top'].set_visible(False)
-# axes[1].spines['bottom'].set_visible(False)
-# axes[2].spines['top'].set_visible(False)
-# axes[0].tick_params(bottom=False)
-# axes[1].tick_params(bottom=False)
-# axes[2].set_xticks([1,2])
-# axes[2].set_xticklabels(['Leiden3','scTriangulate'])
-
-# d = 0.015
-# # bottom left diagonal line
-# axes[0].plot((-d,d),(-d,d),transform=axes[0].transAxes,clip_on=False,color='k')
-# axes[1].plot((-d,d),(-d,d),transform=axes[1].transAxes,clip_on=False,color='k')
-# # bottom right diagonal line
-# axes[0].plot((1-d,1+d),(-d,d),transform=axes[0].transAxes,clip_on=False,color='k')
-# axes[1].plot((1-d,1+d),(-d,d),transform=axes[1].transAxes,clip_on=False,color='k')
-# # top left diagonal line
-# axes[1].plot((-d,d),(1-d,1+d),transform=axes[1].transAxes,clip_on=False,color='k')
-# axes[2].plot((-d,d),(1-d,1+d),transform=axes[2].transAxes,clip_on=False,color='k')
-# # top right diagonal line
-# axes[1].plot((1-d,1+d),(1-d,1+d),transform=axes[1].transAxes,clip_on=False,color='k')
-# axes[2].plot((1-d,1+d),(1-d,1+d),transform=axes[2].transAxes,clip_on=False,color='k')
-
-# # adding text
-# for x,y in zip([1,2],[0.8403,0.8405]):
-#     axes[0].text(x,y+0.002,str(y),va='center',ha='center')
-# for x,y in zip([1,2],[0.7109, 0.7218]):
-#     axes[1].text(x,y+0.002,str(y),va='center',ha='center')
-# for x,y in zip([1,2],[0.6160, 0.6325]):
-#     axes[2].text(x,y+0.002,str(y),va='center',ha='center')
-
-# # adding legend
-# import matplotlib.lines as mlines
-# axes[0].legend(handles=[mlines.Line2D([],[],color=i) for i in ['#1f77b4', '#ff7f0e', '#2ca02c']],
-#                labels=['Homegeneity','Completeness','NMI'],frameon=False,loc='best')
-# plt.savefig('output_tfidf5/statistics.pdf',bbox_inches='tight')
-# plt.close()
 
 
 '''for building the tutorial'''
@@ -305,6 +227,9 @@ NMI:0.7200750208482996
 # sctri.plot_circular_barplot(key='sctri_rna_leiden_1',col='pruned')
 
 # sctri.get_metrics_and_shapley(barcode='AAACCCACATCCAATG-1',save=True)
+
+# generate_gradient(cmap='jet',name='jet')
+# generate_block(color_list=pick_n_colors(200),name='r433')
 
 
 
