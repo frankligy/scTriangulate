@@ -358,7 +358,8 @@ class ScTriangulate(object):
 
 
     @staticmethod
-    def salvage_run(step_to_start,last_step_file,compute_metrics_parallel=True,scale_sccaf=True,layer=None,added_metrics_kwargs=None,compute_shapley_parallel=True,win_fraction_cutoff=0.25,
+    def salvage_run(step_to_start,last_step_file,scale_sccaf=True,layer=None,added_metrics_kwargs=[{'species':'human','criterion':2,'layer':None}],compute_shapley_parallel=True,
+                    shapley_mode='shapley_all_or_none',shapley_bonus=0.01,win_fraction_cutoff=0.25,
                     reassign_abs_thresh=10,assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
                     viewer_heterogeneity_keys=None,nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,heatmap_cmap='viridis',heatmap_regex=None,
                     heatmap_direction='include',heatmap_n_genes=None,heatmap_cbar_scale=None):
@@ -414,11 +415,41 @@ class ScTriangulate(object):
                     sctri.viewer_heterogeneity_figure(key=key,other_umap=other_umap,heatmap_scale=heatmap_scale,heatmap_cmap=heatmap_cmap,heatmap_regex=heatmap_regex,
                                                       heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
 
+        elif step_to_start == 'run_shapley':
+            sctri = ScTriangulate.deserialize(last_step_file)
+            sctri.compute_shapley(parallel=compute_shapley_parallel,mode=shapley_mode,bonus=shapley_bonus)
+            sctri.serialize(name='after_shapley.p')
+            sctri.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,layer=layer,assess_raw=assess_raw)
+            sctri.serialize(name='after_rank_pruning.p')
+            sctri.uns['raw_cluster_goodness'].to_csv(os.path.join(sctri.dir,'raw_cluster_goodness.txt'),sep='\t')
+            sctri.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
+            sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=sctri.reference)
+            for col in ['final_annotation','pruned']:
+                sctri.plot_umap(col,'category')
+            if nca_embed:
+                logger_sctriangulate.info('starting to do nca embedding')
+                adata = nca_embedding(sctri.adata,10,'pruned','umap',n_top_genes=3000)
+                adata.write(os.path.join(sctri.dir,'adata_nca.h5ad'))
+            if assess_pruned:
+                sctri.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer,added_metrics_kwargs=added_metrics_kwargs)
+                sctri.serialize(name='after_pruned_assess.p')
+            if viewer_cluster:
+                sctri.viewer_cluster_feature_html()
+                sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
+            if viewer_heterogeneity:
+                if viewer_heterogeneity_keys is None:
+                    viewer_heterogeneity_keys = [self.reference]
+                for key in viewer_heterogeneity_keys:
+                    sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
+                    sctri.viewer_heterogeneity_html(key=key)
+                    sctri.viewer_heterogeneity_figure(key=key,other_umap=other_umap,heatmap_scale=heatmap_scale,heatmap_cmap=heatmap_cmap,heatmap_regex=heatmap_regex,
+                                                    heatmap_direction='include',heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
 
 
             
 
-    def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,layer=None,added_metrics_kwargs=[{'species':'human','criterion':2,'layer':None}],compute_shapley_parallel=True,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
+    def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,layer=None,added_metrics_kwargs=[{'species':'human','criterion':2,'layer':None}],compute_shapley_parallel=True,
+                 shapley_mode='shapley_all_or_none',shapley_bonus=0.01,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
                  assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None,
                  nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,heatmap_cmap='viridis',heatmap_regex=None,heatmap_direction='include',heatmap_n_genes=None,
                  heatmap_cbar_scale=None):
@@ -448,7 +479,7 @@ class ScTriangulate(object):
         '''
         self.compute_metrics(parallel=compute_metrics_parallel,scale_sccaf=scale_sccaf,layer=layer,added_metrics_kwargs=added_metrics_kwargs)
         self.serialize(name='after_metrics.p')
-        self.compute_shapley(parallel=compute_shapley_parallel)
+        self.compute_shapley(parallel=compute_shapley_parallel,mode=shapley_mode,bonus=shapley_bonus)
         self.serialize(name='after_shapley.p')
         self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,layer=layer,assess_raw=assess_raw)
         self.serialize(name='after_rank_pruning.p')
@@ -1070,7 +1101,7 @@ class ScTriangulate(object):
 
 
 
-    def compute_shapley(self,parallel=True):
+    def compute_shapley(self,parallel=True,mode='default',bonus=0.01):
         '''
         Main core function, after obtaining the metrics for each cluster. For each single cell, let's calculate the shapley
         value for each annotation and assign the cluster to the one with highest shapley value.
@@ -1107,7 +1138,7 @@ class ScTriangulate(object):
             sub_datas = [data[:,sub_index,:] for sub_index in sub_indices]  # [sub_data,sub_data,....]
             pool = mp.Pool(processes=cores)
             logger_sctriangulate.info('spawn {} sub processes for shapley computing'.format(cores))
-            raw_results = [pool.apply_async(func=run_shapley,args=(sub_obs[i],self.query,self.reference,self.size_dict,sub_datas[i])) for i in range(len(sub_obs))]
+            raw_results = [pool.apply_async(func=run_shapley,args=(sub_obs[i],self.query,self.reference,self.size_dict,sub_datas[i],mode,bonus,)) for i in range(len(sub_obs))]
             pool.close()
             pool.join()
             for collect in raw_results: # [(final,intermediate), (), ()...]
@@ -1156,7 +1187,7 @@ class ScTriangulate(object):
 
             # computing
             obs = self.adata.obs
-            collect = run_shapley(obs,self.query,self.reference,self.size_dict,data)
+            collect = run_shapley(obs,self.query,self.reference,self.size_dict,data,mode,bonus)
             final.extend(collect[0])
             intermediate.extend(collect[1])
             self.adata.obs['final_annotation'] = final
@@ -2709,7 +2740,7 @@ def each_key_run(sctri,key,scale_sccaf,layer,added_metrics_kwargs=None):
     return collect
 
 
-def run_shapley(obs,query,reference,size_dict,data):
+def run_shapley(obs,query,reference,size_dict,data,mode,bonus):
     logger_sctriangulate.info('process {} need to process {} cells for shapley computing'.format(os.getpid(),data.shape[1]))
     final = []
     intermediate = []
@@ -2717,7 +2748,7 @@ def run_shapley(obs,query,reference,size_dict,data):
         layer = data[:,i,:]
         result = []
         for j in range(layer.shape[0]):
-            result.append(shapley_value(j,layer))
+            result.append(wrapper_shapley(j,layer,mode,bonus))
         cluster_row = obs.iloc[i].loc[query].values
         to_take = which_to_take(result,query,reference,cluster_row,size_dict)   # which annotation this cell should adopt
         final.append(to_take)    

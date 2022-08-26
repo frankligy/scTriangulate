@@ -8,6 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import rankdata
+from itertools import combinations
+import math
 
 import scanpy as sc
 import anndata as ad
@@ -42,6 +44,26 @@ def size_sort(size_list):
     return c,s
 
 
+
+def wrapper_shapley(index,data,mode='shapley_all_or_none',bonus=0.01):
+    '''
+    this is a wrapper function to run different way of computing the shapley value,
+    the input please see the docstring of function shapley_value.
+    additional inputs are mode, dictating how the shapley will be computed
+    bonus dictating the cheat point that going to be added.
+    '''
+
+    if mode == 'shapley_all_or_none':
+        final_result = shapley_all_or_none_value(index,data,bonus)
+    elif mode == 'shapley':
+        final_result = shapley_value(index,data,bonus)
+    elif mode == 'rank':
+        final_result = rank_based_value(index,data,bonus)
+    elif mode == 'rank_all_or_none':
+        final_result = rank_based_all_or_none_value(index,data,bonus)
+    return final_result
+
+
 # functions for computing shapley
 def cheat_add_bonus(total_matrix,index_matrix,bonus):
     index_matrix = copy.deepcopy(index_matrix) # make a copy, since we will modify an mutable data
@@ -56,7 +78,7 @@ def cheat_add_bonus(total_matrix,index_matrix,bonus):
 
 
 
-def shapley_value(index,data):
+def shapley_all_or_none_value(index,data,bonus=0.01):
     '''
     it takes in a 2d ndarray, row means how many players, col means the metrics for a game performance
     [[0.5,0.4,0.7],             edge case 
@@ -66,8 +88,6 @@ def shapley_value(index,data):
 
     also need to take in an index, row index, tell function which player's contribution you want to compute
     '''
-    from itertools import combinations
-    import math
     others = np.delete(data,index,axis=0)  # others except the one that we want to query
     others_index_to_combine = np.arange(others.shape[0])  # others' index in others matrix
     all_combine = []   # [(0,),(1,),(0,1)...]  # all the combinations of others' coalitions
@@ -83,7 +103,7 @@ def shapley_value(index,data):
         total_matrix = np.concatenate([others_matrix,player_row],axis=0)
         index_matrix = rankdata(total_matrix,method='max',axis=0)
         # adding cheat bonus
-        index_matrix = cheat_add_bonus(total_matrix,index_matrix,0.01)
+        index_matrix = cheat_add_bonus(total_matrix,index_matrix,bonus)
         # now see how good player is, you only win if you beat all others
         player_rank = index_matrix[-1,:]
         good_or_not = (player_rank == total_matrix.shape[0])
@@ -97,6 +117,52 @@ def shapley_value(index,data):
         value = normalize_constant * surplus
         shapley += value
     return shapley
+
+def shapley_value(index,data,bonus=0.01):
+    others = np.delete(data,index,axis=0)  # others except the one that we want to query
+    others_index_to_combine = np.arange(others.shape[0])  # others' index in others matrix
+    all_combine = []   # [(0,),(1,),(0,1)...]  # all the combinations of others' coalitions
+    for r in range(others.shape[0]):
+        coalition = list(combinations(others_index_to_combine,r=r+1))
+        all_combine.extend(coalition)
+    shapley = 0
+    for item in all_combine:  # loop on each coalitions, compute normalized surplus
+        feature_dim = data.shape[1]
+
+        others_matrix = others[np.array(item),:].reshape(-1,feature_dim)
+        player_row = data[index,:].reshape(-1,feature_dim)
+        total_matrix = np.concatenate([others_matrix,player_row],axis=0)
+        index_matrix = rankdata(total_matrix,method='max',axis=0)
+        # adding cheat bonus
+        index_matrix = cheat_add_bonus(total_matrix,index_matrix,bonus)
+        player_rank = index_matrix[-1,:]
+        # compute surplus
+        surplus = player_rank.sum()
+
+        s = len(item)
+        n = data.shape[0]
+        normalize_constant = math.factorial(s) * math.factorial(n-s-1) / math.factorial(n)
+        value = normalize_constant * surplus
+        shapley += value
+    return shapley
+
+def rank_based_value(index,data,bonus=0.01):
+    index_matrix = rankdata(data,method='max',axis=0)
+    index_matrix = cheat_add_bonus(data,index_matrix,bonus)
+    value = index_matrix[index,:].sum()
+    return value
+
+def rank_based_all_or_none_value(index,data,bonus=0.01):
+    index_matrix = rankdata(data,method='max',axis=0)
+    index_matrix = cheat_add_bonus(data,index_matrix,bonus)
+    # now see how good player is, you only win if you beat all others
+    player_rank = index_matrix[-1,:]
+    good_or_not = (player_rank == index_matrix.shape[0])
+    player_rank[np.logical_not(good_or_not)] = 0
+    value = player_rank.sum()
+    return value
+
+
 
 def approximate_shapley_value(data,n_sample=6,n_time=1000):  # for big coalition
     total = np.zeros(shape=data.shape[0])
