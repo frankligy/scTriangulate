@@ -23,6 +23,10 @@ __init__()
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.main_class.ScTriangulate.deserialize
 
+(statics) salvage_run()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.main_class.ScTriangulate.salvage_run
+
 add_new_metrics()
 ~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.main_class.ScTriangulate.add_new_metrics

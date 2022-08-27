@@ -4,6 +4,7 @@ import scanpy as sc
 import anndata as ad
 import pandas as pd
 import numpy as np
+import subprocess
 import os,sys
 sys.path.insert(0,'/data/salomonis2/software')
 from sctriangulate import *
@@ -135,7 +136,7 @@ adata_tea = sc.read('input_adt_umap.h5ad')
 
 
 # insights
-sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
+# sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
 #sctri.adata.obs.to_csv('to_bm_ensemble.txt',sep='\t')
 
 # # for ensemble
@@ -210,5 +211,54 @@ sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
 
 # MAIT, NKT
 # sctri.plot_cluster_feature('azimuth','MAIT','location')
+
+
+
+'''
+answer reviewer questions (why shapley versus rank, why 0.01, why pruning and reassigning)
+original, shapley_all_or_none
+rank
+rank_all_or_none
+shapley
+'''
+# for opt in ['rank_all_or_none','rank','shapley']:
+#     os.mkdir('output_one_{}'.format(opt))
+#     subprocess.run(['cp','output_one/after_metrics.p','output_one_{}'.format(opt)])
+#     ScTriangulate.salvage_run(step_to_start='run_shapley',last_step_file='output_one/after_metrics.p',outdir='output_one_{}'.format(opt),
+#                               shapley_mode=opt,shapley_bonus=0.01,assess_pruned=False,viewer_cluster=False,viewer_heterogeneity=False)
+
+# sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
+# for opt in ['rank_all_or_none','rank','shapley']:
+#     new_sctri = ScTriangulate.deserialize('output_one_{}/after_rank_pruning.p'.format(opt))
+#     new_sctri.uns['raw_cluster_goodness'].to_csv(os.path.join(new_sctri.dir,'raw_cluster_goodness.txt'),sep='\t')
+#     new_sctri.add_to_invalid_by_win_fraction(percent=0.25)
+#     new_sctri.pruning(method='reassign',abs_thresh=10,remove1=True,reference=new_sctri.reference)
+#     new_obs = new_sctri.adata.obs
+#     add_annotations(sctri.adata,new_obs,['pruned'],0,['pruned_{}'.format(opt)],'\t','memory')
+
+# sctri.cluster_performance(cluster='pruned',competitors=['pruned_{}'.format(opt) for opt in ['rank_all_or_none','rank','shapley']],
+#                           reference='azimuth',show_cluster_number=True,metrics=True)
+
+# for bonus in [0,0.005,0.01,0.05,0.1]:
+#     os.mkdir('output_one_bonus_{}'.format(bonus))
+#     subprocess.run(['cp','output_one/after_metrics.p','output_one_bonus_{}'.format(bonus)])
+#     ScTriangulate.salvage_run(step_to_start='run_shapley',last_step_file='output_one/after_metrics.p',outdir='output_one_bonus_{}'.format(bonus),
+#                               shapley_mode='shapley_all_or_none',shapley_bonus=bonus,assess_pruned=False,viewer_cluster=False,viewer_heterogeneity=False)
+
+# sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
+# for bonus in [0,0.005,0.01,0.05,0.1]:
+#     new_sctri = ScTriangulate.deserialize('output_one_bonus_{}/after_rank_pruning.p'.format(bonus))
+#     new_sctri.uns['raw_cluster_goodness'].to_csv(os.path.join(new_sctri.dir,'raw_cluster_goodness.txt'),sep='\t')
+#     new_sctri.add_to_invalid_by_win_fraction(percent=0.25)
+#     new_sctri.pruning(method='reassign',abs_thresh=10,remove1=True,reference=new_sctri.reference)
+#     new_obs = new_sctri.adata.obs
+#     add_annotations(sctri.adata,new_obs,['pruned'],0,['pruned_bonus_{}'.format(bonus)],'\t','memory')
+
+# sctri.cluster_performance(cluster='pruned',competitors=['pruned_bonus_{}'.format(bonus) for bonus in [0,0.005,0.01,0.05,0.1]],
+#                           reference='azimuth',show_cluster_number=True,metrics=True)
+
+
+sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
+sctri.cluster_performance(cluster='pruned',competitors=['raw'],reference='azimuth',show_cluster_number=True,metrics=True)
 
 

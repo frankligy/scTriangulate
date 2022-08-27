@@ -358,7 +358,7 @@ class ScTriangulate(object):
 
 
     @staticmethod
-    def salvage_run(step_to_start,last_step_file,scale_sccaf=True,layer=None,added_metrics_kwargs=[{'species':'human','criterion':2,'layer':None}],compute_shapley_parallel=True,
+    def salvage_run(step_to_start,last_step_file,outdir=None,scale_sccaf=True,layer=None,added_metrics_kwargs=[{'species':'human','criterion':2,'layer':None}],compute_shapley_parallel=True,
                     shapley_mode='shapley_all_or_none',shapley_bonus=0.01,win_fraction_cutoff=0.25,
                     reassign_abs_thresh=10,assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,
                     viewer_heterogeneity_keys=None,nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,heatmap_cmap='viridis',heatmap_regex=None,
@@ -369,6 +369,7 @@ class ScTriangulate(object):
 
         :param step_to_start: string, now support 'assess_pruned'.
         :param last_step_file: string, the path to the intermediate from which we start the salvage run.
+        :param outdir: None or string, whether to change the outdir or not.
         
         Other parameters are the same as ``lazy_run`` function.
 
@@ -378,8 +379,14 @@ class ScTriangulate(object):
 
         '''
         # before running this function, make sure previously generated file/folder are renamed, otherwise, they will be overwritten.
+        sctri = ScTriangulate.deserialize(last_step_file)
+        if outdir is not None:
+            if not os.path.exists(outdir):
+                os.mkdir(outdir)
+            sctri.dir = outdir
+            
         if step_to_start == 'assess_pruned':
-            sctri = ScTriangulate.deserialize(last_step_file)
+            
             sctri.uns['raw_cluster_goodness'].to_csv(os.path.join(sctri.dir,'raw_cluster_goodness.txt'),sep='\t')
             sctri.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
             sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=sctri.reference)
@@ -402,7 +409,7 @@ class ScTriangulate(object):
                     sctri.viewer_heterogeneity_figure(key=key,other_umap=other_umap,heatmap_scale=heatmap_scale,heatmap_cmap=heatmap_cmap,heatmap_regex=heatmap_regex,
                                                       heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
         elif step_to_start == 'build_all_viewers':
-            sctri = ScTriangulate.deserialize(last_step_file)
+
             if viewer_cluster:
                 sctri.viewer_cluster_feature_html()
                 sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
@@ -416,7 +423,7 @@ class ScTriangulate(object):
                                                       heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
 
         elif step_to_start == 'run_shapley':
-            sctri = ScTriangulate.deserialize(last_step_file)
+
             sctri.compute_shapley(parallel=compute_shapley_parallel,mode=shapley_mode,bonus=shapley_bonus)
             sctri.serialize(name='after_shapley.p')
             sctri.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,layer=layer,assess_raw=assess_raw)
