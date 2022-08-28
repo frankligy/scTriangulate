@@ -206,6 +206,7 @@ def marker_gene(adata, key, species, criterion, folder):
     result['enrichr'] = col_enrichr
     result['gsea'] = col_gsea
     result['purify'] = col_purify
+
     return result
 
 
@@ -272,6 +273,9 @@ def reassign_score(adata,key,marker,regress_size=False):
         key_size_dict = get_size_in_metrics(adata.obs,key)
         df_inspect = pd.concat([pd.Series(key_metric_dict),pd.Series(key_size_dict)],axis=1) # index is cluster, col1 is metric, col2 is size
         cluster_to_accuracy = regress_size(df_inspect,regressor='GLM',to_dict=True)
+
+    del adata_now
+
     return cluster_to_accuracy, confusion_reassign
 
 '''below is the part for regression score'''
@@ -418,6 +422,9 @@ def tf_idf10_for_cluster(adata,key,species,criterion,regress_size=False,layer=No
         key_size_dict = get_size_in_metrics(adata.obs,key)
         df_inspect = pd.concat([pd.Series(key_metric_dict),pd.Series(key_size_dict)],axis=1) # index is cluster, col1 is metric, col2 is size   
         cluster_to_tfidf10 = regress_size(df_inspect,regressor='GLM',to_dict=True)
+
+    del df
+    
     return cluster_to_tfidf10, exclusive_genes
 
 
@@ -446,6 +453,9 @@ def tf_idf5_for_cluster(adata,key,species,criterion,regress_size=False,layer=Non
         key_size_dict = get_size_in_metrics(adata.obs,key)
         df_inspect = pd.concat([pd.Series(key_metric_dict),pd.Series(key_size_dict)],axis=1) # index is cluster, col1 is metric, col2 is size
         cluster_to_tfidf5 = regress_size(df_inspect,regressor='GLM',to_dict=True)
+
+    del df
+
     return cluster_to_tfidf5
 
 def tf_idf1_for_cluster(adata,key,species,criterion,regress_size=False,layer=None):
@@ -473,6 +483,9 @@ def tf_idf1_for_cluster(adata,key,species,criterion,regress_size=False,layer=Non
         key_size_dict = get_size_in_metrics(adata.obs,key)
         df_inspect = pd.concat([pd.Series(key_metric_dict),pd.Series(key_size_dict)],axis=1) # index is cluster, col1 is metric, col2 is size
         cluster_to_tfidf1 = regress_size(df_inspect,regressor='GLM',to_dict=True)
+
+    del df
+
     return cluster_to_tfidf1
 
 
@@ -525,6 +538,11 @@ def SCCAF_score(adata, key, species, criterion, scale_sccaf,regress_size=False):
         key_size_dict = get_size_in_metrics(adata.obs,key)
         df_inspect = pd.concat([pd.Series(key_metric_dict),pd.Series(key_size_dict)],axis=1) # index is cluster, col1 is metric, col2 is size
         cluster_to_SCCAF = regress_size(df_inspect,regressor='GLM',to_dict=True)
+
+    del X
+    del X_train
+    del X_test
+
     return cluster_to_SCCAF, confusion_sccaf
 
 

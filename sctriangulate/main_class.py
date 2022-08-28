@@ -764,7 +764,7 @@ class ScTriangulate(object):
         '''
         if issparse(self.adata.X):
             self._to_dense()
-        counts_matrix = self.adata.X
+        counts_matrix = self.adata.X  # I don't want adata.X to be modified, so make a copy 
         logger_sctriangulate.info('running Scrublet may take several minutes')
         scrub = scr.Scrublet(counts_matrix)
         doublet_scores,predicted_doublets = scrub.scrub_doublets(min_counts=1,min_cells=1)
@@ -2691,7 +2691,7 @@ def penalize_artifact_void(obs,query,stamps,metrics):
 
 def each_key_run(sctri,key,scale_sccaf,layer,added_metrics_kwargs=None):
     folder = sctri.dir
-    adata = sctri.adata
+    adata = sctri.adata   # I don't want original to be modified, so make a copy
     species = sctri.species
     criterion = sctri.criterion
     metrics = sctri.metrics
@@ -2703,7 +2703,7 @@ def each_key_run(sctri,key,scale_sccaf,layer,added_metrics_kwargs=None):
     except AssertionError:
         adata.X = adata.X.toarray()  
 
-    # remove cluster that only have 1 cell, for DE analysis
+    # remove cluster that only have 1 cell, for DE analysis, adata_to_compute is just a view of adata
     adata_to_compute = check_filter_single_cluster(adata,key)  
 
     # a dynamically named dict
@@ -2743,6 +2743,8 @@ def each_key_run(sctri,key,scale_sccaf,layer,added_metrics_kwargs=None):
     collect['exclusive_genes'] = exclusive_genes
     collect['confusion_reassign'] = confusion_reassign
     collect['confusion_sccaf'] = confusion_sccaf
+
+    del adata
 
     return collect
 
