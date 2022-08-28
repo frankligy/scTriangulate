@@ -694,6 +694,15 @@ def umap_dual_view_save(adata,cols,method='umap'):
             plt.close()      
 
 def just_log_norm(adata):
+    '''
+    perform CPTT and log operation on adata.X in place, no return value
+
+    :param adata: the anndata to perform operations on
+
+    Example:
+
+        just_log_norm(adata)
+    '''
     sc.pp.normalize_total(adata,target_sum=1e4)
     sc.pp.log1p(adata)
     return adata

@@ -223,6 +223,10 @@ make_sure_adata_writable()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.make_sure_adata_writable
 
+just_log_norm()
+~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.preprocessing.just_log_norm()
+
 scanpy_recipe()
 ~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.scanpy_recipe
