@@ -5,10 +5,15 @@ import numpy as np
 import os,sys
 import scanpy as sc
 import matplotlib.pyplot as plt
-
+sys.path.insert(0,'/data/salomonis2/software')
 from sctriangulate import *
 from sctriangulate.preprocessing import *
 from sctriangulate.colors import bg_greyed_cmap
+
+
+mpl.rcParams['pdf.fonttype'] = 42
+mpl.rcParams['ps.fonttype'] = 42
+mpl.rcParams['font.family'] = 'Arial'
 
 # load the data
 # adata = sc.read_10x_h5('31WF_ND19-446__TNC-RNA-ADT.h5',gex_only=False)
@@ -84,7 +89,7 @@ adata_combine = sc.read('combined_rna_adt.h5ad')
 # insights
 ## plot all adts
 # all_adts = ['AB_' + item for item in adata_adt.var_names.tolist()]
-sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
+# sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
 # sc.pl.umap(sctri.adata,color=all_adts,cmap=bg_greyed_cmap('viridis'),vmin=1e-5)
 # plt.savefig('all_adt.pdf',bbox_inches='tight')
 # plt.close()
@@ -93,10 +98,10 @@ sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
 
 # cluster performance
 # sctri.cluster_performance(cluster='pruned',competitors=sctri.query,reference='azimuth',show_cluster_number=True)
-cols = ['wsnn_res.0.25','wsnn_res.0.5','wsnn_res.0.75','wsnn_res.1','wsnn_res.1.25','wsnn_res.1.5','wsnn_res.1.75',
-        'wsnn_res.2','wsnn_res.2.25','wsnn_res.2.5','wsnn_res.2.75','wsnn_res.3','wsnn_res.3.25','wsnn_res.3.5','wsnn_res.3.75']
-add_annotations(sctri.adata,'./wnn_metadata.txt',cols,0,cols)
-sctri.cluster_performance(cluster='pruned',competitors=cols,reference='azimuth',show_cluster_number=True)
+# cols = ['wsnn_res.0.25','wsnn_res.0.5','wsnn_res.0.75','wsnn_res.1','wsnn_res.1.25','wsnn_res.1.5','wsnn_res.1.75',
+#         'wsnn_res.2','wsnn_res.2.25','wsnn_res.2.5','wsnn_res.2.75','wsnn_res.3','wsnn_res.3.25','wsnn_res.3.5','wsnn_res.3.75']
+# add_annotations(sctri.adata,'./wnn_metadata.txt',cols,0,cols)
+# sctri.cluster_performance(cluster='pruned',competitors=cols,reference='azimuth',show_cluster_number=True)
 
 ## output the obs
 # sctri.obs_to_df()
@@ -136,5 +141,65 @@ sctri.cluster_performance(cluster='pruned',competitors=cols,reference='azimuth',
 # for cluster in ['sctri_adt_leiden_2@10','sctri_adt_leiden_1@12','sctri_adt_leiden_2@22','sctri_adt_leiden_3@1','sctri_rna_leiden_2@2','sctri_rna_leiden_1@0','sctri_adt_leiden_1@0']:
 #     sctri.plot_multi_modal_feature_rank(cluster=cluster)
 
+'''
+reivision, sensitivity test
+'''
 
+# for opt in ['rank_all_or_none','rank','shapley']:
+#     ScTriangulate.salvage_run(step_to_start='run_shapley',last_step_file='output_one/after_metrics.p',outdir='output_one_{}'.format(opt),
+#                               shapley_mode=opt,shapley_bonus=0.01,assess_pruned=False,viewer_cluster=False,viewer_heterogeneity=False)
+
+# sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
+# for opt in ['rank_all_or_none','rank','shapley']:
+#     new_sctri = ScTriangulate.deserialize('output_one_{}/after_rank_pruning.p'.format(opt))
+#     new_sctri.uns['raw_cluster_goodness'].to_csv(os.path.join(new_sctri.dir,'raw_cluster_goodness.txt'),sep='\t')
+#     new_sctri.add_to_invalid_by_win_fraction(percent=0.25)
+#     new_sctri.pruning(method='reassign',abs_thresh=10,remove1=True,reference=new_sctri.reference)
+#     new_obs = new_sctri.adata.obs
+#     add_annotations(sctri.adata,new_obs,['pruned'],0,['pruned_{}'.format(opt)],'\t','memory')
+
+# sctri.cluster_performance(cluster='pruned',competitors=['pruned_{}'.format(opt) for opt in ['rank_all_or_none','rank','shapley']],
+#                           reference='azimuth',show_cluster_number=True,metrics=True)
+
+# for bonus in [0,0.005,0.01,0.05,0.1]:
+#     ScTriangulate.salvage_run(step_to_start='run_shapley',last_step_file='output_one/after_metrics.p',outdir='output_one_bonus_{}'.format(bonus),
+#                               shapley_mode='shapley_all_or_none',shapley_bonus=bonus,assess_pruned=False,viewer_cluster=False,viewer_heterogeneity=False)
+
+# sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
+# for bonus in [0,0.005,0.01,0.05,0.1]:
+#     new_sctri = ScTriangulate.deserialize('output_one_bonus_{}/after_rank_pruning.p'.format(bonus))
+#     new_sctri.uns['raw_cluster_goodness'].to_csv(os.path.join(new_sctri.dir,'raw_cluster_goodness.txt'),sep='\t')
+#     new_sctri.add_to_invalid_by_win_fraction(percent=0.25)
+#     new_sctri.pruning(method='reassign',abs_thresh=10,remove1=True,reference=new_sctri.reference)
+#     new_obs = new_sctri.adata.obs
+#     add_annotations(sctri.adata,new_obs,['pruned'],0,['pruned_bonus_{}'.format(bonus)],'\t','memory')
+
+# sctri.cluster_performance(cluster='pruned',competitors=['pruned_bonus_{}'.format(bonus) for bonus in [0,0.005,0.01,0.05,0.1]],
+#                           reference='azimuth',show_cluster_number=True,metrics=True)
+
+
+
+# sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
+# for wfc in [0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6]:
+#     sctri.clear_invalid()
+#     sctri.add_to_invalid_by_win_fraction(percent=wfc)
+#     sctri.pruning(method='reassign',abs_thresh=10,remove1=True,reference=sctri.reference)
+#     new_obs = sctri.adata.obs
+#     add_annotations(sctri.adata,new_obs,['pruned'],0,['pruned_wfc_{}'.format(wfc)],'\t','memory')
+
+# sctri.adata.obs['pruned'] = sctri.adata.obs['pruned_wfc_0.25']
+# sctri.cluster_performance(cluster='pruned',competitors=['pruned_wfc_{}'.format(wfc) for wfc in [0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6]],
+#                           reference='azimuth',show_cluster_number=True,metrics=True)
+
+sctri = ScTriangulate.deserialize('output_one/after_pruned_assess.p')
+for nabs in [1,5,10,15,20,25,30,35,40,45,50]:
+    sctri.clear_invalid()
+    sctri.add_to_invalid_by_win_fraction(percent=0.25)
+    sctri.pruning(method='reassign',abs_thresh=nabs,remove1=True,reference=sctri.reference)
+    new_obs = sctri.adata.obs
+    add_annotations(sctri.adata,new_obs,['pruned'],0,['pruned_nabs_{}'.format(nabs)],'\t','memory')
+
+sctri.adata.obs['pruned'] = sctri.adata.obs['pruned_nabs_10']
+sctri.cluster_performance(cluster='pruned',competitors=['pruned_nabs_{}'.format(nabs) for nabs in [1,5,10,15,20,25,30,35,40,45,50]],
+                          reference='azimuth',show_cluster_number=True,metrics=True)
 

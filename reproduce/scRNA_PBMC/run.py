@@ -66,7 +66,7 @@ adata = sc.read('adata_after_scanpy_recipe_rna_0.5_1_2_3_4_5_6_umap_True.h5ad')
 # sctri.lazy_run(viewer_heterogeneity_keys=[sctri.reference,'azimuth'])
 
 # insights
-sctri = ScTriangulate.deserialize('output_two/after_pruned_assess.p')
+# sctri = ScTriangulate.deserialize('output_two/after_pruned_assess.p')
 
 '''overall insights'''
 # sctri.obs_to_df()
@@ -209,7 +209,7 @@ sctri = ScTriangulate.deserialize('output_two/after_pruned_assess.p')
 
 
 # cluster performance plot
-sctri.cluster_performance(cluster='pruned',competitors=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'],reference='azimuth',show_cluster_number=True,metrics=None)
+# sctri.cluster_performance(cluster='pruned',competitors=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'],reference='azimuth',show_cluster_number=True,metrics=None)
 
 
 
@@ -230,6 +230,71 @@ sctri.cluster_performance(cluster='pruned',competitors=['sctri_rna_leiden_1','sc
 
 # generate_gradient(cmap='jet',name='jet')
 # generate_block(color_list=pick_n_colors(200),name='r433')
+
+
+'''
+revision sensitivity test
+'''
+
+# for opt in ['rank_all_or_none','rank','shapley']:
+#     ScTriangulate.salvage_run(step_to_start='run_shapley',last_step_file='output_two/after_metrics.p',outdir='output_two_{}'.format(opt),
+#                               shapley_mode=opt,shapley_bonus=0.01,assess_pruned=False,viewer_cluster=False,viewer_heterogeneity=False)
+
+# sctri = ScTriangulate.deserialize('output_two/after_pruned_assess.p')
+# for opt in ['rank_all_or_none','rank','shapley']:
+#     new_sctri = ScTriangulate.deserialize('output_two_{}/after_rank_pruning.p'.format(opt))
+#     new_sctri.uns['raw_cluster_goodness'].to_csv(os.path.join(new_sctri.dir,'raw_cluster_goodness.txt'),sep='\t')
+#     new_sctri.add_to_invalid_by_win_fraction(percent=0.25)
+#     new_sctri.pruning(method='reassign',abs_thresh=10,remove1=True,reference=new_sctri.reference)
+#     new_obs = new_sctri.adata.obs
+#     add_annotations(sctri.adata,new_obs,['pruned'],0,['pruned_{}'.format(opt)],'\t','memory')
+
+# sctri.cluster_performance(cluster='pruned',competitors=['pruned_{}'.format(opt) for opt in ['rank_all_or_none','rank','shapley']],
+#                           reference='azimuth',show_cluster_number=True,metrics=True)
+
+
+
+# for bonus in [0,0.005,0.01,0.05,0.1]:
+#     ScTriangulate.salvage_run(step_to_start='run_shapley',last_step_file='output_two/after_metrics.p',outdir='output_two_bonus_{}'.format(bonus),
+#                               shapley_mode='shapley_all_or_none',shapley_bonus=bonus,assess_pruned=False,viewer_cluster=False,viewer_heterogeneity=False)
+
+# sctri = ScTriangulate.deserialize('output_two/after_pruned_assess.p')
+# for bonus in [0,0.005,0.01,0.05,0.1]:
+#     new_sctri = ScTriangulate.deserialize('output_two_bonus_{}/after_rank_pruning.p'.format(bonus))
+#     new_sctri.uns['raw_cluster_goodness'].to_csv(os.path.join(new_sctri.dir,'raw_cluster_goodness.txt'),sep='\t')
+#     new_sctri.add_to_invalid_by_win_fraction(percent=0.25)
+#     new_sctri.pruning(method='reassign',abs_thresh=10,remove1=True,reference=new_sctri.reference)
+#     new_obs = new_sctri.adata.obs
+#     add_annotations(sctri.adata,new_obs,['pruned'],0,['pruned_bonus_{}'.format(bonus)],'\t','memory')
+
+# sctri.cluster_performance(cluster='pruned',competitors=['pruned_bonus_{}'.format(bonus) for bonus in [0,0.005,0.01,0.05,0.1]],
+#                           reference='azimuth',show_cluster_number=True,metrics=True)
+
+
+# sctri = ScTriangulate.deserialize('output_two/after_pruned_assess.p')
+# for wfc in [0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6]:
+#     sctri.clear_invalid()
+#     sctri.add_to_invalid_by_win_fraction(percent=wfc)
+#     sctri.pruning(method='reassign',abs_thresh=10,remove1=True,reference=sctri.reference)
+#     new_obs = sctri.adata.obs
+#     add_annotations(sctri.adata,new_obs,['pruned'],0,['pruned_wfc_{}'.format(wfc)],'\t','memory')
+
+# sctri.adata.obs['pruned'] = sctri.adata.obs['pruned_wfc_0.25']
+# sctri.cluster_performance(cluster='pruned',competitors=['pruned_wfc_{}'.format(wfc) for wfc in [0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6]],
+#                           reference='azimuth',show_cluster_number=True,metrics=True)
+
+
+sctri = ScTriangulate.deserialize('output_two/after_pruned_assess.p')
+for nabs in [1,5,10,15,20,25,30,35,40,45,50]:
+    sctri.clear_invalid()
+    sctri.add_to_invalid_by_win_fraction(percent=0.25)
+    sctri.pruning(method='reassign',abs_thresh=nabs,remove1=True,reference=sctri.reference)
+    new_obs = sctri.adata.obs
+    add_annotations(sctri.adata,new_obs,['pruned'],0,['pruned_nabs_{}'.format(nabs)],'\t','memory')
+
+sctri.adata.obs['pruned'] = sctri.adata.obs['pruned_nabs_10']
+sctri.cluster_performance(cluster='pruned',competitors=['pruned_nabs_{}'.format(nabs) for nabs in [1,5,10,15,20,25,30,35,40,45,50]],
+                          reference='azimuth',show_cluster_number=True,metrics=True)
 
 
 
