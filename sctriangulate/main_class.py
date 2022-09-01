@@ -160,11 +160,6 @@ class ScTriangulate(object):
         # step2: replace invalid char in cluster and key name    
         ## replace cluster name
         invalid_chars = ['/','@','$',' ']
-        if self.reference in self.query:
-            all_keys = self.query
-        else:
-            all_keys = copy.deepcopy(self.query)
-            all_keys.append(self.reference)
         for key in all_keys:
             for ichar in invalid_chars:
                 self.adata.obs[key] = self.adata.obs[key].str.replace(ichar,'_')
@@ -451,6 +446,35 @@ class ScTriangulate(object):
                     sctri.viewer_heterogeneity_html(key=key)
                     sctri.viewer_heterogeneity_figure(key=key,other_umap=other_umap,heatmap_scale=heatmap_scale,heatmap_cmap=heatmap_cmap,heatmap_regex=heatmap_regex,
                                                     heatmap_direction='include',heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
+
+        elif step_to_start == 'run_pruning':
+
+            sctri.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,layer=layer,assess_raw=assess_raw)
+            sctri.serialize(name='after_rank_pruning.p')
+            sctri.uns['raw_cluster_goodness'].to_csv(os.path.join(sctri.dir,'raw_cluster_goodness.txt'),sep='\t')
+            sctri.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
+            sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=sctri.reference)
+            for col in ['final_annotation','pruned']:
+                sctri.plot_umap(col,'category')
+            if nca_embed:
+                logger_sctriangulate.info('starting to do nca embedding')
+                adata = nca_embedding(sctri.adata,10,'pruned','umap',n_top_genes=3000)
+                adata.write(os.path.join(sctri.dir,'adata_nca.h5ad'))
+            if assess_pruned:
+                sctri.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer,added_metrics_kwargs=added_metrics_kwargs)
+                sctri.serialize(name='after_pruned_assess.p')
+            if viewer_cluster:
+                sctri.viewer_cluster_feature_html()
+                sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
+            if viewer_heterogeneity:
+                if viewer_heterogeneity_keys is None:
+                    viewer_heterogeneity_keys = [self.reference]
+                for key in viewer_heterogeneity_keys:
+                    sctri.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=key)
+                    sctri.viewer_heterogeneity_html(key=key)
+                    sctri.viewer_heterogeneity_figure(key=key,other_umap=other_umap,heatmap_scale=heatmap_scale,heatmap_cmap=heatmap_cmap,heatmap_regex=heatmap_regex,
+                                                    heatmap_direction='include',heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
+
 
 
             
