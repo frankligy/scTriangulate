@@ -1447,7 +1447,7 @@ class ScTriangulate(object):
 
         return confusion_df
 
-    def plot_confusion(self,name,key,save=True,format='pdf',cmap=retrieve_pretty_cmap('scphere'),**kwargs):
+    def plot_confusion(self,name,key,save=True,format='pdf',cmap=retrieve_pretty_cmap('scphere'),labelsize=None,**kwargs):
         '''
         plot the confusion as a heatmap.
 
@@ -1456,6 +1456,7 @@ class ScTriangulate(object):
         :param save: boolean, whether to save the figure. Default: True.
         :param format: boolean, file format to save. Default: '.pdf'.
         :param cmap: colormap object, Default: scphere_cmap, which defined in colors module.
+        :param labelsize: float, this can adjust the label size on yaxis and xaxis for the resultant heatmap
         :param kwargs: additional keyword arguments to sns.heatmap().
 
         Examples::
@@ -1470,7 +1471,10 @@ class ScTriangulate(object):
         '''
         df = self.uns[name][key]
         df = df.apply(func=lambda x:x/x.sum(),axis=1)
-        sns.heatmap(df,cmap=cmap,**kwargs)  
+        fig,ax = plt.subplots()
+        sns.heatmap(df,ax=ax,cmap=cmap,**kwargs) 
+        if labelsize is not None: 
+            ax.tick_params(labelsize=1)
         if save:
             plt.savefig(os.path.join(self.dir,'confusion_{}_{}.{}'.format(name,key,format)),bbox_inches='tight')
             plt.close()
