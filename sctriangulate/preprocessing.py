@@ -906,14 +906,21 @@ class Normalization(object):
             from sctriangulate.preprocessing import Normalization
             post_mat = Normalization.total_normalization(pre_mat)
         '''
+        if target is None:
+            target = np.mean(mat,axis=1).reshape(-1,1)
         total = np.sum(mat,axis=1).reshape(-1,1)
         sf = total/target
         post = np.log(mat/sf + 1)
         return post
 
     @staticmethod
-    def GMM_normalization(mat):
+    def GMM_normalization(mat,non_negative=False):
         '''
+        This method is a re-implementaion from `Stephenson et al <https://www.nature.com/articles/s41591-021-01329-2>`_,
+        The raw counts are first subjected to a CPTT total normalization, then a GaussianMixture model was fitted to the data,
+        we substract the mean of the background from the data to remove background noise. Optionally, user can make the post-processed
+        matrix as non-negative by setting ``non_negative==True``
+
         Examples::
 
             from sctriangulate.preprocessing import Normalization
@@ -927,6 +934,8 @@ class Normalization(object):
         bg_index = np.argmin(means.mean(axis=1))
         bg_mean = means[bg_index,:].reshape(1,-1)
         post = mat - bg_mean
+        if non_negative:
+            post = np.where(post>=0,post,0)
         return post
 
 
