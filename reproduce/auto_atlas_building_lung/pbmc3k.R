@@ -29,3 +29,6 @@ pbmc <- FindNeighbors(pbmc, dims = 1:10) # pbmc@graph add $RNA_nn and $RNA_snn, 
 pbmc <- FindClusters(pbmc, resolution = 0.5)  # will add cluster to pbmc@meta.data, also active.ident will automatically change
 pbmc <- RunUMAP(pbmc, dims = 1:10) # pbmc@reduction list will add @umap 
 cluster2.markers <- FindMarkers(pbmc, ident.1 = 2, min.pct = 0.25)
+
+# essential command in Seurat: https://satijalab.org/seurat/articles/essential_commands.html
+
