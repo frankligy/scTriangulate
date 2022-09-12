@@ -15,7 +15,6 @@ from scipy.spatial.distance import pdist,squareform
 from scipy.cluster.hierarchy import linkage,leaves_list
 import multiprocessing as mp
 import platform
-import logging
 import subprocess
 import re
 
@@ -24,6 +23,7 @@ import anndata as ad
 import gseapy as gp
 import scrublet as scr
 
+from .logger import *
 from .shapley import *
 from .metrics import *
 from .viewer import *
@@ -124,6 +124,7 @@ class ScTriangulate(object):
             if not predict_doublet == 'precomputed':
                 self.doublet_predict()
         else:
+            logger_sctriangulate.info('skip scrublet doublet prediction, instead doublet is filled using value 0.5')
             doublet_scores = np.full(shape=self.adata.obs.shape[0],fill_value=0.5)  # add a dummy score
             self.adata.obs['doublet_scores'] = doublet_scores
 
@@ -188,36 +189,31 @@ class ScTriangulate(object):
         self.adata.var.index.name = None
 
     def _set_logging(self):
-        # get all logger
-        global logger_sctriangulate
-        logger_sctriangulate = logging.getLogger(__name__)
-        logger_scanpy = logging.getLogger('scanpy')
-        logger_gseapy = logging.getLogger('gseapy')
-        logger_scrublet = logging.getLogger('scrublet')
+        import warnings
+        warnings.simplefilter("ignore")
 
-        # make other logger silent
-        logger_scanpy.setLevel(logging.ERROR)
-        logger_gseapy.setLevel(logging.ERROR)
-        logger_scrublet.setLevel(logging.ERROR)
+        # get all logger and make them silent
+        for pkg in ['scanpy','gseapy','scrublet']:
+            logging.getLogger(pkg).setLevel(logging.CRITICAL)
 
         # configure own logger
         if self.verbose == 1:
             c_handler = logging.StreamHandler()
-            c_handler.setLevel(logging.INFO)
             c_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s' )
             c_handler.setFormatter(c_formatter)        
             logger_sctriangulate.addHandler(c_handler)
-            logger_sctriangulate.info('choosing console logging')
+            logger_sctriangulate.setLevel(logging.INFO)  # you can not setLevel for the Handler, as the root logger already has default handler and level is Warning, just add handler will not gonna change anything
+            logger_sctriangulate.info('Choosing logging to console (VERBOSE=1)')
 
         elif self.verbose == 2:
             if not os.path.exists(self.dir):
                 os.mkdir(self.dir)
             f_handler = logging.FileHandler(os.path.join(self.dir,'scTriangulate.log'))
-            f_handler.setLevel(logging.INFO)
             f_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s' )
             f_handler.setFormatter(f_formatter)
             logger_sctriangulate.addHandler(f_handler)
-            logger_sctriangulate.info('choosing file logging')
+            logger_sctriangulate.setLevel(logging.INFO)
+            logger_sctriangulate.info('Choosing logging to a log file (VERBOSE=2)')
 
 
     def _to_dense(self):
@@ -479,9 +475,9 @@ class ScTriangulate(object):
 
             
 
-    def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=True,layer=None,added_metrics_kwargs=[{'species':'human','criterion':2,'layer':None}],compute_shapley_parallel=True,
+    def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=False,layer=None,cores=None,added_metrics_kwargs=[{'species':'human','criterion':2,'layer':None}],compute_shapley_parallel=True,
                  shapley_mode='shapley_all_or_none',shapley_bonus=0.01,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
-                 assess_raw=False,assess_pruned=True,viewer_cluster=True,viewer_cluster_keys=None,viewer_heterogeneity=True,viewer_heterogeneity_keys=None,
+                 assess_raw=False,assess_pruned=False,viewer_cluster=False,viewer_cluster_keys=None,viewer_heterogeneity=False,viewer_heterogeneity_keys=None,
                  nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,heatmap_cmap='viridis',heatmap_regex=None,heatmap_direction='include',heatmap_n_genes=None,
                  heatmap_cbar_scale=None):
         '''
@@ -490,6 +486,7 @@ class ScTriangulate(object):
         :param compute_metrics_parallel: boolean, whether to parallelize ``compute_metrics`` step. Default: True
         :param scale_sccaf: boolean, whether to first scale the expression matrix before running sccaf score. Default: True
         :param layer: None or str, the adata layer where the raw count is stored, useful when calculating tfidf score when adata.X has been skewed (no zero value, like totalVI denoised value)
+        :param cores: None or int, how many cores you'd like to specify, by default, it is min(n_annotations,n_available_cores) for metrics computing, and n_available_cores for other parallelizable operations
         :param added_metrics_kwargs: list, see the notes in __init__ function, this is to specify additional arguments that will be passed to each added metrics callable.
         :param compute_shapley_parallel: boolean, whether to parallelize ``compute_parallel`` step. Default: True
         :param win_fraction_cutoff: float, between 0-1, the cutoff for function ``add_invalid_by_win_fraction``. Default: 0.25
@@ -508,10 +505,13 @@ class ScTriangulate(object):
 
             sctri.lazy_run(viewer_heterogeneity_keys=['annotation1','annotation2'])
         '''
-        self.compute_metrics(parallel=compute_metrics_parallel,scale_sccaf=scale_sccaf,layer=layer,added_metrics_kwargs=added_metrics_kwargs)
+        logger_sctriangulate.info('Starting to compute stability metrics, ignore scanpy logging like "Trying to set..." or "Storing ... as categorical"')
+        self.compute_metrics(parallel=compute_metrics_parallel,scale_sccaf=scale_sccaf,layer=layer,added_metrics_kwargs=added_metrics_kwargs,cores=cores)
         self.serialize(name='after_metrics.p')
-        self.compute_shapley(parallel=compute_shapley_parallel,mode=shapley_mode,bonus=shapley_bonus)
+        logger_sctriangulate.info('Starting to compute shapley')
+        self.compute_shapley(parallel=compute_shapley_parallel,mode=shapley_mode,bonus=shapley_bonus,cores=cores)
         self.serialize(name='after_shapley.p')
+        logger_sctriangulate.info('Starting to prune and reassign the raw result to get pruned results')
         self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,layer=layer,assess_raw=assess_raw)
         self.serialize(name='after_rank_pruning.p')
         self.uns['raw_cluster_goodness'].to_csv(os.path.join(self.dir,'raw_cluster_goodness.txt'),sep='\t')
@@ -519,13 +519,32 @@ class ScTriangulate(object):
         self.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=self.reference)
         for col in ['final_annotation','pruned']:
             self.plot_umap(col,'category')
+        # output necessary result
+        make_sure_adata_writable(self.adata)
+        self.adata.write(os.path.join(self.dir,'sctriangulate.h5ad'))
+        self.adata.obs.to_csv(os.path.join(self.dir,'sctri_barcode2cellmetadata.txt'),sep='\t')
+        pd.DataFrame(data=self.adata.obsm['X_umap'],index=self.adata.obs_names,columns=['umap_x','umap_y']).to_csv(os.path.join(self.dir,'sctri_umap_coord.txt'))
+        self.extract_stability(keys=self.query)
+        for q in self.query:
+            self.gene_to_df(mode='marker_genes',key=q)
+            self.gene_to_df(mode='exclusive_genes',key=q)
+
         if nca_embed:
             logger_sctriangulate.info('starting to do nca embedding')
             adata = nca_embedding(self.adata,10,'pruned','umap',n_top_genes=3000)
             adata.write(os.path.join(self.dir,'adata_nca.h5ad'))
         if assess_pruned:
+            logger_sctriangulate.info('starting to get stability metrics on pruned final results')
             self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer,added_metrics_kwargs=added_metrics_kwargs)
             self.serialize(name='after_pruned_assess.p')
+            subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr/'))])
+            # update the old output 
+            make_sure_adata_writable(self.adata)
+            self.adata.write(os.path.join(self.dir,'sctriangulate.h5ad'))
+            self.adata.obs.to_csv(os.path.join(self.dir,'sctri_barcode2cellmetadata.txt'),sep='\t')
+            self.extract_stability(keys=['pruned'])
+            self.gene_to_df(mode='marker_genes',key='pruned')
+            self.gene_to_df(mode='exclusive_genes',key='pruned')
         if viewer_cluster:
             self.viewer_cluster_feature_html()
             self.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
@@ -786,10 +805,10 @@ class ScTriangulate(object):
             sctri.doublet_predict()
 
         '''
-        if issparse(self.adata.X):
-            self._to_dense()
+        logger_sctriangulate.info('Running scrublet to get doublet scores, it will take a while and please follow their prompts below:')
+        if not issparse(self.adata.X):
+            self._to_sparse()
         counts_matrix = self.adata.X  # I don't want adata.X to be modified, so make a copy 
-        logger_sctriangulate.info('running Scrublet may take several minutes')
         scrub = scr.Scrublet(counts_matrix)
         doublet_scores,predicted_doublets = scrub.scrub_doublets(min_counts=1,min_cells=1)
         self.adata.obs['doublet_scores'] = doublet_scores
@@ -890,7 +909,7 @@ class ScTriangulate(object):
         return df
 
 
-    def compute_metrics(self,parallel=True,scale_sccaf=True,layer=None,added_metrics_kwargs=None):
+    def compute_metrics(self,parallel=True,scale_sccaf=True,layer=None,added_metrics_kwargs=None,cores=None):
         '''
         main function for computing the metrics (defined by self.metrics) of each clusters in each annotation.
         After the run, q (# query) * m (# metrics) columns will be added to the adata.obs, the column like will be like
@@ -915,7 +934,11 @@ class ScTriangulate(object):
         if parallel:
             cores1 = len(self.query)  # make sure to request same numeber of cores as the length of query list
             cores2 = mp.cpu_count()
-            cores = min(cores1,cores2)
+            cores3 = cores
+            if cores is not None:
+                cores = cores3
+            else:
+                cores = min(cores1,cores2)
             logger_sctriangulate.info('Spawn to {} processes'.format(cores))
             pool = mp.Pool(processes=cores)
             self._to_sparse()
@@ -1132,7 +1155,7 @@ class ScTriangulate(object):
 
 
 
-    def compute_shapley(self,parallel=True,mode='default',bonus=0.01):
+    def compute_shapley(self,parallel=True,mode='default',bonus=0.01,cores=None):
         '''
         Main core function, after obtaining the metrics for each cluster. For each single cell, let's calculate the shapley
         value for each annotation and assign the cluster to the one with highest shapley value.
@@ -1160,7 +1183,10 @@ class ScTriangulate(object):
                 data[i,:,:] = self.adata.obs[practical_colname].values
             final = []
             intermediate = []
-            cores = mp.cpu_count()
+            if cores is not None:
+                cores = cores
+            else:
+                cores = mp.cpu_count()
             # split the obs and data, based on cell axis
             obs = self.adata.obs
             obs_index = np.arange(obs.shape[0])
@@ -1184,11 +1210,9 @@ class ScTriangulate(object):
             # get raw sctriangulate result
             obs = self.adata.obs
             obs_index = np.arange(obs.shape[0])  # [0,1,2,.....]
-            cores = mp.cpu_count()
             sub_indices = np.array_split(obs_index,cores)  # indices for each chunk [(0,1,2...),(56,57,58...),(),....]
             sub_obs = [obs.iloc[sub_index,:] for sub_index in sub_indices]  # [sub_df,sub_df,...]
             pool = mp.Pool(processes=cores)
-            logger_sctriangulate.info('spawn {} sub processes for getting raw sctriangulate result'.format(cores))
             r = pool.map_async(run_assign,sub_obs)
             pool.close()
             pool.join()

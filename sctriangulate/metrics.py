@@ -6,10 +6,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import sys
 import gseapy as gp
+import logging
 import math
 import os
 
+from .logger import logger_sctriangulate
 from .preprocessing import *
+
 
 def check_filter_single_cluster(adata,key):
     vc = adata.obs[key].value_counts()
@@ -24,7 +27,6 @@ def doublet_compute(adata,key):
         mean_score = adata[adata.obs[key]==cluster,:].obs['doublet_scores'].values.mean()
         cluster_to_doublet[cluster] = mean_score
     return cluster_to_doublet
-
 
 
 def compute_combo_score(rank_uns,cluster):
@@ -195,6 +197,7 @@ def marker_gene(adata, key, species, criterion, folder):
     col_enrichr = []
     col_gsea = []
     col_purify = []   # genelist that have artifact genes removed
+    logger_sctriangulate.warning('Running GSEAPY for marker genes for {}, requires Internet connection (not an error, just reminder)'.format(key))
     for cluster in result.index:
         enrichr_dict = run_enrichr(result.loc[cluster,:].to_list()[0],key=key,name=cluster,folder=folder,species=species,criterion=criterion)  # [0] because it is a [[gene_list]],we only need [gene_list]
         gsea_dict = run_gsea(result.loc[cluster,:].to_list()[0],key=key,name=cluster,folder=folder,species=species,criterion=criterion)
