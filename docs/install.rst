@@ -21,15 +21,12 @@ From source code::
 
     The above approaches will take care of all dependencies for you, for the information, scTriangulate depends on
 
-    * 'scanpy ==1.7.2',
-    * 'gseapy ==0.10.4',
-    * 'scrublet ==0.2.3',
-    * 'yattag',
-    * 'anytree',
-    * 'mygene ==3.2.2',
-    * 'numpy ==1.19.5',
-    * 'pandas ==1.1.5',
-    * 'leidenalg'
+    * squidpy ==1.2.0
+    * gseapy ==0.10.4
+    * scrublet ==0.2.3
+    * yattag
+    * anytree
+    * mygene ==3.2.2
 
 A minitest is included::
 
