@@ -134,9 +134,9 @@ We first instantiate ``ScTriangulate`` object by specifying:
 The ``dir`` doesn't need to be an existing folder, the program will automatically create one if not present. More information about instantiation can be
 found in the API :ref:`reference_to_instantiation`.
 
-The purpose of the three arguments in ``lazy_run()`` is just to save time, you can leave it as the default by calling ``lazy_run()``, which will automatically
-assess the stability of the final defined cluster as well, generate the cluster viewer and heterogeneity viewer. However, if you only want to obtain the scTriangulate
-reconciled cluster information, you don't need the above three steps, so we can optionally skip these steps.
+``assess_pruned`` which will automatically assess the stability of the final defined cluster as well, generate the cluster viewer and heterogeneity viewer. Other
+two arguments will automatically generate static HTML viewers. By default, we set them as ``False`` as the main purpose is to get scTriangulate clusters and stability. 
+You can switch them to ``True``.
 
 
 .. note::
@@ -156,7 +156,7 @@ through ``sctri.metrics`` attribute list::
 
     adata = sc.read('adata_after_scanpy_recipe_rna_1_2_3_umap_True.h5ad')
     sctri = ScTriangulate(dir='./output',adata=adata,query=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
-    sctri.compute_metrics(parallel=True,scale_sccaf=True)
+    sctri.compute_metrics(parallel=True)
     sctri.serialize('break_point_after_metrics.p')   # save it for next step
 
 After this step, 3 * 4 = 12 columns will be added to the ``sctri.adata.obs`` dataframe. 3 = 3 resolutions, 4 = 4 metrics.
@@ -252,8 +252,7 @@ Comparison with Azimuth mapping
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 Azimuth leverages > 200 ADTs to delineate the major cell populations in PBMCs, which can serve as a silver standard. First we obtain the Azimuth mapping results 
-using the h5ad object after we performed QC. Azimuth predction results can be downloaded from 
-<http://altanalyze.org/scTriangulate/scRNASeq/azimuth_pred.tsv::
+using the h5ad object after we performed QC. Azimuth predction results can be downloaded from (http://altanalyze.org/scTriangulate/scRNASeq/azimuth_pred.tsv)::
 
     sctri = ScTriangulate.deserialize('output/break_point_after_prune.p')
     add_azimuth(sctri.adata,'azimuth_pred.tsv')
@@ -334,7 +333,7 @@ the dataset can be downloaded from the http://altanalyze.org/scTriangulate/CITES
 As a more general explanation of how scTriangulate can be used in multi-modal setting, we use a pictorial representation:
 
 .. image:: ./_static/tutorial/multi_modal/general.png
-   :height: 400px
+   :height: 350px
    :width: 600px
    :align: center
    :target: target
@@ -471,9 +470,15 @@ scTriangulate can visualize the top markers in each cluster, example output see 
 
     sctri.plot_multi_modal_feature_rank(cluster='sctri_rna_leiden_3@6')
 
+.. image:: ./_static/plot_multi_modal_feature_rank.png
+    :height: 500px
+    :width: 500px
+    :align: center
+    :target: target
+
 
 scTriangulate discovers new cell states from the ADT markers (CD56 high MAIT cell), supported by `previous literature <https://www.pnas.org/content/114/27/E5434>`_,
-azimuth prediction can be downloaded from http://altanalyze.org/scTriangulate/CITESeq/azimuth_pred.tsv::
+azimuth prediction can be downloaded from (http://altanalyze.org/scTriangulate/CITESeq/azimuth_pred.tsv)::
 
     sctri = ScTriangulate.deserialize('output/after_pruned_assess.p')
     add_azimuth(sctri.adata,'azimuth_pred.tsv')

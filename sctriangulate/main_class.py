@@ -56,7 +56,7 @@ class ScTriangulate(object):
     '''
     How to create/instantiate ScTriangulate object.
 
-    :param dir: Output folder path on the disk
+    :param dir: Output folder path on the disk, will create if not exist
     :param adata: input adata file
     :param query: a python list contains the annotation names to query
     :param species: string, either human (default) or mouse, it will impact how the program searches for artifact genes in the database
@@ -94,7 +94,7 @@ class ScTriangulate(object):
     '''
 
     def __init__(self,dir,adata,query,species='human',criterion=2,verbose=1,reference=None,add_metrics={'tfidf5':tf_idf5_for_cluster},
-                    predict_doublet=True):
+                    predict_doublet=False):
 
         self.verbose = verbose
         self.dir = dir
@@ -341,7 +341,7 @@ class ScTriangulate(object):
             df.to_csv(os.path.join(self.dir,'sctri_metrics_and_shapley_df_{}.txt'.format(barcode)),sep='\t')
         return df
 
-    def prune_result(self,win_fraction_cutoff=0.25,reassign_abs_thresh=10,scale_sccaf=True,layer=None,remove1=True,assess_raw=False,added_metrics_kwargs=None):
+    def prune_result(self,win_fraction_cutoff=0.25,reassign_abs_thresh=10,scale_sccaf=False,layer=None,remove1=True,assess_raw=False,added_metrics_kwargs=[{'species': 'human', 'criterion': 2, 'layer': None}]):
         self.pruning(method='rank',discard=None,scale_sccaf=scale_sccaf,layer=layer,assess_raw=False)
         self.add_to_invalid_by_win_fraction(percent=win_fraction_cutoff)
         self.pruning(method='reassign',abs_thresh=reassign_abs_thresh,remove1=True,reference=self.reference)
@@ -489,6 +489,14 @@ class ScTriangulate(object):
         :param cores: None or int, how many cores you'd like to specify, by default, it is min(n_annotations,n_available_cores) for metrics computing, and n_available_cores for other parallelizable operations
         :param added_metrics_kwargs: list, see the notes in __init__ function, this is to specify additional arguments that will be passed to each added metrics callable.
         :param compute_shapley_parallel: boolean, whether to parallelize ``compute_parallel`` step. Default: True
+        :param shapley_mode: string, accepted values:
+
+                     * `shapley_all_or_none`: default, computing shapley, and players only get points when it beats all
+                     * `shapley`: computing shapley, but players get points based on explicit ranking, say 3 players, if ranked first, you get 3, if running up, you get 2
+                     * `rank_all_or_none`: no shapley computing, importance based on ranking, and players only get points when it beats all
+                     * `rank`: no shapley computing, importance based on ranking, but players get points based on explicit ranking as described above
+
+        :param shapley_bonus: float, default is 0.01, an offset value so that if the runner up is just {bonus} inferior to first place, it will still be a valid cluster
         :param win_fraction_cutoff: float, between 0-1, the cutoff for function ``add_invalid_by_win_fraction``. Default: 0.25
         :param reassign_abs_thresh: int, the cutoff for minimum number of cells a valid cluster should haves. Default: 10
         :param assess_raw: boolean, whether to run the same cluster assessment metrics on raw cluster labels. Default: False
@@ -909,7 +917,7 @@ class ScTriangulate(object):
         return df
 
 
-    def compute_metrics(self,parallel=True,scale_sccaf=True,layer=None,added_metrics_kwargs=None,cores=None):
+    def compute_metrics(self,parallel=True,scale_sccaf=False,layer=None,added_metrics_kwargs=[{'species': 'human', 'criterion': 2, 'layer': None}],cores=None):
         '''
         main function for computing the metrics (defined by self.metrics) of each clusters in each annotation.
         After the run, q (# query) * m (# metrics) columns will be added to the adata.obs, the column like will be like
@@ -924,10 +932,15 @@ class ScTriangulate(object):
                             controls whether scale the expression data or not. It is recommended to scale the data for any machine learning
                             algorithm, however, the liblinaer solver has been demonstrated to be robust to the scale/unscale options. When
                             the dataset > 50,000 cells or features > 1000000 (ATAC peaks), it is advised to not scale it for faster running time.
+        :param layer: None or str, the adata layer where the raw count is stored, useful when calculating tfidf score when adata.X has been skewed (no zero value, 
+                      like totalVI denoised value)
+        :param added_metrics_kwargs: list, see the notes in __init__ function, this is to specify additional arguments that will be passed to each added metrics callable.
+        :param cores: None or int, how many cores you’d like to specify, by default, it is min(n_annotations,n_available_cores) for metrics computing, 
+                      and n_available_cores for other parallelizable operations
         
         Examples::
 
-            sctri.compute_metrics(parallel=True,scale_sccaf=True)
+            sctri.compute_metrics(parallel=False)
 
 
         '''
@@ -1155,12 +1168,20 @@ class ScTriangulate(object):
 
 
 
-    def compute_shapley(self,parallel=True,mode='default',bonus=0.01,cores=None):
+    def compute_shapley(self,parallel=True,mode='shapley_all_or_none',bonus=0.01,cores=None):
         '''
         Main core function, after obtaining the metrics for each cluster. For each single cell, let's calculate the shapley
         value for each annotation and assign the cluster to the one with highest shapley value.
 
         :param parallel: boolean. Whether to run it in parallel. (scatter and gather). Default: True
+        :param mode: string, accepted values:
+
+                     * `shapley_all_or_none`: default, computing shapley, and players only get points when it beats all
+                     * `shapley`: computing shapley, but players get points based on explicit ranking, say 3 players, if ranked first, you get 3, if running up, you get 2
+                     * `rank_all_or_none`: no shapley computing, importance based on ranking, and players only get points when it beats all
+                     * `rank`: no shapley computing, importance based on ranking, but players get points based on explicit ranking as described above
+        :param bonus: float, default is 0.01, an offset value so that if the runner up is just {bonus} inferior to first place, it will still be a valid cluster
+        :param cores: None or int, None will run mp.cpu_counts() to get all available cpus.
 
         Examples::
 
