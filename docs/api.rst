@@ -67,6 +67,10 @@ doublet_predict()
 ~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.main_class.ScTriangulate.doublet_predict
 
+elo_rating_like()
+~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.main_class.ScTriangulate.elo_rating_like
+
 extract_stability()
 ~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.main_class.ScTriangulate.extract_stability

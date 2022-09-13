@@ -1360,6 +1360,40 @@ class ScTriangulate(object):
                     original_name = ref + '|' + item
                     mapping[original_name] = composite_name
         self.adata.obs['user_choice'] = self.adata.obs['prefixed'].map(mapping).values
+
+
+    def elo_rating_like(self):
+        '''
+        Computing an overall quality score for each annotation, like the idea of ``Elo Rating`` in chess in which it can 
+        reflect the probability that one player will win in a chess match. Here, we argue the overall quality score should be defined by 
+        the average of all cells' shapley value in all clusters, normalized by the number of players (annotation), and further normalized by
+        number of clusters, as our computation of shapley is an additive process such that more player will result in higher shapley value. 
+        This step should be run after shapley value were evaluated.
+
+        :return result_dic: a dictionary keyed by annotation, value is overall quality score
+
+        Examples::
+
+            result_dic = sctri.elo_rating_like()
+        '''
+        obs = self.adata.obs.copy()
+        n_p = len(self.query)
+        result_dic = {}
+        for q in self.query:
+            col_cluster_name = q
+            col_shapley_name = '_'.join([q,'shapley'])
+            elo_rating = 0
+            n_c = 0
+            for c,sub_df in obs.groupby(by=q):
+                elo_rating_c = sub_df[col_shapley_name].mean() / n_p
+                elo_rating += elo_rating_c
+                n_c += 1
+            elo_rating = elo_rating / n_c
+            result_dic[q] = elo_rating
+        return result_dic
+            
+
+
         
 
     def plot_umap(self,col,kind='category',save=True,format='pdf',umap_dot_size=None,umap_cmap='YlOrRd',frameon=False):
@@ -2764,7 +2798,7 @@ def penalize_artifact_void(obs,query,stamps,metrics):
 
 def each_key_run(sctri,key,scale_sccaf,layer,added_metrics_kwargs=None):
     folder = sctri.dir
-    adata = sctri.adata   # I don't want original to be modified, so make a copy
+    adata = sctri.adata   # here modify adata will still affect sctri.adata
     species = sctri.species
     criterion = sctri.criterion
     metrics = sctri.metrics
@@ -2777,7 +2811,10 @@ def each_key_run(sctri,key,scale_sccaf,layer,added_metrics_kwargs=None):
         adata.X = adata.X.toarray()  
 
     # remove cluster that only have 1 cell, for DE analysis, adata_to_compute is just a view of adata
-    adata_to_compute = check_filter_single_cluster(adata,key)  
+    adata_to_compute = check_filter_single_cluster(adata,key)    # here adata_to_compute is just a view of original adata, how I guarantee adata won't change?
+                                                                 # it is in each stability function, because potential modification of the adata_to_compute, I will
+                                                                 # make a copy and delete it once the computation is done (garbage collection), so that the view (adata_to_compute)
+                                                                 # won't be changed, and the adata and sctri.adata won't be changed either.
 
     # a dynamically named dict
     cluster_to_metric = {}
