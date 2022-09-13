@@ -42,7 +42,7 @@ from sctriangulate.colors import *
 
 # Your adata should have (a) adata.X (b) at least two columns representing conflicting annotations in adata.obs (c) adata.obsm['X_umap'] for automatically generate visualization
 
-adata = sc.read('adata_after_scanpy_recipe_rna_0.5_1_2_3_4_5_6_umap_True.h5ad')
+adata = sc.read('./test/input.h5ad')
 sctri = ScTriangulate(dir='./output',adata=adata,query=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
 sctri.lazy_run()
 
