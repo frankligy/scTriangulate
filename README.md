@@ -10,10 +10,6 @@ scTriangulate leverages cooperative game theory (Shapley Value) in conjunction w
 
 Please don't hesitate to reach out to me if you have any questions (contact down the page), I will be responsive.
 
-## Tutorials and Installation
-
-Check our [full documentation and step-by-step tutorials.](https://sctriangulate.readthedocs.io/en/latest/get_started.html)
-
 ## Overview
 
 ![schema](./image/schema.png)
@@ -29,6 +25,30 @@ It can be used in an array of settings:
 4. Integrate labels from multi-modality single cell datasets (CITE-Seq, Multiome, TEA-Seq, ASAP-Seq, etc.).
 
 ![schuma_chop](./image/schema_chop.png)
+
+## Tutorials and Installation
+
+Check out our [full documentation and step-by-step tutorials](https://sctriangulate.readthedocs.io/en/latest/get_started.html). But let's get a quick sense for a minimum example:
+
+```bash
+pip install sctriangulate
+```
+
+```python
+import scanpy as sc
+from sctriangulate import *
+from sctriangulate.preprocessing import *
+from sctriangulate.colors import *
+
+# Your adata should have (a) adata.X (b) at least two columns representing conflicting annotations in adata.obs (c) adata.obsm['X_umap'] for automatically generate visualization
+
+adata = sc.read('adata_after_scanpy_recipe_rna_0.5_1_2_3_4_5_6_umap_True.h5ad')
+sctri = ScTriangulate(dir='./output',adata=adata,query=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
+sctri.lazy_run()
+
+# All the results will be saved in the dir you specified
+```
+
 
 ## Citation
 
