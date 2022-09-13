@@ -19,7 +19,7 @@ requires = [
 
 setup(
       name = 'sctriangulate',
-      version = '0.10.1',
+      version = '0.12.0',
       description= 'A Python package to mix-and-match conflicting clustering results in single cell analysis, and generate reconciled clustering solutions.',
       long_description=long_description,
       long_description_content_type='text/markdown',

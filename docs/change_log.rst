@@ -1,6 +1,19 @@
 Change Log
 ============
 
+Version 0.12.0 2022/09/13
+----------------------------
+
+* Adding sctriangulate.spatial module
+* Adding different mode for computing annotation importance including ranking-based method
+* Adding elo_rating for computing the overall quality score for each annotation
+* Adding logger module for proper and clean logging
+* streamlined the API to make it easy to understand and run, no need to dig into low-level implementation
+* flexibly adding new metrics and callable
+* Allowing specifying number of cores to use
+* Allowing easily output stability scores
+* fix bugs in the code and doc
+
 Version 0.10.1 2022/01/07
 ----------------------------
 
