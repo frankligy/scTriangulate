@@ -1375,6 +1375,8 @@ class ScTriangulate(object):
         Examples::
 
             result_dic = sctri.elo_rating_like()
+
+            # {'sctri_rna_leiden_1': 1.5053613872472829, 'sctri_rna_leiden_2': 1.0973714905049967, 'sctri_rna_leiden_3': 1.1032324231884296}
         '''
         obs = self.adata.obs.copy()
         n_p = len(self.query)
