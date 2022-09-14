@@ -1,3 +1,5 @@
+#!/usr/local/bin/python
+
 import scanpy as sc
 from sctriangulate import *
 from sctriangulate.preprocessing import *
