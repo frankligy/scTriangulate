@@ -49,6 +49,20 @@ sctri.lazy_run()
 # All the results will be saved in the dir you specified
 ```
 
+## Docker
+
+You can run the main functionalities using a docker container:
+
+```bash
+docker pull frankligy123/sctriangulate:0.12.0.1
+# imagine you are in the folder where your input.h5ad file sits, and you want to save your results to a new folder in the
+# same directory as ./output, here is how you run the docker
+docker run -v $PWD:/usr/src/app/run -t frankligy123/sctriangulate:0.12.0.1 --adata_path ./run/input.h5ad \
+           --dir_path ./run/output --query sctri_rna_leiden_1 sctri_rna_leiden_2 sctri_rna_leiden_3
+# access help page
+docker run -v $PWD:/usr/src/app/run -t frankligy123/sctriangulate:0.12.0.1 --help
+```
+
 
 ## Citation
 
