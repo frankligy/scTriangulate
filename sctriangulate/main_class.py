@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import to_rgba
+import matplotlib.patches as mpatch
 import matplotlib as mpl
 import seaborn as sns
 from anytree import Node, RenderTree
@@ -659,6 +660,109 @@ class ScTriangulate(object):
         for metric,func in add_metrics.items():
             self.add_metrics[metric] = func
         self.total_metrics.extend(list(self.add_metrics.keys()))
+
+    def plot_stability(self,clusters,broke=True,
+                       height_ratios=(0.3,0.7),hspace=0.1,text_above=0.1,top_ylim=(6,7),bottom_ylim=(0,1),break_point_length=0.015):
+
+        '''
+        When specifying a list of clutsers, we will plot the stability metrics and shapley values associated with these clustes,
+        This can give an intuitive view regarding which cluster is better
+
+        :param clusters: a list of clusters, each cluster should be annotation@cluster_name
+        :param broke: bool, whether to draw barplot with break point or not, default is True
+        :param height_ratios: tuple, the height ratios for top ax and bottom ax
+        :param hspace: float, the space between top ax and bottom ax
+        :param text_above: float, the distance above the bar to draw text
+        :param top_ylim: tuple, the ylim of top ax
+        :param bottom_ylim: tuple, the ylim of bottom ax
+        :param break_point_length: float, to draw a tick to show break point, the length is default to 0.015
+
+        Examples::
+
+            sctri.plot_stability(clusters=['Sun@Interstitial_macrophages','Kaminsky@cDC2','Krasnow@IGSF21+_Dendritic'],broke=True,top_ylim=[5,7])
+            sctri.plot_stability(clusters=['Sun@monocytes','Kaminsky@cMonocyte','Kaminsky@ncMonocyte'])
+
+        .. image:: ./_static/plot_stability.png
+            :height: 300px
+            :width: 400px
+            :align: center
+            :target: target
+        '''
+
+        # acquire stability data from object
+        tm = copy.deepcopy(self.total_metrics)
+        tm.remove('doublet')
+        stability_dic = {}   # {'anno1':[0.5,0.4,0.3,0.6]}
+        k2c = {}   # {'anno1':'c2'}
+        for c in clusters:
+            k,c = c.split('@')
+            k2c[k] = c
+            stablity_scores = []
+            for m in tm:
+                cluster_to_score = self.score[k]['cluster_to_{}'.format(m)]
+                stablity_scores.append(cluster_to_score[c])
+            stability_dic[k] = stablity_scores
+         
+        if len(k2c) != len(clusters):   # there are at least two clusters in same annotation, meaning no competitions
+            plot_shapley = False
+            logger_sctriangulate.info('plot_stability, at least two clusters are under same annotation, no shapley will be plotted')
+            # just a normal barplot
+            df_data = []
+            for c in clusters:
+                k,c = c.split('@')
+                stability_scores = []
+                for m in tm:
+                    cluster_to_score = self.score[k]['cluster_to_{}'.format(m)]
+                    stability_scores.append(cluster_to_score[c])
+                df_data.append(stability_scores)
+            df = pd.DataFrame.from_records(data=df_data,index=clusters,columns=tm)
+            fig, ax = plt.subplots()
+            df.plot(kind='bar',ax=ax)
+            current_handles,current_labels = ax.get_legend_handles_labels()
+            ax.legend(current_handles,current_labels,bbox_to_anchor=(1,1),loc='upper left',frameon=False)
+            plt.savefig(os.path.join(self.dir,'score_justify_no_shapley.pdf'),bbox_inches='tight')
+            plt.close()
+            return None
+
+
+        # acquire shapley data from object, if they are competing
+        plot_shapley = True
+        obs = self.adata.obs.copy()
+        for k,c in k2c.items():
+            obs = obs.loc[obs[k]==c,:]
+        if obs.shape[0] == 0:  # they are not competing in this game
+            plot_shapley = False
+        else:
+            shapley_dic = obs.iloc[0].loc[['{}_shapley'.format(k) for k in k2c.keys()]].to_dict()  # {'anno1_shapley':6.67}
+            for k,s in shapley_dic.items():
+                k = k.split('_shapley')[0]
+                if s == 0:
+                    s = 0.02   # for visual effect in barplot
+                stability_dic[k].append(s)
+
+        # plot
+        if plot_shapley:
+            score_justify(stability_dic,k2c,tm,self.dir,broke,height_ratios,hspace,text_above,top_ylim,bottom_ylim,break_point_length)
+        else:
+            logger_sctriangulate.info('plot_stability, passed clustsers do not compete with each other, no shapley will be plotted')
+            # just a normal barplot
+            df_data = []
+            df_index = []
+            for (k,lis),(k,c) in zip(stability_dic.items(),k2c.items()):
+                df_data.append(lis)
+                df_index.append(k + '@' + c)
+            df = pd.DataFrame.from_records(data=df_data,index=df_index,columns=tm)
+            fig, ax = plt.subplots()
+            df.plot(kind='bar',ax=ax)
+            current_handles,current_labels = ax.get_legend_handles_labels()
+            ax.legend(current_handles,current_labels,bbox_to_anchor=(1,1),loc='upper left',frameon=False)
+            plt.savefig(os.path.join(self.dir,'score_justify_no_shapley.pdf'),bbox_inches='tight')
+            plt.close()
+
+
+
+        
+
 
     def plot_winners_statistics(self,col,fontsize=3,plot=True,save=True):
         '''
@@ -2907,8 +3011,54 @@ def filter_DE_genes(adata,species,criterion,regex=None,direction='include'):
 
 
 
+def score_justify(stability_dic,k2c,metrics_name,outdir,broke=True,
+                  height_ratios=(0.3,0.7),hspace=0.1,text_above=0.1,top_ylim=(6,7),bottom_ylim=(0,1),break_point_length=0.015):
 
+    from functools import reduce
+    # you need to construct x_i, y_i, and then concat x_i and y_i together
+    ys = []  # each element is the heights (list) for one annotation
+    xs = []  # each element is the x-coords (list) for one annotation
+    n = len(stability_dic)   # number of competitors
+    s = len(list(stability_dic.values())[0])   # number of scores (including shapley)
+    diff = n + 1
+    for i,(k,lis) in enumerate(stability_dic.items()):
+        ys.append(lis)
+        xs.append([(lambda x:diff * x + i)(x) for x in range(s)])    # diff * x + c
+    x = reduce(lambda a,b:a+b, xs)
+    y = reduce(lambda a,b:a+b, ys)
+    colors = pick_n_colors(n)
+    fig,axes = plt.subplots(nrows=2,ncols=1,sharex=True,gridspec_kw={'height_ratios':height_ratios,'hspace':hspace})
+    for ax in axes:
+        ax.bar(x=x,height=y,color=np.repeat(colors,s),edgecolor='k')
+        for i in range(len(x)):
+            ax.text(x[i],y[i]+text_above,str(round(y[i],3)),va='center',ha='center',fontsize=3)
 
+    if broke:
+        axes[0].set_ylim(top_ylim)
+        axes[1].set_ylim(bottom_ylim)
+        axes[0].spines['bottom'].set_visible(False)
+        axes[1].spines['top'].set_visible(False)
+        axes[0].tick_params(bottom=False)
+
+        d = break_point_length
+        axes[0].plot((-d,d),(-d,d),transform=axes[0].transAxes,clip_on=False,color='k')
+        axes[0].plot((1-d,1+d),(-d,d),transform=axes[0].transAxes,clip_on=False,color='k')
+        axes[1].plot((-d,d),(1-d,1+d),transform=axes[1].transAxes,clip_on=False,color='k')
+        axes[1].plot((1-d,1+d),(1-d,1+d),transform=axes[1].transAxes,clip_on=False,color='k')
+
+    midpoint = np.arange(n).mean()
+    t = [(lambda x:diff*x+midpoint)(i) for i in range(s)]
+    axes[1].set_xticks(t)
+    axes[1].set_xticklabels(metrics_name + ['Shapley Value'],rotation=60)
+
+    axes[1].legend(handles=[mpatch.Patch(color=i) for i in colors],labels=[k+'@'+v for k,v in k2c.items()],
+            loc='upper left',bbox_to_anchor=(1,1),frameon=False)
+    axes[1].set_xlabel('Metrics and Shapley')
+    axes[1].set_ylabel('Value')
+
+    # save
+    plt.savefig(os.path.join(outdir,'score_justify_broke_{}.pdf'.format(broke)),bbox_inches='tight')
+    plt.close()
 
 
 

@@ -232,6 +232,19 @@ In multi-modal setting, a cluster's identify usually defined by all modalities, 
     :align: center
     :target: target
 
+plot_stability
+~~~~~~~~~~~~~~~~~
+
+Plot the stability of competing clusters::
+
+    sctri.plot_stability(clusters=['Sun@Interstitial_macrophages','Kaminsky@cDC2','Krasnow@IGSF21+_Dendritic'],broke=True,top_ylim=[5,7])
+
+.. image:: ./_static/plot_stability.png
+    :height: 300px
+    :width: 400px
+    :align: center
+    :target: target
+
 
 plot_confusion
 ~~~~~~~~~~~~~~~~

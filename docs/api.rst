@@ -17,7 +17,7 @@ __init__()
                       regress_out_size_effect, compute_shapley, pruning, plot_umap, plot_confusion, plot_cluster_feature,
                       modality_contributions, plot_multi_modal_feature_rank, plot_long_heatmap, viewer_cluster_feature_figure,
                       viewer_cluster_feature_html, viewer_heterogeneity_figure, viewer_heterogeneity_html, plot_concordance,
-                      plot_two_column_sankey, extract_stability, elo_rating_like
+                      plot_two_column_sankey, extract_stability, elo_rating_like, plot_stability
 
 (statis) deserialize()
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -123,6 +123,11 @@ plot_long_heatmap()
 plot_multi_modal_feature_rank()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.main_class.ScTriangulate.plot_multi_modal_feature_rank
+
+
+plot_stability()
+~~~~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.main_class.ScTriangulate.plot_stability
 
 plot_two_column_sankey()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
