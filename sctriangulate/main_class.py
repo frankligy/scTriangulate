@@ -477,7 +477,7 @@ class ScTriangulate(object):
             
 
     def lazy_run(self,compute_metrics_parallel=True,scale_sccaf=False,layer=None,cores=None,added_metrics_kwargs=[{'species':'human','criterion':2,'layer':None}],compute_shapley_parallel=True,
-                 shapley_mode='shapley_all_or_none',shapley_bonus=0.01,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
+                 shapley_mode=None,shapley_bonus=0.01,win_fraction_cutoff=0.25,reassign_abs_thresh=10,
                  assess_raw=False,assess_pruned=False,viewer_cluster=False,viewer_cluster_keys=None,viewer_heterogeneity=False,viewer_heterogeneity_keys=None,
                  nca_embed=False,n_top_genes=3000,other_umap=None,heatmap_scale=None,heatmap_cmap='viridis',heatmap_regex=None,heatmap_direction='include',heatmap_n_genes=None,
                  heatmap_cbar_scale=None):
@@ -492,10 +492,11 @@ class ScTriangulate(object):
         :param compute_shapley_parallel: boolean, whether to parallelize ``compute_parallel`` step. Default: True
         :param shapley_mode: string, accepted values:
 
-                     * `shapley_all_or_none`: default, computing shapley, and players only get points when it beats all
+                     * `shapley_all_or_none`: computing shapley, and players only get points when it beats all
                      * `shapley`: computing shapley, but players get points based on explicit ranking, say 3 players, if ranked first, you get 3, if running up, you get 2
                      * `rank_all_or_none`: no shapley computing, importance based on ranking, and players only get points when it beats all
                      * `rank`: no shapley computing, importance based on ranking, but players get points based on explicit ranking as described above
+                     * `None`: if n_annotations <= 15, use shapley_all_or_none, if n_anntations > 15, use rank
 
         :param shapley_bonus: float, default is 0.01, an offset value so that if the runner up is just {bonus} inferior to first place, it will still be a valid cluster
         :param win_fraction_cutoff: float, between 0-1, the cutoff for function ``add_invalid_by_win_fraction``. Default: 0.25
@@ -518,6 +519,15 @@ class ScTriangulate(object):
         self.compute_metrics(parallel=compute_metrics_parallel,scale_sccaf=scale_sccaf,layer=layer,added_metrics_kwargs=added_metrics_kwargs,cores=cores)
         self.serialize(name='after_metrics.p')
         logger_sctriangulate.info('Starting to compute shapley')
+        if shapley_mode is None:
+            logger_sctriangulate.info('Shapley_mode is set to None')
+            n_annotations = len(self.query)
+            if n_annotations > 15:
+                logger_sctriangulate.info('Number of competing annotation is greater than 15, setting shapley_mode as rank')
+                shapley_mode = 'rank'
+            else:
+                logger_sctriangulate.info('Number of competing annotation is less than 15, setting shapley_mode as shapley_all_or_none')
+                shapley_mode = 'shapley_all_or_none'
         self.compute_shapley(parallel=compute_shapley_parallel,mode=shapley_mode,bonus=shapley_bonus,cores=cores)
         self.serialize(name='after_shapley.p')
         logger_sctriangulate.info('Starting to prune and reassign the raw result to get pruned results')
