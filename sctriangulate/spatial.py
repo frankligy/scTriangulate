@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import anndata as ad
 import networkx as nx
-from .preprocessing import *
 from PIL import Image
 from json import load
 import matplotlib.pyplot as plt
@@ -15,6 +14,16 @@ from sklearn.cluster import AgglomerativeClustering
 import networkx as nx
 from itertools import product
 
+from .preprocessing import *
+from .logger import *
+c_handler = logging.StreamHandler()
+c_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+c_handler.setFormatter(c_formatter)        
+logger_sctriangulate.addHandler(c_handler)
+logger_sctriangulate.setLevel(logging.INFO)
+
+
+
 # for publication ready figure
 mpl.rcParams['pdf.fonttype'] = 42
 mpl.rcParams['ps.fonttype'] = 42
@@ -22,16 +31,26 @@ mpl.rcParams['font.family'] = 'Arial'
 
 
 # spatial IO
-def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,spatial_folder=None,spatial_library_id=None,**kwargs):
+def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,txt_file=None,txt_file_sep=',',tmp_mtx_folder=None,
+                      spatial_library_id=None,spatial_folder=None,spatial_coord=None,spatial_coord_sep=',',coord_columns=None,
+                      spatial_images=None,spatial_scalefactors=None,**kwargs):
     '''
     read the spatial data into the memory as adata
     
     :param mode_count: string, how the spatial count data is present, it can be a folder containing mtx file, or h5 file, or others
     :param mode_spatial: string, how the spatial images and associated files are present, it can be in visium format, or others
     :param mtx_folder: string, if mode_count == 'mtx', specify the folder name
-    :param spatial_folder: string, if mode_spatial == 'visium', specifiy the folder name
+    :param txt_file_sep: string, it can be either common or tab or others
+    :param txt_file: string, if mode_count == 'small_txt' for 'large_txt', specify the txt path
+    :param tmp_mtx_folder: string, if mode_count == 'large_txt', specify the folder where the intermediate mtx folder will be created
     :param spatial_library_id: string, when necessary, specify the library_id for the spatial slide
-    :param kwargs: optional keyword arguments will be passed to mtx_to_adata
+    :param spatial_folder: string, if mode_spatial == 'visium', specifiy the folder name, when mode_spatial=='visium'
+    :param spatial_coord: string, the path to which we have spatial coords for each barcode, when mode_spatial=='generic'
+    :param spatial_coord_sep: string, it can be '\t' or ',' or other delimiters, when mode_spatial=='generic'
+    :param coord_columns: list, the columns you need to transfer from ``spatial_coord``, when mode_spatial =='generic'
+    :param spatial_images: dict, {'hires':path_to_image}, it can be None, when mode_spatial =='generic'
+    :param spatial_scalefactors: dict, {'tissue_hires_scalef':0.17,'tissue_lowres_scalef':0.05,'fiducial_diameter_fullres':144,'spot_diameter_fullres':89}, it can be None, when mode_spatial=='generic'
+    :param kwargs: optional keyword arguments will be passed to the function handling how the input count will be read
 
     Examples::
 
@@ -42,6 +61,14 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,spa
     '''
     if mode_count == 'mtx':
         adata_spatial = mtx_to_adata(int_folder=mtx_folder,**kwargs)
+    elif mode_count == 'large_txt':
+        logger_sctriangulate.info('sctriangulate spatial module reading a large txt, converting to mtx first, will take a while')
+        large_txt_to_mtx(int_file=txt_file,out_folder=tmp_mtx_folder,sep=txt_file_sep,**kwargs)
+        logger_sctriangulate.info('Now mtx file is available at {}, next time you should use mode_count=mtx'.format(tmp_mtx_folder))
+        adata_spatial = mtx_to_adata(int_folder=tmp_mtx_folder,gene_is_index=True)
+    elif mode_count == 'small_txt':
+        adata_spatial = small_txt_to_adata(int_file=txt_file,**kwargs)
+
     if mode_spatial == 'visium':
         # spatial coordinate
         coords = pd.read_csv(os.path.join(spatial_folder,'tissue_positions_list.csv'), index_col=0, header=None)
@@ -62,6 +89,30 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,spa
         f = open(os.path.join(spatial_folder,'scalefactors_json.json'))
         adata_spatial.uns['spatial'][spatial_library_id]['scalefactors'] = load(f)
         ### uns metadata
+        adata_spatial.uns['spatial'][spatial_library_id]['metadata'] = {}
+    
+    if mode_spatial == 'generic':
+        # spatial coordinate
+        coords = pd.read_csv(spatial_coord,index_col=0,sep=spatial_coord_sep)
+        tmp = pd.merge(adata_spatial.obs,coords,how='left',left_index=True,right_index=True)
+        tmp.index.name = None
+        adata_spatial.obs = tmp
+        adata_spatial.obsm['spatial'] = adata_spatial.obs[coord_columns].values
+        adata_spatial.obs.drop(columns=coord_columns,inplace=True)
+        # uns
+        adata_spatial.uns['spatial'] = {}
+        adata_spatial.uns['spatial'][spatial_library_id] = {}
+        # uns images
+        adata_spatial.uns['spatial'][spatial_library_id]['images'] = {}
+        if spatial_images is not None:
+            for res,img_path in spatial_images.items():
+                adata_spatial.uns['spatial'][spatial_library_id]['images'][res] = np.array(Image.open(img_path))
+        # uns scalefactors
+        if spatial_scalefactors is None:
+            adata_spatial.uns['spatial'][spatial_library_id]['scalefactors'] = {}
+        else:
+            adata_spatial.uns['spatial'][spatial_library_id]['scalefactors'] = scale_factor
+        # uns metadata
         adata_spatial.uns['spatial'][spatial_library_id]['metadata'] = {}
     return adata_spatial
     

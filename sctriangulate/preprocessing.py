@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import rankdata
 import multiprocessing as mp
-import logging
 import scanpy as sc
 import anndata as ad
 from scipy.io import mmread,mmwrite
@@ -17,8 +16,9 @@ import matplotlib as mpl
 from functools import reduce
 from sklearn.decomposition import PCA
 import umap
+from tqdm import tqdm
 
-from sctriangulate.colors import *
+from .colors import *
 
 
 
@@ -62,7 +62,7 @@ def small_txt_to_adata(int_file,gene_is_index=True):
     return adata
 
 
-def large_txt_to_mtx(int_file,out_folder,gene_is_index=True,type_convert_to='int16'):  # whether the txt if gene * cell
+def large_txt_to_mtx(int_file,out_folder,gene_is_index=True,type_convert_to='int16',n_lines=None,sep='\t'):  # whether the txt if gene * cell
     '''
     Given a large txt dense expression file, convert them to mtx file on cluster to facilitate future I/O
 
@@ -71,19 +71,28 @@ def large_txt_to_mtx(int_file,out_folder,gene_is_index=True,type_convert_to='int
     :param gene_is_index: boolean, whether the gene/features is the index in the int_file.
     :param type_convert_to: string, since it is a large dataframe, need to read in chunk, to accelarate it and reduce the memory footprint,
                             we convert it to either 'int16' if original data is count, or 'float32' if original data is normalized data.
+    :param n_lines: int, the number of lines for the ``int_file``, it is just for informative progress bar
+    :param sep: string, defalut is tab, can be other as well
     
     Examples::
 
         from sctriangulate.preprocessing import large_txt_to_mtx
         large_txt_to_mtx(int_file='input.txt',out_folder='./data',gene_is_index=False,type_convert_to='float32')
     ''' 
-    reader = pd.read_csv(int_file,sep='\t',index_col=0,chunksize=1000)
+    chunksize = 1000
+    reader = pd.read_csv(int_file,sep=sep,index_col=0,chunksize=chunksize)
     store = []
-    for chunk in reader:
-        tmp = chunk.astype(type_convert_to)
-        store.append(tmp)
+    if n_lines is None:
+        for chunk in tqdm(reader):
+            tmp = chunk.astype(type_convert_to)
+            store.append(tmp)
+    else:
+        total = n_lines // chunksize + 1
+        for chunk in tqdm(reader,total=total):
+            tmp = chunk.astype(type_convert_to)
+            store.append(tmp)
+
     data = pd.concat(store)
-    print(data.shape)
     '''save as mtx, now!!!'''
     if not os.path.exists(out_folder):
         os.mkdir(out_folder)
