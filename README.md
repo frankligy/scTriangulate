@@ -40,6 +40,9 @@ from sctriangulate import *
 from sctriangulate.preprocessing import *
 from sctriangulate.colors import *
 
+# If you are using Mac, set Matplotlib backend as Agg
+sctriangulate_setting(backend='Agg')
+
 # Your adata should have (a) adata.X (b) at least two columns representing conflicting annotations in adata.obs (c) adata.obsm['X_umap'] for automatically generate visualization
 
 adata = sc.read('./test/input.h5ad')
