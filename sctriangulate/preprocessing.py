@@ -39,12 +39,13 @@ def sctriangulate_preprocessing_setting(backend='Agg',png=False):
         mpl.rcParams['figure.dpi'] = 600
 
 
-def small_txt_to_adata(int_file,gene_is_index=True):
+def small_txt_to_adata(int_file,gene_is_index=True,sep='\t'):
     '''
     given a small dense expression (<2GB) txt file, load them into memory as adata, and also make sure the X is sparse matrix.
 
     :param int_file: string, path to the input txt file, delimited by tab
-    :param gene_is_index: boolean, whether the gene/features are the index.
+    :param gene_is_index: boolean, whether the gene/features are the index
+    :param sep: the delimieter, default is tab
 
     :return: AnnData
 
@@ -54,7 +55,7 @@ def small_txt_to_adata(int_file,gene_is_index=True):
         adata= = small_txt_to_adata('./input.txt',gene_is_index=True)
 
     '''
-    df = pd.read_csv(int_file,sep='\t',index_col=0)
+    df = pd.read_csv(int_file,sep=sep,index_col=0)
     if gene_is_index:
         adata = ad.AnnData(X=csr_matrix(df.values.T),var=pd.DataFrame(index=df.index.values),obs=pd.DataFrame(index=df.columns.values))
     else:

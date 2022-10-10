@@ -37,12 +37,26 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,txt
     '''
     read the spatial data into the memory as adata
     
-    :param mode_count: string, how the spatial count data is present, it can be a folder containing mtx file, or h5 file, or others
-    :param mode_spatial: string, how the spatial images and associated files are present, it can be in visium format, or others
+    :param mode_count: string, how the spatial count data is present:
+
+        * `mtx`: a folder where inputs are represented in mtx format
+        * `large_txt`: a large txt file, usually means exceed 2GB
+        * `small_txt`: a small txt file, usually means below 2GB
+
+    :param mode_spatial: string, how the spatial images and associated files are present
+
+        * `visium`: spatial location and images are laid out as visium format from spaceranger
+        * `generic`: more generic format where the users have to supply the file path to find the location and images
+
+    Depending on how the mode_count is set, additional paramters need to be set for reading the count data
+
     :param mtx_folder: string, if mode_count == 'mtx', specify the folder name
-    :param txt_file_sep: string, it can be either common or tab or others
+    :param txt_file_sep: string, if mode_count == 'small_txt' for 'large_txt', it can be either common or tab or others
     :param txt_file: string, if mode_count == 'small_txt' for 'large_txt', specify the txt path
     :param tmp_mtx_folder: string, if mode_count == 'large_txt', specify the folder where the intermediate mtx folder will be created
+
+    Depending on how the mode_spatial is set, addtiional parameters need to be set for reading the spatial data
+
     :param spatial_library_id: string, when necessary, specify the library_id for the spatial slide
     :param spatial_folder: string, if mode_spatial == 'visium', specifiy the folder name, when mode_spatial=='visium'
     :param spatial_coord: string, the path to which we have spatial coords for each barcode, when mode_spatial=='generic'
@@ -50,6 +64,9 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,txt
     :param coord_columns: list, the columns you need to transfer from ``spatial_coord``, when mode_spatial =='generic'
     :param spatial_images: dict, {'hires':path_to_image}, it can be None, when mode_spatial =='generic'
     :param spatial_scalefactors: dict, {'tissue_hires_scalef':0.17,'tissue_lowres_scalef':0.05,'fiducial_diameter_fullres':144,'spot_diameter_fullres':89}, it can be None, when mode_spatial=='generic'
+
+    Depending on how the mode_count is set, additional parameters can be passed to the underlying preprocessing functions to read in the data
+
     :param kwargs: optional keyword arguments will be passed to the function handling how the input count will be read
 
     Examples::
