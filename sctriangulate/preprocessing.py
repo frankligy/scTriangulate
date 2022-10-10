@@ -17,6 +17,8 @@ from functools import reduce
 from sklearn.decomposition import PCA
 import umap
 from tqdm import tqdm
+import gzip
+from io import BytesIO,StringIO
 
 from .colors import *
 
@@ -108,7 +110,8 @@ def large_txt_to_mtx(int_file,out_folder,gene_is_index=True,type_convert_to='int
 
 def mtx_to_adata(int_folder,gene_is_index=True,feature='genes.tsv',feature_col='index',barcode='barcodes.tsv',barcode_col='index',matrix='matrix.mtx'):  # whether the mtx file is gene * cell
     '''
-    convert mtx file to adata in RAM, make sure the X is sparse.
+    convert mtx file to adata in RAM, make sure the X is sparse. Gzip file is supported as well, program will automatically detect gz extension
+    and use gzip pacakge to read it into memory
 
     :param int_folder: string, folder where the mtx files are stored.
     :param gene_is_index: boolean, whether the gene is index.
@@ -126,15 +129,39 @@ def mtx_to_adata(int_folder,gene_is_index=True,feature='genes.tsv',feature_col='
         mtx_to_adata(int_folder='./data',gene_is_index=False,feature='genes')
 
     '''
+
+    # read gene
+    if feature.endswith('.gz'):
+        with gzip.open(os.path.join(int_folder,feature),'rb') as f:
+            file_content = f.read()   # bytestring
+        stuff_to_read = BytesIO(file_content)
+    else:
+        stuff_to_read = os.path.join(int_folder,feature)
     if feature_col == 'index':
-        gene = pd.read_csv(os.path.join(int_folder,feature),sep='\t',index_col=0,header=None).index
+        gene = pd.read_csv(stuff_to_read,sep='\t',index_col=0,header=None).index
     else:
-        gene = pd.read_csv(os.path.join(int_folder,feature),sep='\t',index_col=0,header=None)[feature_col]
+        gene = pd.read_csv(stuff_to_read,sep='\t',index_col=0,header=None)[feature_col]
+
+    # read barcode
+    if feature.endswith('.gz'):
+        with gzip.open(os.path.join(int_folder,barcode),'rb') as f:
+            file_content = f.read()  # bytestring
+        stuff_to_read = BytesIO(file_content)
+    else:
+        stuff_to_read = os.path.join(int_folder,barcode)
     if barcode_col == 'index':
-        cell = pd.read_csv(os.path.join(int_folder,barcode),sep='\t',index_col=0,header=None).index
+        cell = pd.read_csv(stuff_to_read,sep='\t',index_col=0,header=None).index
     else:
-        cell = pd.read_csv(os.path.join(int_folder,barcode),sep='\t',index_col=0,header=None)[barcode_col]
-    value = csr_matrix(mmread(os.path.join(int_folder,matrix)))
+        cell = pd.read_csv(stuff_to_read,sep='\t',index_col=0,header=None)[barcode_col]
+
+    # read value
+    if matrix.endswith('.gz'):
+        with gzip.open(os.path.join(int_folder,matrix),'rb') as f:
+            file_content = f.read() # bytestring
+        stuff_to_read = BytesIO(file_content)
+    else:
+        stuff_to_read = os.path.join(int_folder,matrix)
+    value = csr_matrix(mmread(stuff_to_read))
     if gene_is_index:
         value = value.T
         adata = ad.AnnData(X=value,obs=pd.DataFrame(index=cell),var=pd.DataFrame(index=gene))
