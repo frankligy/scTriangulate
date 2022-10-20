@@ -134,6 +134,18 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,txt
     return adata_spatial
     
 
+def inverse_y_axis_coord(adata_spatial):
+    '''
+    sc.pl.spatial function put (0,0) on top-left following image analysis convention, but in certain cases, it is not ideal, so
+    this function will inverse the y-axis to the normal way
+    '''
+    coord = adata_spatial.obsm['spatial']
+    y_max = coord.max(axis=0)[1]
+    y_coord_new = np.full(coord.shape[0],y_max) - coord[:,1]
+    coord_new = np.column_stack((coord[:,0],y_coord_new))
+    adata_spatial.obsm['spatial'] = coord_new
+    return adata_spatial
+
 
 # visualize deconvolution
 def plot_one_dot(ax,prop,x,y,scale_factor,circle_diameter,colors):
