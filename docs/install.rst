@@ -8,6 +8,10 @@ scTriangulate requires python >= 3.7. This software has been extensively tested 
 
 From source code::
 
+    # method 1: Using pip (recommened)
+    pip install git+https://github.com/frankligy/scTriangulate.git
+
+    # method 2: Using setuptools 
     git clone https://github.com/frankligy/scTriangulate
     cd ./scTriangulate
     conda create -n sctriangulate_env python=3.7
@@ -30,6 +34,9 @@ From source code::
 
 A minitest is included::
 
+    cd .
+    pytest
+
+    # or
     cd ./test
-    python -W ignore mini_test.py
-    # should pass all tests
+    pytest mini_test.py -v
