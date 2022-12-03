@@ -39,7 +39,7 @@ Furthermore, we are planning to support TCR/BCR and spatial data in the future, 
 presentation of how the count matrix and annotations can be set up in multi-modal setting:
 
 .. image:: ./_static/tutorial/multi_modal/general_schema.png
-   :height: 200px
+   :height: 250px
    :width: 600px
    :align: center
    :target: target
@@ -47,21 +47,21 @@ presentation of how the count matrix and annotations can be set up in multi-moda
 scTriangulate works seemlessly with the popular `scanpy <https://scanpy.readthedocs.io/en/stable/>`_ package. Although scTriangulate operates on ``AnnData``, we
 provided a myriad of preprocessing functions to convert most of frequently-encountered file formats, accomodating all user cases.
 
-    * **Anndata** (.h5ad): Your feature matrix (concating all modalities features as shown above) should be at `.X`, conflicting annotations should be the columns of `.obs`,
+    1. **Anndata** (.h5ad): Your feature matrix (concating all modalities features as shown above) should be at `.X`, conflicting annotations should be the columns of `.obs`,
                            and normaly you would have `.obsm['X_umap']` key filled with your preferred UMAP coordinates (Please refer to :ref:`reference_to_add_umap` function for details if needed), 
                            if pre-computed UMAP is not available, you can refer to function :ref:`reference_to_scanpy_recipe` to generate UMAP from your data.
 
-If your count matrix is in **mtx** format, and you have additional annotation file (and umap coordinate) as plain text file, You can consider using these functions
-(:ref:`.. _reference_to_mtx_to_adata`, :ref:`reference_to_add_annotation`, :ref:`reference_to_add_umap`) to construct Anndata as described above.
+    2. If your count matrix is in **mtx** format, and you have additional annotation file (and umap coordinate) as plain text file, You can consider using these functions
+       (:ref:`.. reference_to_mtx_to_adata`, :ref:`reference_to_add_annotation`, :ref:`reference_to_add_umap`) to construct Anndata as described above.
 
-If your count matrix is in **dense txt** format, and you have additional annotation file (and umap coordinate) as plain text file, You can consider using these functions
-(:ref:`.. _reference_to_small_txt_to_adata`, :ref:`reference_to_add_annotation`, :ref:`reference_to_add_umap`) to construct Anndata as described above. An example annotation plain txt
-file looks like below:
+    3. If your count matrix is in **dense txt** format, and you have additional annotation file (and umap coordinate) as plain text file, You can consider using these functions
+       (:ref:`.. reference_to_small_txt_to_adata`, :ref:`reference_to_add_annotation`, :ref:`reference_to_add_umap`) to construct Anndata as described above. An example annotation plain txt
+       file looks like below:
 
 .. note::
     In the scenario where the dense matrix is super large (>10GB), reading it into memory can take huge amount of time and a better way to resolve it is to first
-    convert it to a mtx file, so that repetitively reading in will be more time efficient. For that, please refer to function :ref:`.. _reference_to_large_txt_to_mtx` and function
-    :ref:`.. _reference_to_mtx_to_adata`.
+    convert it to a mtx file, so that repetitively reading in will be more time efficient. For that, please refer to function :ref:`.. reference_to_large_txt_to_mtx` and function
+    :ref:`.. reference_to_mtx_to_adata`.
 
 .. csv-table:: annotation txt file
     :file: ./_static/annotation_txt.csv
