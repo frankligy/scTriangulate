@@ -188,13 +188,19 @@ Normalization Class
 .. autoclass:: sctriangulate.preprocessing.Normalization
     :members: 
 
+.. _reference_to_small_txt_to_adata:
+
 small_txt_to_adata()
 ~~~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.small_txt_to_adata
 
+.. _reference_to_large_txt_to_mtx:
+
 large_txt_to_mtx()
 ~~~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.large_txt_to_mtx
+
+.. _reference_to_mtx_to_adata:
 
 mtx_to_adata()
 ~~~~~~~~~~~~~~~~~~
@@ -235,6 +241,8 @@ make_sure_adata_writable()
 just_log_norm()
 ~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.preprocessing.just_log_norm()
+
+.. _reference_to_scanpy_recipe:
 
 scanpy_recipe()
 ~~~~~~~~~~~~~~~~~~

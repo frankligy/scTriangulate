@@ -427,7 +427,7 @@ Running scTriangulate
 Just use ``lazy_run()`` function, I have broken it down in the single_modality section::
 
     sctri = ScTriangulate(dir='output',adata=adata_combine,add_metrics={},query=['sctri_adt_leiden_1','sctri_adt_leiden_2','sctri_adt_leiden_3','sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
-    sctri.lazy_run(assess_pruned=False,viewer_cluster=False,viewer_heterogeneity=False)
+    sctri.lazy_run(assess_pruned=False,viewer_cluster=False,viewer_heterogeneity=False,added_metrics_kwargs=[])
 
 All the intermediate results will be stored at ./output folder.
 
