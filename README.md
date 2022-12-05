@@ -40,7 +40,7 @@ from sctriangulate import *
 from sctriangulate.preprocessing import *
 from sctriangulate.colors import *
 
-# If you are using Mac, set Matplotlib backend as Agg
+# If you are using Mac or PC, set Matplotlib backend as Agg
 sctriangulate_setting(backend='Agg')
 
 # Your adata should have:
