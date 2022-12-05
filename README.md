@@ -28,7 +28,7 @@ It can be used in an array of settings:
 
 ## Tutorials and Installation
 
-Check out our [full documentation and step-by-step tutorials](https://sctriangulate.readthedocs.io/en/latest/get_started.html). But let's get a quick sense for a minimum example, it has been tested in python>=3.7 on both macos and Linux:
+Check out our [full documentation and step-by-step tutorials](https://sctriangulate.readthedocs.io/en/latest/get_started.html). But let's get a quick sense for a minimum example, it has been tested in python>=3.7 on MacOS, Linux and Windows PC.
 
 ```bash
 pip install sctriangulate
