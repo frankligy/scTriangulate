@@ -43,10 +43,13 @@ from sctriangulate.colors import *
 # If you are using Mac or PC, set Matplotlib backend as Agg
 sctriangulate_setting(backend='Agg')
 
+# If you are using Linux server, make sure you have internet connections
+
 # Your adata should have:
 # (a) adata.X, properly normalized (i.e. log CPTT for RNA, CLR for ADT, etc), check sctriangulate.preprocessing.Normalization for various choices
 # (b) at least two columns representing conflicting annotations in adata.obs, passed to query argument
-# (c) adata.obsm['X_umap'] for automatically generate visualization
+# (c) adata.obsm['X_umap'] for automatically generate visualization, check sctriangulate.preprocessing.scanpy_recipe to generate umap 
+# (d) don't have adata.raw attribute, if have, del adata.raw, this will interfere how scanpy calculate marker genes
 
 adata = sc.read('./test/input.h5ad')
 sctri = ScTriangulate(dir='./output',adata=adata,query=['sctri_rna_leiden_1','sctri_rna_leiden_2','sctri_rna_leiden_3'])
