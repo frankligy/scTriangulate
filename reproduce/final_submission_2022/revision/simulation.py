@@ -52,15 +52,15 @@ sctri.lazy_run(scale_sccaf=False,added_metrics_kwargs={},assess_pruned=True,view
 sys.exit('stop')
 
 
-# # discovery mode and conserved mode
-# adata = sc.read('sim_dc.h5ad')
-# adata.X = adata.layers['counts']
-# adata.obsm['X_umap'] = adata.obsm['PCA']
-# adata.obs['broad_anno'] = adata.obs['Group'].map({'Group1':'c1','Group2':'c2','Group3':'c3','Group4':'c3','Group5':'c3','Group6':'c3'}).values
-# adata.obs['middle_anno'] = adata.obs['Group'].map({'Group1':'c1','Group2':'c2','Group3':'c3','Group4':'c3','Group5':'c4','Group6':'c4'}).values
-# adata.obs['fine_anno'] = adata.obs['Group'].map({'Group1':'c1','Group2':'c2','Group3':'c3','Group4':'c4','Group5':'c5','Group6':'c6'}).values
-# umap_dual_view_save(adata,cols=['broad_anno','middle_anno','fine_anno','Group'])
-# sctri = ScTriangulate(dir='output_sim_dc_one',adata=adata,query=['broad_anno','middle_anno','fine_anno'],add_metrics={})
-# sctri.lazy_run(scale_sccaf=False,added_metrics_kwargs={},assess_pruned=True,viewer_cluster=False,viewer_heterogeneity=False)
-# sctri = ScTriangulate(dir='output_sim_dc_two',adata=adata,query=['broad_anno','middle_anno','fine_anno'])
-# sctri.lazy_run(scale_sccaf=False,assess_pruned=True,viewer_cluster=False,viewer_heterogeneity=False)
+# discovery mode and conserved mode
+adata = sc.read('sim_dc.h5ad')
+adata.X = adata.layers['counts']
+adata.obsm['X_umap'] = adata.obsm['PCA']
+adata.obs['broad_anno'] = adata.obs['Group'].map({'Group1':'c1','Group2':'c2','Group3':'c3','Group4':'c3','Group5':'c3','Group6':'c3'}).values
+adata.obs['middle_anno'] = adata.obs['Group'].map({'Group1':'c1','Group2':'c2','Group3':'c3','Group4':'c3','Group5':'c4','Group6':'c4'}).values
+adata.obs['fine_anno'] = adata.obs['Group'].map({'Group1':'c1','Group2':'c2','Group3':'c3','Group4':'c4','Group5':'c5','Group6':'c6'}).values
+umap_dual_view_save(adata,cols=['broad_anno','middle_anno','fine_anno','Group'])
+sctri = ScTriangulate(dir='output_sim_dc_one',adata=adata,query=['broad_anno','middle_anno','fine_anno'],add_metrics={})
+sctri.lazy_run(scale_sccaf=False,added_metrics_kwargs={},assess_pruned=True,viewer_cluster=False,viewer_heterogeneity=False)
+sctri = ScTriangulate(dir='output_sim_dc_two',adata=adata,query=['broad_anno','middle_anno','fine_anno'])
+sctri.lazy_run(scale_sccaf=False,assess_pruned=True,viewer_cluster=False,viewer_heterogeneity=False)
