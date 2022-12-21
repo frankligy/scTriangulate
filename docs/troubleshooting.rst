@@ -32,6 +32,36 @@ annotation-sets, it may reach the maximum RAM that you allocate. If that happen,
   sctri.lazy_run(compute_metrics_parallel=False)
 
 
+Compute TFIDF on integrated expression matrix (with negative value)
+----------------------------------------------------------------------
+
+Since TFIDF score computation looks for zero and non-zero value for a gene to represent whether a gene is specifically present in a population or not. Normally, raw count 
+matrix or properly normalized data (CPTT, CLR) won't violate the non-negativity and you can use those normalized expression matrix as it is. But as you can imagine,
+when you have an integrated expression matrix post batch-effect correction (say after running MNN or TotalVI), it is likely certain entries become negative, this will 
+affect the TFIDF score computation. In this scenario, you can follow the steps below, in addition to supply your integrated matrix to ``adata.X``, you may need to provide
+another layer of the expression matrix using either raw count or other normalized version with non-negative value to ``adata.layers``, and specify which ``layer`` the TFIDF
+function should look for when computing the score in running ``lazy_run`` function. More explanation of the adata layers slot can be found in `AnnData <https://anndata.readthedocs.io/en/latest/generated/anndata.AnnData.layers.html>`_::
+
+    # imagine you have two dataframe df_integrated, df_raw_count in the RAM, refer to all various preprocessing functions to facilate the IO process
+    # df_integrated and df_raw_count is of the same shape (n_cell,n_feature), but former one is integrated data with negative value,
+    # the latter one is the raw count data.
+    # if the shape are slightly different say the df_integrated removed certain cell barcodes, make sure to be consistent for your df_raw_count as well.
+
+    # first make sure the feature order and the cell barcode order are the same
+    df_raw_count = df_raw_count.loc[df_integrated.index,df_integrated.columns]
+
+    # assuming integrated matrix has been added to your adata.X, and you have a few conflicting cell annotations in your adata.obs columns
+    # then you will just need to add this raw count piece into adata.layers, using a customed key value, say ['raw_count']
+    key = 'raw_count'
+    adata.layers[key] = df_raw_count.values
+
+    # Now you can start to run scTriangulate, just add a layer paramter when executing lazy_run
+    sctri = ScTriangulate(dir='output',adata=adata,query=['annotation1','annotation2','annotation3'])
+    sctri.lazy_run(layer='raw_count')
+
+    # or if you just want to compute metrics
+    sctri.compute_metrics(layer='raw_count')
+
 
 
 
