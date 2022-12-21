@@ -91,7 +91,7 @@ def run_gsea(gene_list,key,name,folder,species,criterion):
     try:
         pre_res = gp.prerank(rnk=df, gene_sets=artifact_dict,
                             permutation_num=100,
-                            outdir=os.path.join(folder,'scTriangulate_local_mode_gsea/{}/{}'.format(key,name)),
+                            outdir=os.path.join(folder,'scTriangulate_local_mode_gsea','{}'.format(key),'{}'.format(name)),
                             min_size=1,
                             max_size=10000,
                             seed=6,

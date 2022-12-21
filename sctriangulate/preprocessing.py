@@ -720,14 +720,14 @@ def umap_dual_view_save(adata,cols,method='umap'):
             fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
             sc.pl.umap(adata,color=col,frameon=False,ax=ax[0])
             sc.pl.umap(adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
-            plt.savefig('./umap_dual_view_{}.pdf'.format(col),bbox_inches='tight')
+            plt.savefig('umap_dual_view_{}.pdf'.format(col),bbox_inches='tight')
             plt.close()
     elif method == 'tsne':
         for col in cols:
             fig,ax = plt.subplots(nrows=2,ncols=1,figsize=(8,20),gridspec_kw={'hspace':0.3})  # for final_annotation
             sc.pl.tsne(adata,color=col,frameon=False,ax=ax[0])
             sc.pl.tsne(adata,color=col,frameon=False,legend_loc='on data',legend_fontsize=5,ax=ax[1])
-            plt.savefig('./tsne_dual_view_{}.pdf'.format(col),bbox_inches='tight')
+            plt.savefig('tsne_dual_view_{}.pdf'.format(col),bbox_inches='tight')
             plt.close()      
 
 def just_log_norm(adata):

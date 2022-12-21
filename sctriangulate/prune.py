@@ -25,7 +25,7 @@ def rank_pruning(sctri,discard=None,scale_sccaf=True,layer=None,assess_raw=False
     if assess_raw:
         # construct data for shapley
         sctri.run_single_key_assessment(key='raw',scale_sccaf=scale_sccaf,layer=layer)
-        subprocess.run(['rm','-r','{}'.format(os.path.join(sctri.dir,'scTriangulate_local_mode_enrichr/'))])
+        subprocess.run(['rm','-r','{}'.format(os.path.join(sctri.dir,'scTriangulate_local_mode_enrichr'))])
         score_info = copy.deepcopy(sctri.score['raw'])
         score_info.pop('cluster_to_doublet',None)  # don't consider doublet score
 

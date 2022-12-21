@@ -556,7 +556,7 @@ class ScTriangulate(object):
             logger_sctriangulate.info('starting to get stability metrics on pruned final results')
             self.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer,added_metrics_kwargs=added_metrics_kwargs)
             self.serialize(name='after_pruned_assess.p')
-            subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr/'))])
+            subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr'))])
             # update the old output 
             make_sure_adata_writable(self.adata)
             self.adata.write(os.path.join(self.dir,'sctriangulate.h5ad'))
@@ -1083,7 +1083,7 @@ class ScTriangulate(object):
                 self._add_to_uns('confusion_sccaf',key,collect)
                 self._add_to_uns('marker_genes',key,collect)
                 self._add_to_uns('exclusive_genes',key,collect)
-            subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr/'))])
+            subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr'))])
             self._to_sparse()
 
         else:
@@ -2832,8 +2832,8 @@ class ScTriangulate(object):
         # generate html
         with open(os.path.join(self.dir,'figure4viewer','viewer.html'),'w') as f:
             f.write(to_html(self.cluster,self.score,self.total_metrics))
-        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.js'),os.path.join(self.dir,'figure4viewer')))
-        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/viewer.css'),os.path.join(self.dir,'figure4viewer')))
+        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer','viewer.js'),os.path.join(self.dir,'figure4viewer')))
+        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer','viewer.css'),os.path.join(self.dir,'figure4viewer')))
 
     def viewer_heterogeneity_figure(self,key,other_umap=None,format='png',heatmap_scale=False,heatmap_cmap='viridis',heatmap_regex=None,heatmap_direction='include',
                                     heatmap_n_genes=None,heatmap_cbar_scale=None):
@@ -2887,8 +2887,8 @@ class ScTriangulate(object):
         with open(os.path.join(self.dir,'figure4viewer','inspection_{}.html'.format(key)),'w') as f:
             f.write(inspection_html(key_cluster_dict,key)) 
         # first copy      
-        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/inspection.js'),os.path.join(self.dir,'figure4viewer')))
-        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer/inspection.css'),os.path.join(self.dir,'figure4viewer')))
+        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer','inspection.js'),os.path.join(self.dir,'figure4viewer')))
+        os.system('cp {} {}'.format(os.path.join(os.path.dirname(os.path.abspath(__file__)),'viewer','inspection.css'),os.path.join(self.dir,'figure4viewer')))
 
 
 
