@@ -75,7 +75,7 @@ docker run -v $PWD:/usr/src/app/run -t frankligy123/sctriangulate:0.12.0.1 --hel
 
 ## Citation
 
-scTriangulate: Decision-level integration of multimodal single-cell data. BioRxiv. Oct 2021 (https://www.biorxiv.org/content/10.1101/2021.10.16.464640v1)
+Li, G., Song, B., Singh, H. et al. Decision level integration of unimodal and multimodal single cell data with scTriangulate. Nat Commun 14, 406 (2023). https://doi.org/10.1038/s41467-023-36016-y
 
 ## Reproducibility
 
