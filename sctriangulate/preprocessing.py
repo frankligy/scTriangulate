@@ -605,6 +605,7 @@ def concat_rna_and_other(adata_rna,adata_other,umap,umap_key,name,prefix):
     :param adata_rna: AnnData
     :param adata_other: Anndata
     :param umap: string, whose umap to use, either 'rna' or 'other'
+    :param umap_key: string, the umap coordinate will be added to which key in adata.obsm, for example, X_umap
     :param name: string, the name of other modality, for example, 'adt' or 'atac'
     :param prefix: string, the prefix added in front of features from other modality, by scTriangulate convertion, adt will be 'AB_', atac will be ''.
 
