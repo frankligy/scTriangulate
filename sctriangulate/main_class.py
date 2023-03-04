@@ -485,7 +485,7 @@ class ScTriangulate(object):
         This is the highest level wrapper function for running every step in one goal.
 
         :param compute_metrics_parallel: boolean, whether to parallelize ``compute_metrics`` step. Default: True
-        :param scale_sccaf: boolean, whether to first scale the expression matrix before running sccaf score. Default: True
+        :param scale_sccaf: boolean, whether to first scale the expression matrix before running sccaf score. Default: False
         :param layer: None or str, the adata layer where the raw count is stored, useful when calculating tfidf score when adata.X has been skewed (no zero value, like totalVI denoised value)
         :param cores: None or int, how many cores you'd like to specify, by default, it is min(n_annotations,n_available_cores) for metrics computing, and n_available_cores for other parallelizable operations
         :param added_metrics_kwargs: list, see the notes in __init__ function, this is to specify additional arguments that will be passed to each added metrics callable.

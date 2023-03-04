@@ -22,8 +22,8 @@ So if you are using Linux high-performance compute environment, please make sure
 maybe resolved in the future version.
 
 
-Job killed because reaching the maximum RAM
-------------------------------------------------
+Job killed or halted because reaching the maximum RAM
+-----------------------------------------------------------
 
 The reason is, by default scTriangulate will utilize python standard library multiprocessing to automatically employ multiple cores for faster
 computation, however, it comes at the cost of memory footprint. In the cases of very large dataset (100k cells or 100k features) with more than 5 
