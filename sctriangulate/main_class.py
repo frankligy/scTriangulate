@@ -318,7 +318,7 @@ class ScTriangulate(object):
 
         Examples::
 
-            sctri.confusion_to_df(barcode='AAACCCACATCCAATG-1',save=True)
+            sctri.get_metrics_and_shapley(barcode='AAACCCACATCCAATG-1',save=True)
 
         .. image:: ./_static/get_metrics_and_shapley.png
             :height: 100px
@@ -1109,8 +1109,10 @@ class ScTriangulate(object):
         and self.score, and can be further rendered by the scTriangulate viewer.
 
         :param key: string, the annotation/column name to assess the robustness.
-        :scale_sccaf: boolean, whether to scale the expression data before running SCCAF score. See ``compute_metrics`` function
-                      for full information.
+        :param scale_sccaf: boolean, whether to scale the expression data before running SCCAF score. See ``compute_metrics`` function
+                            for full information.
+        :param layer: see lazy_run for detail
+        :param added_metrics_kwargs: see lazy_run for detail
 
         Examples::
 
