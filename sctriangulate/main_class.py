@@ -75,17 +75,17 @@ class ScTriangulate(object):
     :param add_metrics: python dictionary. These allows users to add additional metrics to favor or disqualify certain cluster. By default,
                         we add tfidf5 score {'tfidf5':tf_idf5_for_cluster}, remember the value in the dictionary should be the name of a callable, user
                         can define the callable by themselves. If don't want any addded metrics, using empty dict {}.
-    .. note:
-
-        For the callable, the signature should be func(adata,key,**kwargs) -> mapping {cluster1:0.5,cluster2:0.6}, when running the program in
-        lazy_run function, we need to specify added_metrics_kwargs as a list, each element in the list is a dictionary that corresponds to the kwargs
-        that will be passed to each callable. 
-
     :param predict_doublet: boolean or string, whether to predict doublet using scrublet or not. Valid value:
 
         * True: will predict doublet score
         * False: will not predict doublet score
         * (string) precomputed: will not predict doublet score but just use existing one
+
+    .. note::
+
+        For the callable, the signature should be func(adata,key,**kwargs) -> mapping {cluster1:0.5,cluster2:0.6}, when running the program in
+        lazy_run function, we need to specify added_metrics_kwargs as a list, each element in the list is a dictionary that corresponds to the kwargs
+        that will be passed to each callable. 
 
     Example::
 
@@ -503,11 +503,11 @@ class ScTriangulate(object):
         :param reassign_abs_thresh: int, the cutoff for minimum number of cells a valid cluster should haves. Default: 10
         :param assess_raw: boolean, whether to run the same cluster assessment metrics on raw cluster labels. Default: False
         :param assess_pruned: boolean, whether to run same cluster assessment metrics on final pruned cluster labels. Default: True
-        :param viewer_cluster: boolean, whether to build viewer html page for all clusters' diagnostic information. Default: True
+        :param viewer_cluster: boolean, whether to build viewer html page for all clusters' diagnostic information. Default: False
         :param viewer_cluster_keys: list, clusters from what annotations we want to view on the viewer, only clusters within this annotation whose diagnostic
                                     plot will be generated under the dir name *figure4viewer*. Default: None, means all annotations in the sctri.query will be 
                                     used.
-        :param viewer_heterogeneity: boolean, whether to build the viewer to show the heterogeneity based on one reference annotation. Default: True
+        :param viewer_heterogeneity: boolean, whether to build the viewer to show the heterogeneity based on one reference annotation. Default: False
         :param viewer_heterogeneity_keys: list, the annotations we want to serve as the reference. Default: None, means the first annotation in sctri.query
                                           will be used as the reference.
         
