@@ -1437,7 +1437,7 @@ def umap_color_exceed_102(adata,key,dot_size=None,legend_fontsize=6,outdir='.',n
     plt.close()
 
 
-def sankey_like_plot(df_raw, col_to_plot)
+def sankey_like_plot(df_raw, col_to_plot):
     alpha = 0.6
 
     df = df_raw.loc[:,col_to_plot]
