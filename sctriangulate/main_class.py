@@ -87,6 +87,7 @@ class ScTriangulate(object):
         lazy_run function, we need to specify added_metrics_kwargs as a list, each element in the list is a dictionary that corresponds to the kwargs
         that will be passed to each callable. 
 
+
     Example::
 
         adata = sc.read('pbmc3k_azimuth_umap.h5ad')
@@ -502,7 +503,7 @@ class ScTriangulate(object):
         :param win_fraction_cutoff: float, between 0-1, the cutoff for function ``add_invalid_by_win_fraction``. Default: 0.25
         :param reassign_abs_thresh: int, the cutoff for minimum number of cells a valid cluster should haves. Default: 10
         :param assess_raw: boolean, whether to run the same cluster assessment metrics on raw cluster labels. Default: False
-        :param assess_pruned: boolean, whether to run same cluster assessment metrics on final pruned cluster labels. Default: True
+        :param assess_pruned: boolean, whether to run same cluster assessment metrics on final pruned cluster labels. Default: False
         :param viewer_cluster: boolean, whether to build viewer html page for all clusters' diagnostic information. Default: False
         :param viewer_cluster_keys: list, clusters from what annotations we want to view on the viewer, only clusters within this annotation whose diagnostic
                                     plot will be generated under the dir name *figure4viewer*. Default: None, means all annotations in the sctri.query will be 

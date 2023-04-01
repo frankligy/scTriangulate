@@ -671,7 +671,7 @@ def nca_embedding(adata,nca_n_components,label,method,max_iter=50,plot=True,save
         sc.pp.highly_variable_genes(adata,flavor='seurat',n_top_genes=n_top_genes)
     else:
         if add_features is not None:  # first add the features, input should be anndata
-            adata = concat_rna_and_other(adata,add_features,umap=None,name='add_features',prefix='add_features_')
+            adata = concat_rna_and_other(adata,add_features,umap='rna',umap_key='X_umap',name='add_features',prefix='add_features_')
         if hv_features is not None:    # custom hv
             tmp = pd.Series(index=adata.var_names,data=np.full(len(adata.var_names),fill_value=False))
             tmp.loc[hv_features] = True
@@ -1435,6 +1435,112 @@ def umap_color_exceed_102(adata,key,dot_size=None,legend_fontsize=6,outdir='.',n
         name = 'umap_{}_exceed_102.pdf'.format(key)
     plt.savefig(os.path.join(outdir,name),bbox_inches='tight')
     plt.close()
+
+
+def sankey_like_plot(df_raw, col_to_plot)
+    alpha = 0.6
+
+    df = df_raw.loc[:,col_to_plot]
+    color_dict = colors_for_set(df.index.tolist())
+    total = df.sum(axis=0).values
+    fig,ax = plt.subplots()
+    ax.set_xlim([0,1])
+    ax.set_ylim([-0.2,1.2])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    margin = 0.1
+    n = len(col_to_plot)
+    ys = [1] * n
+    dist = (1 - margin * 2)/ (n + n -1)
+    for row in df.itertuples():
+        cluster = row.Index
+        color = color_dict[cluster]
+
+        for i,col in enumerate(col_to_plot):
+            tp = eval('row.{}'.format(col)) / total[i]
+            # draw block
+            xy_x = 0.1 + i * 2 * dist
+            xy_y = ys[i] - tp
+            width = dist
+            height = tp
+            rec = Rectangle((xy_x,xy_y),width,height,edgecolor=color,facecolor=color,lw=1)
+            ax.add_patch(rec)
+            # draw line
+            if i < n-1:
+                start_up = (xy_x+dist,ys[i])
+                end_up = (xy_x+dist+dist,ys[i+1])
+                control_start_up = (xy_x+dist+dist/2,ys[i])
+                control_end_up = (xy_x+dist+dist/2,ys[i+1])
+                start_down = (xy_x+dist,ys[i]-tp)
+                end_down = (xy_x+dist+dist,ys[i+1]-(eval('row.{}'.format(col_to_plot[i+1])) / total[i+1]))
+                control_start_down = (xy_x+dist+dist/2,ys[i]-tp)
+                control_end_down = (xy_x+dist+dist/2,ys[i+1]-(eval('row.{}'.format(col_to_plot[i+1])) / total[i+1]))
+                p = Path([start_up,control_start_up,control_end_up,end_up,end_down,control_end_down,control_start_down,start_down,start_up],
+                        [Path.MOVETO,Path.CURVE4,Path.CURVE4,Path.CURVE4,Path.LINETO,Path.CURVE4,Path.CURVE4,Path.CURVE4,Path.CLOSEPOLY])  
+                pp = PathPatch(p,fc=color,alpha=alpha)      
+                ax.add_patch(pp)
+            ys[i] = ys[i] - tp
+
+    ax.legend(handles=[Patch(color=v) for v in color_dict.values()],labels=[k for k in color_dict.keys()],loc='upper left',bbox_to_anchor=(1,1),ncol=2,frameon=False)
+    ax.set_xticks([0.1 + dist/2 + i * 2 * dist for i in range(n)])
+    ax.set_xticklabels(col_to_plot)
+    ax.set_yticks([])
+    plt.savefig('sankey_like_plot_multiple_cols_{}.pdf'.format('_'.join(col_to_plot)),bbox_inches='tight')
+    plt.close()
+
+def multiple_column_sankey(adata,annotations,opacity=0.6,pad=3,thickness=10,margin=300,text=True,save=True,as_html=True,outdir='.'):
+    import plotly.graph_objects as go
+    all_node_label = []
+    all_node_color = []
+    all_link_source = []
+    all_link_target = []
+    all_link_value = []
+    all_link_pert = []
+    all_link_color = []
+
+    for i, anno in enumerate(annotations):
+        if i < len(annotations) - 1:
+            left_annotation = anno
+            right_annotation = annotations[i+1]
+            df = adata.obs.loc[:,[left_annotation,right_annotation]]
+            node_label = df[left_annotation].unique().tolist() + df[right_annotation].unique().tolist()
+            node_color = pick_n_colors(len(node_label))
+            all_node_label.extend(node_label)
+            all_node_color.extend(node_color)
+
+            link = []
+            for source,sub in df.groupby(by=left_annotation):
+                for target,subsub in sub.groupby(by=right_annotation):
+                    if subsub.shape[0] > 0:
+                        link.append((source,target,subsub.shape[0],subsub.shape[0]/sub.shape[0]))
+            link_info = list(zip(*link))
+            link_source = [all_node_label.index(item) for item in link_info[0]]
+            link_target = [all_node_label.index(item) for item in link_info[1]]
+            link_value = link_info[2]
+            link_pert = [round(item,2) for item in link_info[3]]
+            link_color = ['rgba{}'.format(tuple([infer_to_256(item) for item in to_rgb(all_node_color[i])] + [opacity])) for i in link_source]
+
+            all_link_source.extend(link_source)
+            all_link_target.extend(link_target)
+            all_link_value.extend(link_value)
+            all_link_pert.extend(link_pert)
+            all_link_color.extend(link_color)
+
+
+    node_plotly = dict(pad = pad, thickness = thickness,line = dict(color = "grey", width = 0.1),label = all_node_label,color = all_node_color)
+    link_plotly = dict(source=all_link_source,target=all_link_target,value=all_link_value,color=all_link_color,customdata=all_link_pert,
+                       hovertemplate='%{source.label} -> %{target.label} <br /> number of cells: %{value} <br /> percentage: %{customdata}')
+    if not text:
+        fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly, textfont=dict(color='rgba(0,0,0,0)',size=1))])
+    else:
+        fig = go.Figure(data=[go.Sankey(node = node_plotly,link = link_plotly)])
+    fig.update_layout(title_text='sankey_multiple', font_size=6, margin=dict(l=margin,r=margin))
+    if save:
+        if not as_html:
+            fig.write_image(os.path.join(outdir,'multiple_column_sankey.pdf'))
+        else:
+            fig.write_html(os.path.join(outdir,'multiple_column_sankey.html'),include_plotlyjs='cdn') 
 
 
 def custom_two_column_sankey(adata,left_annotation,right_annotation,opacity=0.6,pad=3,thickness=10,margin=300,text=True,save=True,as_html=True,outdir='.'):
