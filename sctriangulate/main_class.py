@@ -2406,18 +2406,14 @@ class ScTriangulate(object):
 
     def modality_contributions(self,mode='marker_genes',key='pruned',tops=20,regex_dict={'adt':r'^AB_','atac':r'^chr\d{1,2}'}):
         '''
-        calculate teh modality contributions for multi modal analysis, the modality contributions of each modality of each cluster means
-        the number of features from this modality that made into the top {tops} feature list. Three columns will be added to obs, they are
-
-            * **adt_contribution**
-            * **atac_contribution**
-            * **rna_contribution**
+        calculate the modality contributions for multi modal analysis, the modality contributions of each modality of each cluster means
+        the number of features from this modality that made into the top {tops} feature list. Multiple columns will be added to obs, they are
+        corresponding to the number of modalities considered
 
         :param mode: string, either 'marker_genes' or 'exclusive_genes'.
         :param key: string, any valid categorical column in self.adata.obs
         :param tops: int, the top n features to consider for each cluster.
-        :param regex_adt: raw string, the pattern by which the ADT feature will be defined.
-        :param regex_atac: raw string ,the pattern by which the atac feature will be defined.
+        :param regex_dict: dict, keyed by modality name, value is a raw string representing the regex pattern for parsing each modality features
 
         Examples::
 
