@@ -195,7 +195,7 @@ def retrieve_pretty_cmap(name):
     elif name == 'scphere':
         return _scphere_cmap
 
-def pick_n_colors(n):
+def pick_n_colors(n,gradient=False,cmap=None):
     '''
     a very handy and abstract function, pick n colors in hex code that guarantee decent contrast.
 
@@ -206,6 +206,8 @@ def pick_n_colors(n):
     5. n > 102, use jet cmap (no guarantee for obvious contrast)
 
     :param n: int, how many colors are needed
+    :param gradient: boolean, whether to use gradient color, default is False
+    :param cmap: string, the valid cmap to use if gradient=True
 
     :return: list, each item is a hex code.
 
@@ -225,24 +227,28 @@ def pick_n_colors(n):
 
 
     '''
-    if n <= 10:
-        _colors = [to_hex(color) for color in cm.get_cmap('tab10').colors[:n]]
-    elif n > 10 and n <= 20:
-        _colors = [to_hex(color) for color in cm.get_cmap('tab20').colors[:n]]
-    elif n > 20 and n <= 28:
-        _colors = _zeileis_28[:n]
-    elif n > 28 and n <= 102:
-        _colors = _godsnot_102[:n]
-    elif n > 102:
-        # _colors = [to_hex(cm.jet(round(i))) for i in np.linspace(0,255,n)]   # old way
-        _colors = np.random.choice(r433,size=n,replace=False)
+    if gradient:
+        _colors = [to_hex(eval('cm.{}'.format(cmap))(round(i))) for i in np.linspace(0,255,n)]
+    else:
+        if n <= 10:
+            _colors = [to_hex(color) for color in cm.get_cmap('tab10').colors[:n]]
+        elif n > 10 and n <= 20:
+            _colors = [to_hex(color) for color in cm.get_cmap('tab20').colors[:n]]
+        elif n > 20 and n <= 28:
+            _colors = _zeileis_28[:n]
+        elif n > 28 and n <= 102:
+            _colors = _godsnot_102[:n]
+        elif n > 102:
+            # _colors = [to_hex(cm.jet(round(i))) for i in np.linspace(0,255,n)]   # old way
+            _colors = np.random.choice(r433,size=n,replace=False)
     return _colors
 
-def colors_for_set(setlist):  # a list without redundancy
+def colors_for_set(setlist, **kwargs):  # a list without redundancy
     '''
     given a set of items, based on how many unique item it has, pick the n color
 
     :param setlist: list without redundant items.
+    :param **kwargs: will be passed to pick_n_colors function
 
     :return: dictionary, {each item: hex code}
 
@@ -253,7 +259,7 @@ def colors_for_set(setlist):  # a list without redundancy
 
     '''
     length = len(setlist)
-    _colors = pick_n_colors(n=length)
+    _colors = pick_n_colors(n=length,**kwargs)
     cmap = pd.Series(index=setlist,data=_colors).to_dict()
     return cmap
 

@@ -1444,7 +1444,7 @@ def sankey_like_plot(df_raw, col_to_plot,figsize=(6.4,4.8)):
     alpha = 0.6
 
     df = df_raw.loc[:,col_to_plot]
-    color_dict = colors_for_set(df.index.tolist())
+    color_dict = colors_for_set(df.index.tolist(),gradient=True,cmap='viridis')
     total = df.sum(axis=0).values
     fig,ax = plt.subplots(figsize=figsize)
     ax.set_xlim([0,1])
@@ -1467,7 +1467,7 @@ def sankey_like_plot(df_raw, col_to_plot,figsize=(6.4,4.8)):
             xy_y = ys[i] - tp
             width = dist
             height = tp
-            rec = Rectangle((xy_x,xy_y),width,height,edgecolor=color,facecolor=color,lw=1)
+            rec = Rectangle((xy_x,xy_y),width,height,edgecolor='k',facecolor=color,lw=0.5)
             ax.add_patch(rec)
             # draw line
             if i < n-1:
@@ -1481,7 +1481,7 @@ def sankey_like_plot(df_raw, col_to_plot,figsize=(6.4,4.8)):
                 control_end_down = (xy_x+dist+dist/2,ys[i+1]-(eval('row.{}'.format(col_to_plot[i+1])) / total[i+1]))
                 p = Path([start_up,control_start_up,control_end_up,end_up,end_down,control_end_down,control_start_down,start_down,start_up],
                         [Path.MOVETO,Path.CURVE4,Path.CURVE4,Path.CURVE4,Path.LINETO,Path.CURVE4,Path.CURVE4,Path.CURVE4,Path.CLOSEPOLY])  
-                pp = PathPatch(p,fc=color,alpha=alpha)      
+                pp = PathPatch(p,fc=color,alpha=alpha,lw=0.5)      
                 ax.add_patch(pp)
             ys[i] = ys[i] - tp
 
