@@ -1438,13 +1438,15 @@ def umap_color_exceed_102(adata,key,dot_size=None,legend_fontsize=6,outdir='.',n
     plt.close()
 
 
-def sankey_like_plot(df_raw, col_to_plot):
+def sankey_like_plot(df_raw, col_to_plot,figsize=(6.4,4.8)):
+    from matplotlib.patches import Rectangle,Patch,PathPatch
+    from matplotlib.path import Path
     alpha = 0.6
 
     df = df_raw.loc[:,col_to_plot]
     color_dict = colors_for_set(df.index.tolist())
     total = df.sum(axis=0).values
-    fig,ax = plt.subplots()
+    fig,ax = plt.subplots(figsize=figsize)
     ax.set_xlim([0,1])
     ax.set_ylim([-0.2,1.2])
     ax.spines['top'].set_visible(False)
