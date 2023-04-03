@@ -312,6 +312,10 @@ colors_for_set()
 ~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.colors.colors_for_set
 
+gradienting()
+~~~~~~~~~~~~~~~~~
+.. autofunction:: sctriangulate.colors.gradienting
+
 bg_greyed_cmap()
 ~~~~~~~~~~~~~~~~~~~
 .. autofunction:: sctriangulate.colors.bg_greyed_cmap

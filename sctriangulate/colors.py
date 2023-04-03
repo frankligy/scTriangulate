@@ -298,6 +298,30 @@ def build_custom_continuous_cmap(*rgb_list):
     new_cmap = colors.LinearSegmentedColormap('new_cmap',segmentdata=cdict)
     return new_cmap
 
+
+def gradienting(input_hex,n):
+    '''
+    Given a hex color code (pivot color), it returns a gradient (specified by n) determined by this pivot color
+
+    :param input_hex: string, like '#4c4cff'
+    :param n: int, how many gradient you want 
+    
+    :return gradiented_hex: list, like ['#d2d2ff', '#a5a5ff', '#7878ff', '#4c4cff']
+
+    Examples::
+
+       gradiented_hex = gradienting('#4c4cff',n=4)
+       # ['#d2d2ff', '#a5a5ff', '#7878ff', '#4c4cff']
+
+    '''
+    gradient = LinearSegmentedColormap.from_list("", ["white", input_hex])
+    gradiented_hex = []
+    for p in np.linspace(0,1,n+1):
+        # if you need n=4, specify 5 because you don't want to take the white
+        gradiented_hex.append(colors.to_hex(gradient(p)))
+    return gradiented_hex[1:]
+
+
 def build_custom_divergent_cmap(hex_left,hex_right):
     '''
     User supplies two arbitrary hex code for the vmin and vmax color values, then it will build a divergent cmap centers at pure white.
