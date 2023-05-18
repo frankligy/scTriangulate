@@ -390,6 +390,14 @@ class ScTriangulate(object):
             if assess_pruned:
                 sctri.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer,added_metrics_kwargs=added_metrics_kwargs)
                 sctri.serialize(name='after_pruned_assess.p')
+                subprocess.run(['rm','-r','{}'.format(os.path.join(sctri.dir,'scTriangulate_local_mode_enrichr'))])
+                # update the old output 
+                make_sure_adata_writable(sctri.adata,delete=True)
+                sctri.adata.write(os.path.join(sctri.dir,'sctriangulate.h5ad'))
+                sctri.adata.obs.to_csv(os.path.join(sctri.dir,'sctri_barcode2cellmetadata.txt'),sep='\t')
+                sctri.extract_stability(keys=['pruned'])
+                sctri.gene_to_df(mode='marker_genes',key='pruned')
+                sctri.gene_to_df(mode='exclusive_genes',key='pruned')
             if viewer_cluster:
                 sctri.viewer_cluster_feature_html()
                 sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
@@ -433,6 +441,14 @@ class ScTriangulate(object):
             if assess_pruned:
                 sctri.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer,added_metrics_kwargs=added_metrics_kwargs)
                 sctri.serialize(name='after_pruned_assess.p')
+                subprocess.run(['rm','-r','{}'.format(os.path.join(sctri.dir,'scTriangulate_local_mode_enrichr'))])
+                # update the old output 
+                make_sure_adata_writable(sctri.adata,delete=True)
+                sctri.adata.write(os.path.join(sctri.dir,'sctriangulate.h5ad'))
+                sctri.adata.obs.to_csv(os.path.join(sctri.dir,'sctri_barcode2cellmetadata.txt'),sep='\t')
+                sctri.extract_stability(keys=['pruned'])
+                sctri.gene_to_df(mode='marker_genes',key='pruned')
+                sctri.gene_to_df(mode='exclusive_genes',key='pruned')
             if viewer_cluster:
                 sctri.viewer_cluster_feature_html()
                 sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
@@ -461,6 +477,14 @@ class ScTriangulate(object):
             if assess_pruned:
                 sctri.run_single_key_assessment(key='pruned',scale_sccaf=scale_sccaf,layer=layer,added_metrics_kwargs=added_metrics_kwargs)
                 sctri.serialize(name='after_pruned_assess.p')
+                subprocess.run(['rm','-r','{}'.format(os.path.join(sctri.dir,'scTriangulate_local_mode_enrichr'))])
+                # update the old output 
+                make_sure_adata_writable(sctri.adata,delete=True)
+                sctri.adata.write(os.path.join(sctri.dir,'sctriangulate.h5ad'))
+                sctri.adata.obs.to_csv(os.path.join(sctri.dir,'sctri_barcode2cellmetadata.txt'),sep='\t')
+                sctri.extract_stability(keys=['pruned'])
+                sctri.gene_to_df(mode='marker_genes',key='pruned')
+                sctri.gene_to_df(mode='exclusive_genes',key='pruned')
             if viewer_cluster:
                 sctri.viewer_cluster_feature_html()
                 sctri.viewer_cluster_feature_figure(parallel=False,select_keys=viewer_cluster_keys,other_umap=other_umap)
@@ -559,7 +583,7 @@ class ScTriangulate(object):
             self.serialize(name='after_pruned_assess.p')
             subprocess.run(['rm','-r','{}'.format(os.path.join(self.dir,'scTriangulate_local_mode_enrichr'))])
             # update the old output 
-            make_sure_adata_writable(self.adata)
+            make_sure_adata_writable(self.adata,delete=True)
             self.adata.write(os.path.join(self.dir,'sctriangulate.h5ad'))
             self.adata.obs.to_csv(os.path.join(self.dir,'sctri_barcode2cellmetadata.txt'),sep='\t')
             self.extract_stability(keys=['pruned'])
