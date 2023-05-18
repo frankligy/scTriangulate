@@ -540,7 +540,7 @@ class ScTriangulate(object):
         for col in ['final_annotation','pruned']:
             self.plot_umap(col,'category')
         # output necessary result
-        make_sure_adata_writable(self.adata)
+        make_sure_adata_writable(self.adata,delete=True)
         self.adata.write(os.path.join(self.dir,'sctriangulate.h5ad'))
         self.adata.obs.to_csv(os.path.join(self.dir,'sctri_barcode2cellmetadata.txt'),sep='\t')
         pd.DataFrame(data=self.adata.obsm['X_umap'],index=self.adata.obs_names,columns=['umap_x','umap_y']).to_csv(os.path.join(self.dir,'sctri_umap_coord.txt'))
