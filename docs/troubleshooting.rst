@@ -68,7 +68,7 @@ How is confidence score computed?
 
 .. image:: ./_static/confidence.png
    :height: 300px
-   :width: 500px
+   :width: 600px
    :align: center
    :target: target
 
