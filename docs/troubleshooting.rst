@@ -63,6 +63,15 @@ function should look for when computing the score in running ``lazy_run`` functi
     sctri.compute_metrics(layer='raw_count')
 
 
+How is confidence score computed?
+------------------------------------
+
+.. image:: ./_static/confidence.png
+   :height: 300px
+   :width: 500px
+   :align: center
+   :target: target
+
 
 
 
