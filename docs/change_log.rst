@@ -1,6 +1,16 @@
 Change Log
 ============
 
+Version 0.13.0 2023/07/21
+----------------------------
+
+Since publication, I made a few minor bug fixes based on the feedback, including:
+
+* Windows user's feedback on path delimiter difference
+* some newly added argument in preprocessing module
+
+main functionalities remain intact, but the update will help the wide usage for other convenient functions
+
 Version 0.12.0 2022/09/13
 ----------------------------
 
