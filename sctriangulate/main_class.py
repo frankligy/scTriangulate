@@ -1794,7 +1794,7 @@ class ScTriangulate(object):
 
         :param key: string, the name of the annotation.
         :param cluster: string, the name of the cluster.
-        :param stype: string, valid values are as below:
+        :param style: string, valid values are as below:
 
             * **umap**: plot the umap of this cluster (including its location and its suggestive heterogeneity)
             * **heatmap**: plot the heatmap of the differentially expressed features across all sub-populations within this cluster.
@@ -1821,7 +1821,7 @@ class ScTriangulate(object):
         :param rotation: int/float, for the violin plot. rotation of the text. Default: 60
         :param single_gene: string, the gene name for single gene plot
         :param dual_gene: list, the dual genes for dual gene plot.
-        :param multi_genes: list, the multiple genes for multi gene plot.
+        :param multi_gene: list, the multiple genes for multi gene plot.
         :param merge: nested list, the sub-populations that we want to merge. [('sub-c1','sub-c2'),('sub-c3','sub-c4')]
         :param to_sinto: boolean, for cellxgene mode, output the txt files for running sinto to generate pseudobulk bam files.
         :param to_samtools: boolean,for cellxgene mode, output the txt files for running samtools to generate the pseudobulk bam files.
@@ -2787,6 +2787,23 @@ class ScTriangulate(object):
 
     def _atomic_viewer_hetero(self,key,format='png',heatmap_scale=False,heatmap_cmap='viridis',heatmap_regex=None,heatmap_direction='include',
                               heatmap_n_genes=None,heatmap_cbar_scale=None):
+
+        # test whether pruned only has one sample and remove1, borrow function from pruning, below basically modify row whose pruned in each subset only has one sample
+        modified_obs = self.adata.obs.copy()
+        modified_obs['ori'] = np.arange(modified_obs.shape[0])     
+        bucket = []
+        for ref,subset in modified_obs.groupby(by=key):
+            vc2 = subset['pruned'].value_counts()
+            most_abundant_cluster = vc2.loc[vc2==vc2.max()].index[0]  # if multiple, just pick the first one
+            exclude_clusters = vc2.loc[vc2==1].index
+            for i in range(subset.shape[0]):
+                if subset.iloc[i]['pruned'] in exclude_clusters:
+                    subset.loc[:,'pruned'].iloc[i] = most_abundant_cluster   # caution that Settingwithcopy issue
+            bucket.append(subset)
+        modified_obs = pd.concat(bucket)
+        modified_obs.sort_values(by='ori',inplace=True)
+        self.adata.obs = modified_obs
+
         for cluster in self.adata.obs[key].unique():
             self.plot_heterogeneity(key,cluster,'build',format=format,heatmap_scale=heatmap_scale,heatmap_cmap=heatmap_cmap,heatmap_regex=heatmap_regex,
                                     heatmap_direction=heatmap_direction,heatmap_n_genes=heatmap_n_genes,heatmap_cbar_scale=heatmap_cbar_scale)
