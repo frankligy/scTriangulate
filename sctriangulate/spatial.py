@@ -62,8 +62,8 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,txt
     :param spatial_coord: string, the path to which we have spatial coords for each barcode, when mode_spatial=='generic'
     :param spatial_coord_sep: string, it can be '\t' or ',' or other delimiters, when mode_spatial=='generic'
     :param coord_columns: list, the columns you need to transfer from ``spatial_coord``, when mode_spatial =='generic'
-    :param spatial_images: dict, {'hires':path_to_image}, it can be None, when mode_spatial =='generic'
-    :param spatial_scalefactors: dict, {'tissue_hires_scalef':0.17,'tissue_lowres_scalef':0.05,'fiducial_diameter_fullres':144,'spot_diameter_fullres':89}, it can be None, when mode_spatial=='generic'
+    :param spatial_images: dict, {'hires':path_to_image}, when mode_spatial =='generic', it can be None, it will be [y,x,channels], top-left convention, unit is pixel
+    :param spatial_scalefactors: dict, {'tissue_hires_scalef':0.17,'tissue_lowres_scalef':0.05,'fiducial_diameter_fullres':144,'spot_diameter_fullres':89}, when mode_spatial=='generic', it can be None
 
     Depending on how the mode_count is set, additional parameters can be passed to the underlying preprocessing functions to read in the data
 
@@ -88,8 +88,12 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,txt
 
     if mode_spatial == 'visium':
         # spatial coordinate
-        coords = pd.read_csv(os.path.join(spatial_folder,'tissue_positions_list.csv'), index_col=0, header=None)
-        coords.columns = ["in_tissue", "array_row", "array_col", "pxl_col_in_fullres", "pxl_row_in_fullres"]
+        if os.path.exists(os.path.join(spatial_folder,'tissue_positions_list.csv')):
+            coords = pd.read_csv(os.path.join(spatial_folder,'tissue_positions_list.csv'), index_col=0, header=None)
+            coords.columns = ["in_tissue", "array_row", "array_col", "pxl_col_in_fullres", "pxl_row_in_fullres"]
+        elif os.path.exists(os.path.join(spatial_folder,'tissue_positions.parquet')):
+            coords = pd.read_parquet(os.path.join(spatial_folder,'tissue_positions.parquet'))
+            coords = coords.set_index(keys='barcode')
         tmp = pd.merge(adata_spatial.obs, coords, how="left", left_index=True, right_index=True)
         tmp.index.name = None
         adata_spatial.obs = tmp
