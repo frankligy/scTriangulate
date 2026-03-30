@@ -7,7 +7,7 @@ numba==0.54.1
 scanpy==1.7.2
 numpy==1.19.5
 pandas==1.1.5
-leidenalg==0.8.8
+leidenalg
 mygene==3.2.2
 anytree
 yattag
