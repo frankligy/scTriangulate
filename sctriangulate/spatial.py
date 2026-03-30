@@ -46,7 +46,7 @@ def read_spatial_data(mode_count='mtx',mode_spatial='visium',mtx_folder=None,txt
     :param mode_spatial: string, how the spatial images and associated files are present
 
         * `visium`: spatial location and images are laid out as visium format from spaceranger
-        * `generic`: more generic format where the users have to supply the file path to find the location and images
+        * `generic`: more generic format where the users have to supply the file path to find the location and images, such as shapley processed centroid for segmented data from geojson
 
     Depending on how the mode_count is set, additional paramters need to be set for reading the count data
 
