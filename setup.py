@@ -9,7 +9,6 @@ long_description = '\n\n'.join([open(os.path.join(base_dir,'README.md'),'r').rea
 
 # requires
 requires = [
-    'leidenalg ==0.8.8',
     'squidpy ==1.2.0',
     'gseapy ==0.10.4',
     'scrublet ==0.2.3',

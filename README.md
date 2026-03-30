@@ -38,7 +38,7 @@ conda env create -f sctri_new_env_py37_linux.yml -p ./py37_new_linux_env
 
 ## Tutorials
 
-Check out our [full documentation and step-by-step tutorials](https://sctriangulate.readthedocs.io/en/latest/get_started.html). But let's get a quick sense for a minimum example, it has been tested in python>=3.7 on MacOS, Linux and Windows PC.
+Check out our [full documentation and step-by-step tutorials](https://sctriangulate.readthedocs.io/en/latest/get_started.html). But let's get a quick sense for a minimum example, it has been tested in python>=3.7 on MacOS, Linux and Windows PC
 
 ```python
 import scanpy as sc
