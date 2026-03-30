@@ -26,13 +26,19 @@ It can be used in an array of settings:
 
 ![schuma_chop](./image/schema_chop.png)
 
-## Tutorials and Installation
-
-Check out our [full documentation and step-by-step tutorials](https://sctriangulate.readthedocs.io/en/latest/get_started.html). But let's get a quick sense for a minimum example, it has been tested in python>=3.7 on MacOS, Linux and Windows PC.
+## Installation
 
 ```bash
-pip install sctriangulate
+# get a copy of original yml file from /reproduce/sctri_new_env_py37_linux.yml
+
+conda env create -f sctri_new_env_py37_linux.yml -p ./py37_new_linux_env
+./py37_new_linux_env/bin/python3.7 -m pip install --no-cache-dir git+https://github.com/frankligy/sctriangulate.git
+./py37_new_linux_env/bin/python3.7 -m pip install --no-cache-dir pyarrow
 ```
+
+## Tutorials
+
+Check out our [full documentation and step-by-step tutorials](https://sctriangulate.readthedocs.io/en/latest/get_started.html). But let's get a quick sense for a minimum example, it has been tested in python>=3.7 on MacOS, Linux and Windows PC.
 
 ```python
 import scanpy as sc
